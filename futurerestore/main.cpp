@@ -48,7 +48,7 @@ using namespace std;
 int main(int argc, const char * argv[]) {
 #define reterror(code,a ...) do {error(a); err = code; goto error;} while (0)
     int err=0;
-    int res = 0;
+    int res = -1;
     
     int optindex = 0;
     int opt = 0;
@@ -159,8 +159,8 @@ int main(int argc, const char * argv[]) {
         err = error;
     }
     
-    cout << "Done: restoring "<< (res ? "succeeded" : "failed");
-    if (!res) cout << ". Errorcode="<<err;
+    cout << "Done: restoring "<< (!res ? "succeeded" : "failed");
+    if (res) cout << ". Errorcode="<<err;
     cout<<endl;
 error:
 
