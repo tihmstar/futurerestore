@@ -35,7 +35,7 @@
 		8799B0C31D89DB4B002F4D5F /* socket.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587721D89D1C1008689F0 /* socket.c */; };
 		8799B0C41D89DB55002F4D5F /* mbn.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876A1D89D1C1008689F0 /* mbn.c */; };
 		8799B0C51D89DB67002F4D5F /* locking.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587671D89D1C1008689F0 /* locking.c */; };
-		8799B0C81D89E2BD002F4D5F /* img4tool.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587901D89D1ED008689F0 /* img4tool.c */; };
+		8799B0C81D89E2BD002F4D5F /* img4tool.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587901D89D1ED008689F0 /* img4tool.c */; settings = {COMPILER_FLAGS = "-D HAVE_CONFIG_H=1 "; }; };
 		8799B0C91D89E2C3002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785878E1D89D1ED008689F0 /* img4.c */; };
 		8799B0CA1D89E371002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587601D89D1C1008689F0 /* img4.c */; };
 		8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785879F1D89D2BA008689F0 /* tsschecker.c */; };
