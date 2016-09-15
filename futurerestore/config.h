@@ -10,7 +10,8 @@
 #define config_h
 
 #define IMG4TOOL_NOMAIN
-
+#define NO_DEBUG_PLIST
+#define NO_GENERATE_GUID
 
 //idevicerestore config
 #define IDEVICERESTORE_NOMAIN
