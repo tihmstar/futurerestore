@@ -36,11 +36,11 @@ void cmd_help(){
     
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
-    printf("  -p, --baseband-manifest PATH\t\tBuildmanifest for requesting baseband ticket\n");
+    printf("  -p, --baseband-manifest PATH\tBuildmanifest for requesting baseband ticket\n");
     printf("  -s, --sep PATH\t\tSep to be flashed\n");
-    printf("  -m, --sep-manifest PATH\t\tBuildmanifest for requesting sep ticket\n");
-    printf("  -w, --wait\t\tkeep rebooting until nonce matches APTicket\n");
-    printf("  -u, --update\t\tupdate instead of erase install\n");
+    printf("  -m, --sep-manifest PATH\tBuildmanifest for requesting sep ticket\n");
+    printf("  -w, --wait\t\t\tkeep rebooting until nonce matches APTicket\n");
+    printf("  -u, --update\t\t\tupdate instead of erase install\n");
     printf("\n");
 }
 
