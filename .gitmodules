@@ -6,4 +6,4 @@
 	url = git@github.com:tihmstar/tsschecker.git
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
-	url = git@github.com:tihmstar/idevicerestore.git
+	url = ssh://git@tihmstar.net:23/idevicerestore.git
