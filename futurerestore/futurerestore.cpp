@@ -510,13 +510,14 @@ char *futurerestore::getLatestManifest(){
         if (bpos) *bpos= '\0';
         if (versions) free(versions[versionCnt-1]),free(versions);
         
+        //make sure it get's freed after function finishes execution by either reaching end or throwing exception
+        ptr_smart<const char*>autofree(versVals.version);
+        
         __latestFirmwareUrl = getFirmwareUrl(device, versVals, _firmwareJson, _firmwareTokens);
-        if (!__latestFirmwareUrl) free((char*)versVals.version),reterror(-21, "could not find url of latest firmware\n");
+        if (!__latestFirmwareUrl) reterror(-21, "could not find url of latest firmware\n");
         
         __latestManifest = getBuildManifest(__latestFirmwareUrl, device, versVals.version, 0);
-        if (!__latestManifest) free((char*)versVals.version),reterror(-22, "could not get buildmanifest of latest firmware\n");
-
-        free((char*)versVals.version);
+        if (!__latestManifest) reterror(-22, "could not get buildmanifest of latest firmware\n");
     }
     
     return __latestManifest;
