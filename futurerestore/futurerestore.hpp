@@ -18,15 +18,15 @@ using namespace std;
 
 template <typename T>
 class ptr_smart {
-    function<void(T)> _ptr_free;
+    function<void(T)> _ptr_free = NULL;
 public:
     T _p;
     ptr_smart(T p, function<void(T)> ptr_free){static_assert(is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
-    ptr_smart(T p){ptr_smart(p,reinterpret_cast<void(*)(T)>(free));}
-    ptr_smart(){ptr_smart(NULL,reinterpret_cast<void(*)(T)>(free));}
+    ptr_smart(T p){_p = p;}
+    ptr_smart(){_p = NULL;}
     T operator=(T p){return _p = p;}
     T *operator&(){return &_p;}
-    ~ptr_smart(){if (_p) _ptr_free(_p);}
+    ~ptr_smart(){if (_p) (_ptr_free) ? _ptr_free(_p) : free((void*)_p);}
 };
 
 class futurerestore {

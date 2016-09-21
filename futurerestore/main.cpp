@@ -45,6 +45,8 @@ void cmd_help(){
     printf("  -m, --sep-manifest PATH\tBuildmanifest for requesting sep ticket\n");
     printf("  -w, --wait\t\t\tkeep rebooting until nonce matches APTicket\n");
     printf("  -u, --update\t\t\tupdate instead of erase install\n");
+    printf("      --latest-sep\t\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
+    printf("      --latest-baseband\t\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
     printf("\n");
 }
 
@@ -145,13 +147,17 @@ int main(int argc, const char * argv[]) {
     }
 
     
-    if (flags & FLAG_LATEST_SEP) client.loadLatestSep();
-    else{
+    if (flags & FLAG_LATEST_SEP){
+        info("user specified to use latest signed sep\n");
+        client.loadLatestSep();
+    }else{
         client.setSepPath(sepPath);
         client.setSepManifestPath(sepManifestPath);
     }
-    if (flags & FLAG_LATEST_BASEBAND) client.loadLatestBaseband();
-    else{
+    if (flags & FLAG_LATEST_BASEBAND){
+        info("user specified to use latest signed baseband (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
+        client.loadLatestBaseband();
+    }else{
         client.setBasebandPath(basebandPath);
         client.setBasebandManifestPath(basebandManifestPath);
     }

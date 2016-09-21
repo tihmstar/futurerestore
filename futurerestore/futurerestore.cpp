@@ -56,7 +56,7 @@ bool futurerestore::init(){
 }
 
 uint64_t futurerestore::getDeviceEcid(){
-    if (!_didInit) reterror(-1, "did not init");
+    if (!_didInit) reterror(-1, "did not init\n");
     uint64_t ecid;
     
     get_ecid(_client, &ecid);
@@ -65,7 +65,7 @@ uint64_t futurerestore::getDeviceEcid(){
 }
 
 int futurerestore::getDeviceMode(bool reRequest){
-    if (!_didInit) reterror(-1, "did not init");
+    if (!_didInit) reterror(-1, "did not init\n");
     if (!reRequest && _client->mode->index != MODE_UNKNOWN) {
         return _client->mode->index;
     }else{
@@ -76,7 +76,7 @@ int futurerestore::getDeviceMode(bool reRequest){
 }
 
 void futurerestore::putDeviceIntoRecovery(){
-    if (!_didInit) reterror(-1, "did not init");
+    if (!_didInit) reterror(-1, "did not init\n");
     
     getDeviceMode(false);
     info("Found device in %s mode\n", _client->mode->string);
@@ -100,7 +100,7 @@ void futurerestore::putDeviceIntoRecovery(){
 }
 
 void futurerestore::setAutoboot(bool val){
-    if (!_didInit) reterror(-1, "did not init");
+    if (!_didInit) reterror(-1, "did not init\n");
     
     if (getDeviceMode(false) != MODE_RECOVERY){
         reterror(-2, "can't set autoboot, when device isn't in recovery mode\n");
@@ -116,7 +116,7 @@ void futurerestore::setAutoboot(bool val){
 }
 
 bool futurerestore::nonceMatchesApTicket(){
-    if (!_didInit) reterror(-1, "did not init");
+    if (!_didInit) reterror(-1, "did not init\n");
     if (getDeviceMode(true) != MODE_RECOVERY) reterror(-10, "Device not in recovery mode, can't check apnonce\n");
     
     unsigned char* realnonce;
@@ -127,7 +127,7 @@ bool futurerestore::nonceMatchesApTicket(){
 }
 
 void futurerestore::waitForNonce(const char *nonce){
-    if (!_didInit) reterror(-1, "did not init");
+    if (!_didInit) reterror(-1, "did not init\n");
     setAutoboot(false);
     
     unsigned char* realnonce;
@@ -467,7 +467,7 @@ futurerestore::~futurerestore(){
 }
 
 void futurerestore::loadFirmwareTokens(){
-    if (_firmwareTokens){
+    if (!_firmwareTokens){
         if (!_firmwareJson) _firmwareJson = getFirmwareJson();
         if (!_firmwareJson) reterror(-6,"[TSSC] could not get firmware.json\n");
         int cnt = parseTokens(_firmwareJson, &_firmwareTokens);
@@ -476,7 +476,7 @@ void futurerestore::loadFirmwareTokens(){
 }
 
 const char *futurerestore::getConnectedDeviceModel(){
-    if (!_client->device->hardware_model){
+    if (!_client->device || !_client->device->product_type){
         
         int mode = getDeviceMode(true);
         if (mode != MODE_NORMAL && mode != MODE_RECOVERY)
@@ -486,7 +486,7 @@ const char *futurerestore::getConnectedDeviceModel(){
             reterror(-2,"ERROR: Unable to discover device model\n");
     }
     
-    return _client->device->hardware_model;
+    return _client->device->product_type;
 }
 
 char *futurerestore::getLatestManifest(){
@@ -531,7 +531,7 @@ char *futurerestore::getLatestFirmwareUrl(){
 void futurerestore::loadLatestBaseband(){
     char * manifeststr = getLatestManifest();
     char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr);
-    if (!downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
+    if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
         reterror(-32, "could not download baseband\n");
     saveStringToFile(manifeststr, _basebandManifestPath = BASEBAND_MANIFEST_TMP_PATH);
 }
@@ -539,7 +539,7 @@ void futurerestore::loadLatestBaseband(){
 void futurerestore::loadLatestSep(){
     char * manifeststr = getLatestManifest();
     char *pathStr = getPathOfElementInManifest("SEP", manifeststr);
-    if (!downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
+    if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
         reterror(-33, "could not download SEP\n");
     saveStringToFile(manifeststr, _sepManifestPath = SEP_MANIFEST_TMP_PATH);
 }
@@ -552,7 +552,7 @@ inline void futurerestore::saveStringToFile(const char *str, const char *path){
     if (!f) reterror(-41,"can't save file at %s\n",path);
     else{
         size_t len = strlen(str);
-        size_t wlen = fwrite(str, len, 1, f);
+        size_t wlen = fwrite(str, 1, len, f);
         fclose(f);
         if (len != wlen) reterror(-42, "saving file failed, wrote=%zu actual=%zu\n",wlen,len);
     }
@@ -656,11 +656,12 @@ char *futurerestore::getPathOfElementInManifest(const char *element, const char 
     
     if (plist_t buildidentities = plist_dict_get_item(buildmanifest._p, "BuildIdentities"))
         if (plist_t firstIdentitie = plist_array_get_item(buildidentities, 0))
-            if (plist_t manifest = plist_dict_get_item(firstIdentitie, element))
-                if (plist_t info = plist_dict_get_item(manifest, "Info"))
-                    if (plist_t path = plist_dict_get_item(info, "Path"))
-                        if (plist_get_string_val(path, &pathStr), pathStr)
-                            goto noerror;
+            if (plist_t manifest = plist_dict_get_item(firstIdentitie, "Manifest"))
+                if (plist_t elem = plist_dict_get_item(manifest, element))
+                    if (plist_t info = plist_dict_get_item(elem, "Info"))
+                        if (plist_t path = plist_dict_get_item(info, "Path"))
+                            if (plist_get_string_val(path, &pathStr), pathStr)
+                                goto noerror;
     reterror(-31, "could not get %s path\n",element);
 noerror:
     return pathStr;
