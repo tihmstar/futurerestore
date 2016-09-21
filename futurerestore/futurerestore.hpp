@@ -22,8 +22,8 @@ class ptr_smart {
 public:
     T _p;
     ptr_smart(T p, function<void(T)> ptr_free){static_assert(is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
-    ptr_smart(T p){this->ptr_smart(p,static_cast<void(*)(T)>(free));}
-    ptr_smart(){this->ptr_smart(NULL,static_cast<void(*)(T)>(free));}
+    ptr_smart(T p){ptr_smart(p,reinterpret_cast<void(*)(T)>(free));}
+    ptr_smart(){ptr_smart(NULL,reinterpret_cast<void(*)(T)>(free));}
     T operator=(T p){return _p = p;}
     T *operator&(){return &_p;}
     ~ptr_smart(){if (_p) _ptr_free(_p);}
