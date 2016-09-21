@@ -68,7 +68,6 @@ int main(int argc, const char * argv[]) {
     const char *sepPath = NULL;
     const char *sepManifestPath = NULL;
     
-    
     t_devicevals devVals;
     t_iosVersion versVals;
     memset(&devVals, 0, sizeof(devVals));

@@ -91,8 +91,10 @@ void futurerestore::putDeviceIntoRecovery(){
         reterror(-3, "unsupported devicemode, please put device in recovery mode or normal mode\n");
     }
     
-    free(_client->udid);
-    _client->udid = NULL;
+    //only needs to be freed manually when function did't throw exception
+    safeFree(_client->udid);
+    
+    //these get also freed by destructor
     normal_client_free(_client);
     recovery_client_free(_client);
 }
@@ -181,7 +183,7 @@ void futurerestore::loadAPTicket(const char *apticketPath){
     else
         plist_from_xml(buf, (uint32_t)fSize, &_apticket);
     
-    if (_im4m) free(_im4m);
+    safeFree(_im4m);
     
     plist_t ticket = plist_dict_get_item(_apticket, "ApImg4Ticket");
     uint64_t im4msize=0;
@@ -194,6 +196,7 @@ void futurerestore::loadAPTicket(string apticketPath){
 
 int futurerestore::doRestore(const char *ipsw, bool noerase){
     int err = 0;
+    //some memory might not get freed if this function throws an exception, but you probably don't want to catch that anyway.
     
     struct idevicerestore_client_t* client = _client;
     int unused;
@@ -452,6 +455,8 @@ error:
 
 
 futurerestore::~futurerestore(){
+    normal_client_free(_client);
+    recovery_client_free(_client);
     idevicerestore_client_free(_client);
     safeFree(_im4m);
     safeFree(_firmwareJson);
@@ -506,9 +511,11 @@ char *futurerestore::getLatestManifest(){
         if (versions) free(versions[versionCnt-1]),free(versions);
         
         __latestFirmwareUrl = getFirmwareUrl(device, versVals, _firmwareJson, _firmwareTokens);
-        if (!__latestFirmwareUrl) reterror(-21, "could not find url of latest firmware\n");
+        if (!__latestFirmwareUrl) free((char*)versVals.version),reterror(-21, "could not find url of latest firmware\n");
+        
         __latestManifest = getBuildManifest(__latestFirmwareUrl, device, versVals.version, 0);
-        if (!__latestManifest) reterror(-22, "could not get buildmanifest of latest firmware\n");
+        if (!__latestManifest) free((char*)versVals.version),reterror(-22, "could not get buildmanifest of latest firmware\n");
+
         free((char*)versVals.version);
     }
     
@@ -642,11 +649,11 @@ plist_t futurerestore::loadPlistFromFile(const char *path){
 
 char *futurerestore::getPathOfElementInManifest(const char *element, const char *manifeststr){
     char *pathStr = NULL;
+    ptr_smart<plist_t> buildmanifest(NULL,plist_free);
     
-    plist_t buildmanifest;
     plist_from_xml(manifeststr, (uint)strlen(manifeststr), &buildmanifest);
     
-    if (plist_t buildidentities = plist_dict_get_item(buildmanifest, "BuildIdentities"))
+    if (plist_t buildidentities = plist_dict_get_item(buildmanifest._p, "BuildIdentities"))
         if (plist_t firstIdentitie = plist_array_get_item(buildidentities, 0))
             if (plist_t manifest = plist_dict_get_item(firstIdentitie, element))
                 if (plist_t info = plist_dict_get_item(manifest, "Info"))
@@ -655,7 +662,6 @@ char *futurerestore::getPathOfElementInManifest(const char *element, const char 
                             goto noerror;
     reterror(-31, "could not get %s path\n",element);
 noerror:
-    plist_free(buildmanifest);
     return pathStr;
 }
 
