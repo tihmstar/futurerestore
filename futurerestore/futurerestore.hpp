@@ -12,19 +12,26 @@
 #include "config.h"
 #include <stdio.h>
 #include "idevicerestore.h"
+#include "jsmn.h"
 
 using namespace std;
 
 class futurerestore {
     struct idevicerestore_client_t* _client;
-    bool _didInit;
-    plist_t _apticket;
-    char *_im4m;
+    bool _didInit = false;
+    plist_t _apticket = NULL;
+    char *_im4m = NULL;
     
-    const char *_sepManifestPath;
-    const char *_basebandManifestPath;
-    const char *_sepPath;
-    const char *_basebandPath;
+    char *_firmwareJson = NULL;
+    jsmntok_t *_firmwareTokens = NULL;;
+    char *__latestManifest = NULL;
+    char *__latestFirmwareUrl = NULL;
+    
+    const char *_sepManifestPath = NULL;
+    const char *_basebandManifestPath = NULL;
+    const char *_sepPath = NULL;
+    const char *_basebandPath = NULL;
+    
     
 public:
     futurerestore();
@@ -40,11 +47,24 @@ public:
     
     bool nonceMatchesApTicket();
 
+    void loadFirmwareTokens();
+    const char *getConnectedDeviceModel();
+    char *getLatestManifest();
+    char *getLatestFirmwareUrl();
+    void loadLatestBaseband();
+    void loadLatestSep();
     
     void setSepManifestPath(const char *sepManifestPath){_sepManifestPath = sepManifestPath;};
     void setBasebandManifestPath(const char *basebandManifestPath){_basebandManifestPath = basebandManifestPath;};
     void setSepPath(const char *sepPath){_sepPath = sepPath;};
     void setBasebandPath(const char *basebandPath){_basebandPath = basebandPath;};
+    
+    
+    const char *sepManifestPath(){return _sepManifestPath;};
+    const char *basebandManifestPath(){return _basebandManifestPath;};
+    const char *sepPath(){return _sepPath;};
+    const char *basebandPath(){return _basebandPath;};
+    
     
     int doRestore(const char *ipsw, bool noerase);
     
@@ -53,6 +73,8 @@ public:
     static char *getNonceFromIM4M(const char* im4m);
     static char *getNonceFromAPTicket(const char* apticketPath);
     static plist_t loadPlistFromFile(const char *path);
+    static void saveStringToFile(const char *str, const char *path);
+    static char *getPathOfElementInManifest(const char *element, const char *manifeststr);
 
 };
 

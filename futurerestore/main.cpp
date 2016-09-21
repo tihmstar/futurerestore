@@ -16,19 +16,23 @@
 #define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
 
 static struct option longopts[] = {
-    { "apticket",       required_argument,      NULL, 't' },
-    { "baseband",       required_argument,      NULL, 'b' },
-    { "baseband-plist", required_argument,      NULL, 'p' },
-    { "sep",            required_argument,      NULL, 's' },
-    { "sep-manifest",   required_argument,      NULL, 'm' },
-    { "wait",           no_argument,            NULL, 'w' },
-    { "update",         no_argument,            NULL, 'u' },
-    { "debug",          no_argument,            NULL, 'd' },
+    { "apticket",           required_argument,      NULL, 't' },
+    { "baseband",           required_argument,      NULL, 'b' },
+    { "baseband-plist",     required_argument,      NULL, 'p' },
+    { "sep",                required_argument,      NULL, 's' },
+    { "sep-manifest",       required_argument,      NULL, 'm' },
+    { "wait",               no_argument,            NULL, 'w' },
+    { "update",             no_argument,            NULL, 'u' },
+    { "debug",              no_argument,            NULL, 'd' },
+    { "latest-sep",         no_argument,            NULL, '0' },
+    { "latest-baseband",    no_argument,            NULL, '1' },
     { NULL, 0, NULL, 0 }
 };
 
-#define FLAG_WAIT   1 << 0
-#define FLAG_UPDATE 1 << 1
+#define FLAG_WAIT               1 << 0
+#define FLAG_UPDATE             1 << 1
+#define FLAG_LATEST_SEP         1 << 2
+#define FLAG_LATEST_BASEBAND    1 << 3
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
@@ -75,7 +79,7 @@ int main(int argc, const char * argv[]) {
         return -1;
     }
     
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud01", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPath = optarg;
@@ -97,6 +101,12 @@ int main(int argc, const char * argv[]) {
                 break;
             case 'u': // long option: "update"; can be called as short option
                 flags |= FLAG_UPDATE;
+                break;
+            case '0': // long option: "latest-sep";
+                flags |= FLAG_LATEST_SEP;
+                break;
+            case '1': // long option: "latest-baseband";
+                flags |= FLAG_LATEST_BASEBAND;
                 break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
@@ -122,7 +132,9 @@ int main(int argc, const char * argv[]) {
         client.putDeviceIntoRecovery();
         client.waitForNonce();
     }
-    if (!(apticketPath && basebandPath && basebandManifestPath && sepPath && sepManifestPath && ipsw)) {
+    if (!(apticketPath && ipsw)
+        && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
+        && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)) ) {
         if (!(flags & FLAG_WAIT) || ipsw){
             error("missing argument\n");
             cmd_help();
@@ -134,21 +146,27 @@ int main(int argc, const char * argv[]) {
     }
 
     
+    if (flags & FLAG_LATEST_SEP) client.loadLatestSep();
+    else{
+        client.setSepPath(sepPath);
+        client.setSepManifestPath(sepManifestPath);
+    }
+    if (flags & FLAG_LATEST_BASEBAND) client.loadLatestBaseband();
+    else{
+        client.setBasebandPath(basebandPath);
+        client.setBasebandManifestPath(basebandManifestPath);
+    }
+
+    
     versVals.basebandMode = kBasebandModeWithoutBaseband;
-    if (!(isSepManifestSigned = isManifestSignedForDevice(sepManifestPath, NULL, devVals, versVals))){
+    if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), NULL, devVals, versVals))){
         reterror(-3,"sep firmware isn't signed\n");
     }
     
     versVals.basebandMode = kBasebandModeOnlyBaseband;
-    if (!(isBasebandSigned = isManifestSignedForDevice(basebandManifestPath, NULL, devVals, versVals))){
+    if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), NULL, devVals, versVals))){
         reterror(-3,"baseband firmware isn't signed\n");
     }
-    
-    client.setSepPath(sepPath);
-    client.setSepManifestPath(sepManifestPath);
-    client.setBasebandPath(basebandPath);
-    client.setBasebandManifestPath(basebandManifestPath);
-    
     
     client.putDeviceIntoRecovery();
     

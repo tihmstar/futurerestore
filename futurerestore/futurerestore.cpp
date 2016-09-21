@@ -21,9 +21,19 @@
 #include "ipsw.h"
 #include "locking.h"
 #include "restore.h"
+#include "tsschecker.h"
 
 #define NONCESIZE 20
 #define USEC_PER_SEC 1000000
+
+#define TMP_PATH "/tmp"
+#define FUTURERESTORE_TMP_PATH TMP_PATH"/futurerestore"
+
+#define BASEBAND_TMP_PATH FUTURERESTORE_TMP_PATH"/baseband.bbfw"
+#define BASEBAND_MANIFEST_TMP_PATH FUTURERESTORE_TMP_PATH"/basebandManifest.plist"
+#define SEP_TMP_PATH FUTURERESTORE_TMP_PATH"/sep.im4p"
+#define SEP_MANIFEST_TMP_PATH FUTURERESTORE_TMP_PATH"/sepManifest.plist"
+
 
 #define reterror(code,msg ...) error(msg),throw int(code)
 #define safeFree(buf) if (buf) free(buf), buf = NULL
@@ -32,9 +42,12 @@
 futurerestore::futurerestore(){
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
-    _didInit = false;
-    _apticket = NULL;
-    _im4m = NULL;
+    
+    struct stat st{0};
+    if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) mkdir(FUTURERESTORE_TMP_PATH, 0755);
+    
+    //tsschecker nocache
+    nocache = 1;
 }
 
 bool futurerestore::init(){
@@ -441,10 +454,101 @@ error:
 futurerestore::~futurerestore(){
     idevicerestore_client_free(_client);
     safeFree(_im4m);
+    safeFree(_firmwareJson);
+    safeFree(_firmwareTokens);
+    safeFree(__latestManifest);
+    safeFree(__latestFirmwareUrl);
     safePlistFree(_apticket);
 }
 
+void futurerestore::loadFirmwareTokens(){
+    if (_firmwareTokens){
+        if (!_firmwareJson) _firmwareJson = getFirmwareJson();
+        if (!_firmwareJson) reterror(-6,"[TSSC] could not get firmware.json\n");
+        int cnt = parseTokens(_firmwareJson, &_firmwareTokens);
+        if (cnt < 1) reterror(-2,"[TSSC] parsing %s.json failed\n",(0) ? "ota" : "firmware");
+    }
+}
+
+const char *futurerestore::getConnectedDeviceModel(){
+    if (!_client->device->hardware_model){
+        
+        int mode = getDeviceMode(true);
+        if (mode != MODE_NORMAL && mode != MODE_RECOVERY)
+            reterror(-20, "unexpected device mode=%d\n",mode);
+        
+        if (check_hardware_model(_client) == NULL || _client->device == NULL)
+            reterror(-2,"ERROR: Unable to discover device model\n");
+    }
+    
+    return _client->device->hardware_model;
+}
+
+char *futurerestore::getLatestManifest(){
+    if (!__latestManifest){
+        loadFirmwareTokens();
+
+        const char *device = getConnectedDeviceModel();
+        t_iosVersion versVals;
+        memset(&versVals, 0, sizeof(versVals));
+        
+        int versionCnt = 0;
+        int i = 0;
+        char **versions = getListOfiOSForDevice(_firmwareJson, _firmwareTokens, device, 0, &versionCnt);
+        if (!versionCnt) reterror(-8, "[TSSC] failed finding latest iOS\n");
+        char *bpos = NULL;
+        while((bpos = strstr(versVals.version = strdup(versions[i++]),"[B]")) != 0){
+            free((char*)versVals.version);
+            if (--versionCnt == 0) reterror(-9, "[TSSC] automatic iOS selection couldn't find non-beta iOS\n");
+        }
+        info("[TSSC] selecting latest iOS: %s\n",versVals.version);
+        if (bpos) *bpos= '\0';
+        if (versions) free(versions[versionCnt-1]),free(versions);
+        
+        __latestFirmwareUrl = getFirmwareUrl(device, versVals, _firmwareJson, _firmwareTokens);
+        if (!__latestFirmwareUrl) reterror(-21, "could not find url of latest firmware\n");
+        __latestManifest = getBuildManifest(__latestFirmwareUrl, device, versVals.version, 0);
+        if (!__latestManifest) reterror(-22, "could not get buildmanifest of latest firmware\n");
+        free((char*)versVals.version);
+    }
+    
+    return __latestManifest;
+}
+
+char *futurerestore::getLatestFirmwareUrl(){
+    return getLatestManifest(),__latestFirmwareUrl;
+}
+
+
+void futurerestore::loadLatestBaseband(){
+    char * manifeststr = getLatestManifest();
+    char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr);
+    if (!downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
+        reterror(-32, "could not download baseband\n");
+    saveStringToFile(manifeststr, _basebandManifestPath = BASEBAND_MANIFEST_TMP_PATH);
+}
+
+void futurerestore::loadLatestSep(){
+    char * manifeststr = getLatestManifest();
+    char *pathStr = getPathOfElementInManifest("SEP", manifeststr);
+    if (!downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
+        reterror(-33, "could not download SEP\n");
+    saveStringToFile(manifeststr, _sepManifestPath = SEP_MANIFEST_TMP_PATH);
+}
+
+
 #pragma mark static methods
+
+inline void futurerestore::saveStringToFile(const char *str, const char *path){
+    FILE *f = fopen(path, "w");
+    if (!f) reterror(-41,"can't save file at %s\n",path);
+    else{
+        size_t len = strlen(str);
+        size_t wlen = fwrite(str, len, 1, f);
+        fclose(f);
+        if (len != wlen) reterror(-42, "saving file failed, wrote=%zu actual=%zu\n",wlen,len);
+    }
+}
 
 char *futurerestore::getNonceFromIM4M(const char* im4m){
     char *ret = NULL;
@@ -534,5 +638,24 @@ plist_t futurerestore::loadPlistFromFile(const char *path){
     free(buf);
     
     return ret;
+}
+
+char *futurerestore::getPathOfElementInManifest(const char *element, const char *manifeststr){
+    char *pathStr = NULL;
+    
+    plist_t buildmanifest;
+    plist_from_xml(manifeststr, (uint)strlen(manifeststr), &buildmanifest);
+    
+    if (plist_t buildidentities = plist_dict_get_item(buildmanifest, "BuildIdentities"))
+        if (plist_t firstIdentitie = plist_array_get_item(buildidentities, 0))
+            if (plist_t manifest = plist_dict_get_item(firstIdentitie, element))
+                if (plist_t info = plist_dict_get_item(manifest, "Info"))
+                    if (plist_t path = plist_dict_get_item(info, "Path"))
+                        if (plist_get_string_val(path, &pathStr), pathStr)
+                            goto noerror;
+    reterror(-31, "could not get %s path\n",element);
+noerror:
+    plist_free(buildmanifest);
+    return pathStr;
 }
 
