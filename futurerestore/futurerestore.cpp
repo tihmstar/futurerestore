@@ -280,8 +280,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     
     plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
     
-    plist_t info = plist_dict_get_item(build_identity, "Info");
-    plist_t manifest = plist_dict_get_item(info, "Manifest");
+    plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
     
     plist_dict_set_item(manifest, "BasebandFirmware", bb_baseband);
     
@@ -531,6 +530,7 @@ char *futurerestore::getLatestFirmwareUrl(){
 void futurerestore::loadLatestBaseband(){
     char * manifeststr = getLatestManifest();
     char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr);
+    info("downloading Baseband\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
         reterror(-32, "could not download baseband\n");
     saveStringToFile(manifeststr, _basebandManifestPath = BASEBAND_MANIFEST_TMP_PATH);
@@ -539,6 +539,7 @@ void futurerestore::loadLatestBaseband(){
 void futurerestore::loadLatestSep(){
     char * manifeststr = getLatestManifest();
     char *pathStr = getPathOfElementInManifest("SEP", manifeststr);
+    info("downloading SEP\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
         reterror(-33, "could not download SEP\n");
     saveStringToFile(manifeststr, _sepManifestPath = SEP_MANIFEST_TMP_PATH);

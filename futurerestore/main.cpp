@@ -129,10 +129,6 @@ int main(int argc, const char * argv[]) {
     
     if (apticketPath) client.loadAPTicket(apticketPath);
     
-    if (flags & FLAG_WAIT){
-        client.putDeviceIntoRecovery();
-        client.waitForNonce();
-    }
     if (!(apticketPath && ipsw)
         && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
         && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)) ) {
@@ -141,6 +137,8 @@ int main(int argc, const char * argv[]) {
             cmd_help();
             err = -2;
         }else{
+            client.putDeviceIntoRecovery();
+            client.waitForNonce();
             info("done\n");
         }
         goto error;
@@ -174,6 +172,9 @@ int main(int argc, const char * argv[]) {
     }
     
     client.putDeviceIntoRecovery();
+    if (flags & FLAG_WAIT){
+        client.waitForNonce();
+    }
     
     try {
         res = client.doRestore(ipsw, flags & FLAG_UPDATE);
