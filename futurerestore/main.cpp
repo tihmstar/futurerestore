@@ -129,9 +129,9 @@ int main(int argc, const char * argv[]) {
     
     if (apticketPath) client.loadAPTicket(apticketPath);
     
-    if (!(apticketPath && ipsw)
+    if (!((apticketPath && ipsw)
         && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
-        && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)) ) {
+        && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)))) {
         if (!(flags & FLAG_WAIT) || ipsw){
             error("missing argument\n");
             cmd_help();

@@ -170,6 +170,7 @@ void futurerestore::waitForNonce(){
 void futurerestore::loadAPTicket(const char *apticketPath){
     if (_apticket) plist_free(_apticket), _apticket = NULL;
     FILE *f = fopen(apticketPath,"rb");
+    if (!f) reterror(-9, "failed to load apticket at %s\n",apticketPath);
     fseek(f, 0, SEEK_END);
     
     size_t fSize = ftell(f);
@@ -265,24 +266,28 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     
     sepbuildmanifest = loadPlistFromFile(_sepManifestPath);
     sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(sepbuildmanifest, client->device->hardware_model, "Erase");
+    if (!sep_build_identity) sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(sepbuildmanifest, client->device->hardware_model, "Update");
     if (sep_build_identity == NULL) {
         reterror(-5,"ERROR: Unable to find any build identities for sep\n");
     }
     
     basebandbuildmanifest = loadPlistFromFile(_basebandManifestPath);
     bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(basebandbuildmanifest, client->device->hardware_model, "Erase");
+    if (!bb_build_identity) bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(basebandbuildmanifest, client->device->hardware_model, "Update");
     if (bb_build_identity == NULL) {
         reterror(-5,"ERROR: Unable to find any build identities for baseband\n");
     }
     
     
     plist_t bb_manifest = plist_dict_get_item(bb_build_identity, "Manifest");
-    
     plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
     
-    plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
+    plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
+    plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
     
+    plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
     plist_dict_set_item(manifest, "BasebandFirmware", bb_baseband);
+    plist_dict_set_item(manifest, "SEP", sep_sep);
     
     client->bbfwtmp = (char*)_basebandPath;
     
