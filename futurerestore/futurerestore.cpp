@@ -23,6 +23,14 @@
 #include "restore.h"
 #include "tsschecker.h"
 
+#ifdef WIN32
+#include <windows.h>
+#define __mkdir(path, mode) mkdir(path)
+#else
+#include <sys/stat.h>
+#define __mkdir(path, mode) mkdir(path, mode)
+#endif
+
 #define NONCESIZE 20
 #define USEC_PER_SEC 1000000
 
@@ -44,7 +52,7 @@ futurerestore::futurerestore(){
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
     struct stat st{0};
-    if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) mkdir(FUTURERESTORE_TMP_PATH, 0755);
+    if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) __mkdir(FUTURERESTORE_TMP_PATH, 0755);
     
     //tsschecker nocache
     nocache = 1;
@@ -658,7 +666,7 @@ char *futurerestore::getPathOfElementInManifest(const char *element, const char 
     char *pathStr = NULL;
     ptr_smart<plist_t> buildmanifest(NULL,plist_free);
     
-    plist_from_xml(manifeststr, (uint)strlen(manifeststr), &buildmanifest);
+    plist_from_xml(manifeststr, (uint32_t)strlen(manifeststr), &buildmanifest);
     
     if (plist_t buildidentities = plist_dict_get_item(buildmanifest._p, "BuildIdentities"))
         if (plist_t firstIdentitie = plist_array_get_item(buildidentities, 0))
