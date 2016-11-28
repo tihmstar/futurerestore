@@ -4,7 +4,7 @@ CXX = g++
 CC = gcc
 INCLUDE += -I futurerestore -I /opt/local/include -I external/idevicerestore/src -I external/tsschecker/tsschecker -I external/img4tool/img4tool
 CFLAGS += $(INCLUDE) -Wall -std=c11 -D HAVE_CONFIG_H=1 
-CXXFLAGS += $(INCLUDE) -Wall -std=c++11
+CXXFLAGS += $(INCLUDE) -Wall -std=c++11 -stdlib=libc++
 
 LDFLAGS += -lirecovery -limobiledevice -lcrypto -lcurl -lplist -lc -lc++ -lzip -lpartialzip-1.0 -lz
 
