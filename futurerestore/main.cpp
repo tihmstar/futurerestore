@@ -125,7 +125,7 @@ int main(int argc, const char * argv[]) {
     }
     
     futurerestore client;
-    client.init();
+    if (!client.init()) reterror(-3,"can't init, no device found\n");
     
     if (apticketPath) client.loadAPTicket(apticketPath);
     
