@@ -163,12 +163,12 @@ int main(int argc, const char * argv[]) {
 
     
     versVals.basebandMode = kBasebandModeWithoutBaseband;
-    if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), NULL, devVals, versVals))){
+    if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), NULL, &devVals, &versVals))){
         reterror(-3,"sep firmware isn't signed\n");
     }
     
     versVals.basebandMode = kBasebandModeOnlyBaseband;
-    if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), NULL, devVals, versVals))){
+    if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), NULL, &devVals, &versVals))){
         reterror(-3,"baseband firmware isn't signed\n");
     }
     
