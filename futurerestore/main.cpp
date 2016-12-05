@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <getopt.h>
+#include <string.h>
 #include "futurerestore.hpp"
 #include "all_tsschecker.h"
 #include "tsschecker.h"

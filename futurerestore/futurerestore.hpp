@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <functional>
 #include "idevicerestore.h"
 #include "jsmn.h"
 
@@ -18,7 +19,7 @@ using namespace std;
 
 template <typename T>
 class ptr_smart {
-    function<void(T)> _ptr_free = NULL;
+    std::function<void(T)> _ptr_free = NULL;
 public:
     T _p;
     ptr_smart(T p, function<void(T)> ptr_free){static_assert(is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
