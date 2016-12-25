@@ -2,11 +2,11 @@ TARGET = futurerestore_tool
 INSTALLTARGET = futurerestore
 CXX = g++
 CC = gcc
-INCLUDE += -I futurerestore -I /opt/local/include -I external/idevicerestore/src -I external/tsschecker/tsschecker -I external/img4tool/img4tool
+INCLUDE += -I/usr/local/include -I futurerestore -I /opt/local/include -I external/idevicerestore/src -I external/tsschecker/tsschecker -I external/img4tool/img4tool
 CFLAGS += $(INCLUDE) -Wall -std=c11 -D HAVE_CONFIG_H=1 
 CXXFLAGS += $(INCLUDE) -Wall -std=c++11 
 
-LDFLAGS += -lirecovery -limobiledevice -lcrypto -lcurl -lplist -lc -lc++ -lzip -lpartialzip-1.0 -lz
+LDFLAGS += -L/opt/local/lib -L/usr/local/lib -lirecovery -limobiledevice -lcrypto -lcurl -lplist -lc -lc++ -lzip -lfragmentzip -lz
 
 OBJECTS += futurerestore.o
 SRC_DIR = futurerestore
