@@ -1,9 +1,9 @@
 [submodule "external/img4tool"]
 	path = external/img4tool
-	url = ssh://git@tihmstar.net:23/img4tool.git
+	url = https://github.com/tihmstar/img4tool.git
 [submodule "external/tsschecker"]
 	path = external/tsschecker
 	url = https://github.com/tihmstar/tsschecker.git
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
-	url = ssh://git@tihmstar.net:23/idevicerestore.git
+	url = https://github.com/tihmstar/idevicerestore.git
