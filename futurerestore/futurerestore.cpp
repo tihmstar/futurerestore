@@ -347,7 +347,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     } else {
         strcpy(tmpf, client->ipsw);
     }
-    char* p = strrchr((const char*)tmpf, '.');
+    char* p = (char*)strrchr((const char*)tmpf, '.');
     if (p) {
         *p = '\0';
     }
@@ -539,7 +539,7 @@ char *futurerestore::getLatestManifest(){
         char **versions = getListOfiOSForDevice(_firmwareJson, _firmwareTokens, device, 0, &versionCnt);
         if (!versionCnt) reterror(-8, "[TSSC] failed finding latest iOS\n");
         char *bpos = NULL;
-        while((bpos = strstr(versVals.version = strdup(versions[i++]),"[B]")) != 0){
+        while((bpos = (char*)strstr(versVals.version = (char*)strdup(versions[i++]),"[B]")) != 0){
             free((char*)versVals.version);
             if (--versionCnt == 0) reterror(-9, "[TSSC] automatic iOS selection couldn't find non-beta iOS\n");
         }
