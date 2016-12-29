@@ -55,6 +55,7 @@ futurerestore::futurerestore(){
     
     //tsschecker nocache
     nocache = 1;
+    _foundnonce = -1;
 }
 
 bool futurerestore::init(){
@@ -122,7 +123,7 @@ void futurerestore::setAutoboot(bool val){
     }
 }
 
-bool futurerestore::nonceMatchesApTicket(){
+plist_t futurerestore::nonceMatchesApTickets(){
     if (!_didInit) reterror(-1, "did not init\n");
     if (getDeviceMode(true) != MODE_RECOVERY) reterror(-10, "Device not in recovery mode, can't check apnonce\n");
     
@@ -130,22 +131,30 @@ bool futurerestore::nonceMatchesApTicket(){
     int realNonceSize = 0;
     recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
     
-    return memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4m,NULL), realNonceSize) == 0;
+    vector<const char*>nonces;
+    
+    for (int i=0; i< _im4ms.size(); i++){
+        if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
+    }
+    
+    return NULL;
 }
 
-void futurerestore::waitForNonce(const char *nonce, size_t nonceSize){
+void futurerestore::waitForNonce(vector<const char *>nonces, size_t nonceSize){
     if (!_didInit) reterror(-1, "did not init\n");
     setAutoboot(false);
     
     unsigned char* realnonce;
     int realNonceSize = 0;
     
-    info("waiting for nonce: ");
-    int i = 0;
-    for (i = 0; i < nonceSize; i++) {
-        info("%02x ", ((unsigned char *)nonce)[i]);
+    for (auto nonce : nonces){
+        info("waiting for nonce: ");
+        int i = 0;
+        for (i = 0; i < nonceSize; i++) {
+            info("%02x ", ((unsigned char *)nonce)[i]);
+        }
+        info("\n");
     }
-    info("\n");
     
     do {
         if (realNonceSize){
@@ -163,44 +172,57 @@ void futurerestore::waitForNonce(const char *nonce, size_t nonceSize){
             info("%02x ", realnonce[i]);
         }
         info("\n");
-    } while (memcmp(realnonce, (unsigned const char*)nonce, realNonceSize) != 0);
+        for (int i=0; i<nonces.size(); i++){
+            if (memcmp(realnonce, (unsigned const char*)nonces[i], realNonceSize) == 0) _foundnonce = i;
+        }
+    } while (_foundnonce == -1);
     info("Device has requested ApNonce now\n");
     
     setAutoboot(true);
 }
 void futurerestore::waitForNonce(){
-    if (!_im4m) reterror(-1, "No IM4M loaded\n");
+    if (!_im4ms.size()) reterror(-1, "No IM4M loaded\n");
     size_t nonceSize;
-    waitForNonce(getNonceFromIM4M(_im4m,&nonceSize),nonceSize);
+    vector<const char*>nonces;
+    
+    for (auto im4m : _im4ms){
+        nonces.push_back(getNonceFromIM4M(im4m,&nonceSize));
+    }
+    
+    waitForNonce(nonces,nonceSize);
 }
 
 
-void futurerestore::loadAPTicket(const char *apticketPath){
-    if (_apticket) plist_free(_apticket), _apticket = NULL;
-    FILE *f = fopen(apticketPath,"rb");
-    if (!f) reterror(-9, "failed to load apticket at %s\n",apticketPath);
-    fseek(f, 0, SEEK_END);
-    
-    size_t fSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    char *buf = (char*)malloc(fSize);
-    fread(buf, fSize, 1, f);
-    fclose(f);
-    
-    if (memcmp(buf, "bplist00", 8) == 0)
-        plist_from_bin(buf, (uint32_t)fSize, &_apticket);
-    else
-        plist_from_xml(buf, (uint32_t)fSize, &_apticket);
-    
-    safeFree(_im4m);
-    
-    plist_t ticket = plist_dict_get_item(_apticket, "ApImg4Ticket");
-    uint64_t im4msize=0;
-    plist_get_data_val(ticket, &_im4m, &im4msize);
-}
-
-void futurerestore::loadAPTicket(string apticketPath){
-    loadAPTicket(apticketPath.c_str());
+void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
+    for (auto apticketPath : apticketPaths){
+        
+        FILE *f = fopen(apticketPath,"rb");
+        if (!f) reterror(-9, "failed to load apticket at %s\n",apticketPath);
+        fseek(f, 0, SEEK_END);
+        
+        size_t fSize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        char *buf = (char*)malloc(fSize);
+        memset(buf, 0, fSize);
+        fread(buf, fSize, 1, f);
+        fclose(f);
+        
+        plist_t apticket = NULL;
+        char *im4m = NULL;
+        
+        if (memcmp(buf, "bplist00", 8) == 0)
+            plist_from_bin(buf, (uint32_t)fSize, &apticket);
+        else
+            plist_from_xml(buf, (uint32_t)fSize, &apticket);
+        
+        
+        plist_t ticket = plist_dict_get_item(apticket, "ApImg4Ticket");
+        uint64_t im4msize=0;
+        plist_get_data_val(ticket, &im4m, &im4msize);
+        
+        _im4ms.push_back(im4m);
+        _aptickets.push_back(apticket);
+    }
 }
 
 int futurerestore::doRestore(const char *ipsw, bool noerase){
@@ -231,7 +253,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }
     info("Identified device as %s, %s\n", client->device->hardware_model, client->device->product_type);
     
-    if (!nonceMatchesApTicket()) reterror(-20, "Devicenonce does not match APTicket nonce\n");
+    if (!(client->tss = nonceMatchesApTickets())) reterror(-20, "Devicenonce does not match APTicket nonce\n");
     
     
     // verify if ipsw file exists
@@ -256,7 +278,6 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     client->image4supported = is_image4_supported(client);
     info("Device supports Image4: %s\n", (client->image4supported) ? "true" : "false");
     
-    client->tss = _apticket;
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
     
@@ -470,12 +491,16 @@ futurerestore::~futurerestore(){
     normal_client_free(_client);
     recovery_client_free(_client);
     idevicerestore_client_free(_client);
-    safeFree(_im4m);
+    for (auto im4m : _im4ms){
+        safeFree(im4m);
+    }
     safeFree(_firmwareJson);
     safeFree(_firmwareTokens);
     safeFree(__latestManifest);
     safeFree(__latestFirmwareUrl);
-    safePlistFree(_apticket);
+    for (auto plist : _aptickets){
+         safePlistFree(plist);
+    }
 }
 
 void futurerestore::loadFirmwareTokens(){
@@ -614,7 +639,7 @@ char *futurerestore::getNonceFromIM4M(const char* im4m, size_t *nonceSize){
     
     ret = (char*)malloc(asn1Len(nonceOctet).dataLen);
     if (ret){
-        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);
+        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);        
         if (nonceSize) *nonceSize = asn1Len(nonceOctet).dataLen;
     }
     

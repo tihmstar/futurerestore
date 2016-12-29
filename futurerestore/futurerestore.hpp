@@ -12,6 +12,7 @@
 #include "config.h"
 #include <stdio.h>
 #include <functional>
+#include <vector>
 #include "idevicerestore.h"
 #include "jsmn.h"
 
@@ -33,8 +34,9 @@ public:
 class futurerestore {
     struct idevicerestore_client_t* _client;
     bool _didInit = false;
-    plist_t _apticket = NULL;
-    char *_im4m = NULL;
+    vector<plist_t> _aptickets;
+    vector<char *>_im4ms;
+    int _foundnonce = -1;
     
     char *_firmwareJson = NULL;
     jsmntok_t *_firmwareTokens = NULL;;
@@ -55,11 +57,10 @@ public:
     void putDeviceIntoRecovery();
     void setAutoboot(bool val);
     void waitForNonce();
-    void waitForNonce(const char *nonce, size_t nonceSize);
-    void loadAPTicket(const char *apticketPath);
-    void loadAPTicket(string apticketPath);
+    void waitForNonce(vector<const char *>nonces, size_t nonceSize);
+    void loadAPTickets(const vector<const char *> &apticketPaths);
     
-    bool nonceMatchesApTicket();
+    plist_t nonceMatchesApTickets();
 
     void loadFirmwareTokens();
     const char *getConnectedDeviceModel();

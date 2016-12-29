@@ -9,6 +9,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <string.h>
+#include <vector>
 #include "futurerestore.hpp"
 #include "all_tsschecker.h"
 #include "tsschecker.h"
@@ -65,11 +66,12 @@ int main(int argc, const char * argv[]) {
     int isBasebandSigned = 0;
     
     const char *ipsw = NULL;
-    const char *apticketPath = NULL;
     const char *basebandPath = NULL;
     const char *basebandManifestPath = NULL;
     const char *sepPath = NULL;
     const char *sepManifestPath = NULL;
+    
+    vector<const char*> apticketPaths;
     
     t_devicevals devVals;
     t_iosVersion versVals;
@@ -84,7 +86,7 @@ int main(int argc, const char * argv[]) {
     while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud01", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
-                apticketPath = optarg;
+                apticketPaths.push_back(optarg);
                 break;
             case 'b': // long option: "baseband"; can be called as short option
                 basebandPath = optarg;
@@ -128,9 +130,9 @@ int main(int argc, const char * argv[]) {
     futurerestore client;
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
-    if (apticketPath) client.loadAPTicket(apticketPath);
+    if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
     
-    if (!((apticketPath && ipsw)
+    if (!((apticketPaths.size() && ipsw)
         && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
         && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)))) {
         if (!(flags & FLAG_WAIT) || ipsw){
