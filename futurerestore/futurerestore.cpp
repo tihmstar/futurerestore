@@ -31,7 +31,6 @@
 #define __mkdir(path, mode) mkdir(path, mode)
 #endif
 
-#define NONCESIZE 20
 #define USEC_PER_SEC 1000000
 
 #define TMP_PATH "/tmp"
@@ -131,10 +130,10 @@ bool futurerestore::nonceMatchesApTicket(){
     int realNonceSize = 0;
     recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
     
-    return memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4m), realNonceSize) == 0;
+    return memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4m,NULL), realNonceSize) == 0;
 }
 
-void futurerestore::waitForNonce(const char *nonce){
+void futurerestore::waitForNonce(const char *nonce, size_t nonceSize){
     if (!_didInit) reterror(-1, "did not init\n");
     setAutoboot(false);
     
@@ -143,7 +142,7 @@ void futurerestore::waitForNonce(const char *nonce){
     
     info("waiting for nonce: ");
     int i = 0;
-    for (i = 0; i < NONCESIZE; i++) {
+    for (i = 0; i < nonceSize; i++) {
         info("%02x ", ((unsigned char *)nonce)[i]);
     }
     info("\n");
@@ -171,7 +170,8 @@ void futurerestore::waitForNonce(const char *nonce){
 }
 void futurerestore::waitForNonce(){
     if (!_im4m) reterror(-1, "No IM4M loaded\n");
-    waitForNonce(getNonceFromIM4M(_im4m));
+    size_t nonceSize;
+    waitForNonce(getNonceFromIM4M(_im4m,&nonceSize),nonceSize);
 }
 
 
@@ -572,7 +572,7 @@ inline void futurerestore::saveStringToFile(const char *str, const char *path){
     }
 }
 
-char *futurerestore::getNonceFromIM4M(const char* im4m){
+char *futurerestore::getNonceFromIM4M(const char* im4m, size_t *nonceSize){
     char *ret = NULL;
     t_asn1Tag *mainSet = NULL;
     t_asn1Tag *manbSet = NULL;
@@ -610,11 +610,12 @@ char *futurerestore::getNonceFromIM4M(const char* im4m){
         goto error;
     }
     nonceOctet = (char*)asn1ElementAtIndex(bnch, 1);
+    nonceOctet++;
     
-    ret = (char*)malloc(NONCESIZE);
+    ret = (char*)malloc(asn1Len(nonceOctet).dataLen);
     if (ret){
-        nonceOctet++;
-        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, NONCESIZE);
+        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);
+        if (nonceSize) *nonceSize = asn1Len(nonceOctet).dataLen;
     }
     
     
@@ -626,7 +627,7 @@ error:
 char *futurerestore::getNonceFromAPTicket(const char* apticketPath){
     char *ret = NULL;
     if (char *im4m = im4mFormShshFile(apticketPath)){
-        ret = getNonceFromIM4M(im4m);
+        ret = getNonceFromIM4M(im4m,NULL);
         free(im4m);
     }
     return ret;

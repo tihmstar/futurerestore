@@ -55,7 +55,7 @@ public:
     void putDeviceIntoRecovery();
     void setAutoboot(bool val);
     void waitForNonce();
-    void waitForNonce(const char *nonce);
+    void waitForNonce(const char *nonce, size_t nonceSize);
     void loadAPTicket(const char *apticketPath);
     void loadAPTicket(string apticketPath);
     
@@ -83,8 +83,8 @@ public:
     int doRestore(const char *ipsw, bool noerase);
     
     ~futurerestore();
-    
-    static char *getNonceFromIM4M(const char* im4m);
+
+    static char *getNonceFromIM4M(const char* im4m, size_t *nonceSize);
     static char *getNonceFromAPTicket(const char* apticketPath);
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(const char *str, const char *path);
