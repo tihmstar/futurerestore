@@ -130,53 +130,59 @@ int main(int argc, const char * argv[]) {
     futurerestore client;
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
-    if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
-    
-    if (!((apticketPaths.size() && ipsw)
-        && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
-        && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)))) {
-        if (!(flags & FLAG_WAIT) || ipsw){
-            error("missing argument\n");
-            cmd_help();
-            err = -2;
-        }else{
-            client.putDeviceIntoRecovery();
-            client.waitForNonce();
-            info("done\n");
+    try {
+        if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
+        
+        if (!((apticketPaths.size() && ipsw)
+              && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
+              && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)))) {
+            if (!(flags & FLAG_WAIT) || ipsw){
+                error("missing argument\n");
+                cmd_help();
+                err = -2;
+            }else{
+                client.putDeviceIntoRecovery();
+                client.waitForNonce();
+                info("done\n");
+            }
+            goto error;
         }
+        
+        
+        if (flags & FLAG_LATEST_SEP){
+            info("user specified to use latest signed sep\n");
+            client.loadLatestSep();
+        }else{
+            client.setSepPath(sepPath);
+            client.setSepManifestPath(sepManifestPath);
+        }
+        if (flags & FLAG_LATEST_BASEBAND){
+            info("user specified to use latest signed baseband (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
+            client.loadLatestBaseband();
+        }else{
+            client.setBasebandPath(basebandPath);
+            client.setBasebandManifestPath(basebandManifestPath);
+        }
+        
+        
+        versVals.basebandMode = kBasebandModeWithoutBaseband;
+        if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), NULL, &devVals, &versVals))){
+            reterror(-3,"sep firmware isn't signed\n");
+        }
+        
+        versVals.basebandMode = kBasebandModeOnlyBaseband;
+        if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), NULL, &devVals, &versVals))){
+            reterror(-3,"baseband firmware isn't signed\n");
+        }
+        
+        client.putDeviceIntoRecovery();
+        if (flags & FLAG_WAIT){
+            client.waitForNonce();
+        }
+    } catch (int error) {
+        err = error;
+        printf("[Error] Fail code=%d\n",err);
         goto error;
-    }
-
-    
-    if (flags & FLAG_LATEST_SEP){
-        info("user specified to use latest signed sep\n");
-        client.loadLatestSep();
-    }else{
-        client.setSepPath(sepPath);
-        client.setSepManifestPath(sepManifestPath);
-    }
-    if (flags & FLAG_LATEST_BASEBAND){
-        info("user specified to use latest signed baseband (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
-        client.loadLatestBaseband();
-    }else{
-        client.setBasebandPath(basebandPath);
-        client.setBasebandManifestPath(basebandManifestPath);
-    }
-
-    
-    versVals.basebandMode = kBasebandModeWithoutBaseband;
-    if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), NULL, &devVals, &versVals))){
-        reterror(-3,"sep firmware isn't signed\n");
-    }
-    
-    versVals.basebandMode = kBasebandModeOnlyBaseband;
-    if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), NULL, &devVals, &versVals))){
-        reterror(-3,"baseband firmware isn't signed\n");
-    }
-    
-    client.putDeviceIntoRecovery();
-    if (flags & FLAG_WAIT){
-        client.waitForNonce();
     }
     
     try {

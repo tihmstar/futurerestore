@@ -567,7 +567,7 @@ char *futurerestore::getLatestFirmwareUrl(){
 
 void futurerestore::loadLatestBaseband(){
     char * manifeststr = getLatestManifest();
-    char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr);
+    char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr, getConnectedDeviceModel(), 0);
     info("downloading Baseband\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
         reterror(-32, "could not download baseband\n");
@@ -576,7 +576,7 @@ void futurerestore::loadLatestBaseband(){
 
 void futurerestore::loadLatestSep(){
     char * manifeststr = getLatestManifest();
-    char *pathStr = getPathOfElementInManifest("SEP", manifeststr);
+    char *pathStr = getPathOfElementInManifest("SEP", manifeststr, getConnectedDeviceModel(), 0);
     info("downloading SEP\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
         reterror(-33, "could not download SEP\n");
@@ -688,20 +688,20 @@ plist_t futurerestore::loadPlistFromFile(const char *path){
     return ret;
 }
 
-char *futurerestore::getPathOfElementInManifest(const char *element, const char *manifeststr){
+char *futurerestore::getPathOfElementInManifest(const char *element, const char *manifeststr, const char *model, int isUpdateInstall){
     char *pathStr = NULL;
     ptr_smart<plist_t> buildmanifest(NULL,plist_free);
     
     plist_from_xml(manifeststr, (uint32_t)strlen(manifeststr), &buildmanifest);
     
-    if (plist_t buildidentities = plist_dict_get_item(buildmanifest._p, "BuildIdentities"))
-        if (plist_t firstIdentitie = plist_array_get_item(buildidentities, 0))
-            if (plist_t manifest = plist_dict_get_item(firstIdentitie, "Manifest"))
-                if (plist_t elem = plist_dict_get_item(manifest, element))
-                    if (plist_t info = plist_dict_get_item(elem, "Info"))
-                        if (plist_t path = plist_dict_get_item(info, "Path"))
-                            if (plist_get_string_val(path, &pathStr), pathStr)
-                                goto noerror;
+    if (plist_t identity = getBuildidentity(buildmanifest._p, model, isUpdateInstall))
+        if (plist_t manifest = plist_dict_get_item(identity, "Manifest"))
+            if (plist_t elem = plist_dict_get_item(manifest, element))
+                if (plist_t info = plist_dict_get_item(elem, "Info"))
+                    if (plist_t path = plist_dict_get_item(info, "Path"))
+                        if (plist_get_string_val(path, &pathStr), pathStr)
+                            goto noerror;
+    
     reterror(-31, "could not get %s path\n",element);
 noerror:
     return pathStr;
