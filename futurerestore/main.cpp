@@ -40,9 +40,8 @@ static struct option longopts[] = {
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
-    printf("Allows restoring nonmatching iOS/Sep/Baseband\n");
-    printf("Version: " VERSION_COMMIT_SHA_FUTURERESTORE" - " VERSION_COMMIT_COUNT_FUTURERESTORE"\n\n");
-
+    printf("Allows restoring nonmatching iOS/Sep/Baseband\n\n");
+    
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
     printf("  -p, --baseband-manifest PATH\tBuildmanifest for requesting baseband ticket\n");
@@ -60,7 +59,8 @@ int main(int argc, const char * argv[]) {
 #define reterror(code,a ...) do {error(a); err = code; goto error;} while (0)
     int err=0;
     int res = -1;
-    
+    printf("Version: " VERSION_COMMIT_SHA_FUTURERESTORE" - " VERSION_COMMIT_COUNT_FUTURERESTORE"\n");
+
     int optindex = 0;
     int opt = 0;
     long flags = 0;
