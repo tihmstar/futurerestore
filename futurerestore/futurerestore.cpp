@@ -202,8 +202,8 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
         
         size_t fSize = ftell(f);
         fseek(f, 0, SEEK_SET);
-        char *buf = (char*)malloc(fSize);
-        memset(buf, 0, fSize);
+        char *buf = (char*)malloc(fSize+1);
+        memset(buf, 0, fSize+1);
         fread(buf, fSize, 1, f);
         fclose(f);
         
@@ -222,6 +222,7 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
         
         _im4ms.push_back(im4m);
         _aptickets.push_back(apticket);
+        printf("reading ticket %s done\n",apticketPath);
     }
 }
 

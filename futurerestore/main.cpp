@@ -22,7 +22,7 @@
 static struct option longopts[] = {
     { "apticket",           required_argument,      NULL, 't' },
     { "baseband",           required_argument,      NULL, 'b' },
-    { "baseband-plist",     required_argument,      NULL, 'p' },
+    { "baseband-manifest",  required_argument,      NULL, 'p' },
     { "sep",                required_argument,      NULL, 's' },
     { "sep-manifest",       required_argument,      NULL, 'm' },
     { "wait",               no_argument,            NULL, 'w' },
@@ -76,10 +76,8 @@ int main(int argc, const char * argv[]) {
     
     vector<const char*> apticketPaths;
     
-    t_devicevals devVals;
-    t_iosVersion versVals;
-    memset(&devVals, 0, sizeof(devVals));
-    memset(&versVals, 0, sizeof(versVals));
+    t_devicevals devVals = {0};
+    t_iosVersion versVals = {0};
     
     if (argc == 1){
         cmd_help();
@@ -133,6 +131,8 @@ int main(int argc, const char * argv[]) {
     futurerestore client;
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
+    printf("futurerestore init done\n");
+    
     try {
         if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
         
@@ -167,6 +167,8 @@ int main(int argc, const char * argv[]) {
             client.setBasebandPath(basebandPath);
             client.setBasebandManifestPath(basebandManifestPath);
         }
+        
+        printf("Did set sep+baseband path and firmware\n");
         
         
         versVals.basebandMode = kBasebandModeWithoutBaseband;
