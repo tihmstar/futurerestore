@@ -80,6 +80,8 @@ public:
     const char *sepPath(){return _sepPath;};
     const char *basebandPath(){return _basebandPath;};
     
+    uint64_t getBasebandGoldCertIDFromDevice();
+    const char *getDeviceModelNoCopy();
     
     int doRestore(const char *ipsw, bool noerase);
     

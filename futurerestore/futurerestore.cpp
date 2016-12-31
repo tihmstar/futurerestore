@@ -225,6 +225,26 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
     }
 }
 
+uint64_t futurerestore::getBasebandGoldCertIDFromDevice(){
+    if (!_client->preflight_info){
+        normal_get_preflight_info(_client, &_client->preflight_info);
+    }
+    plist_t node;
+    node = plist_dict_get_item(_client->preflight_info, "CertID");
+    if (!node || plist_get_node_type(node) != PLIST_UINT) {
+        error("Unable to find required BbGoldCertId in parameters\n");
+        return 0;
+    }
+    uint64_t val = 0;
+    plist_get_uint_val(node, &val);
+    return val;
+}
+
+const char *futurerestore::getDeviceModelNoCopy(){
+    return _client->device->product_type;
+}
+
+
 int futurerestore::doRestore(const char *ipsw, bool noerase){
     int err = 0;
     //some memory might not get freed if this function throws an exception, but you probably don't want to catch that anyway.
