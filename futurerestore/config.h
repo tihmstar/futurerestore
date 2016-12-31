@@ -20,8 +20,8 @@
 
 #undef VERSION_COMMIT_SHA
 #undef VERSION_COMMIT_COUNT
-#define VERSION_COMMIT_COUNT "undefined version number"
-#define VERSION_COMMIT_SHA "undefined version commit"   
+#define VERSION_COMMIT_COUNT_FUTURERESTORE "undefined version number"
+#define VERSION_COMMIT_SHA_FUTURERESTORE "undefined version commit"
 
 
 
