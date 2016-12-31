@@ -18,6 +18,11 @@
 #define PACKAGE_URL "http://libimobiledevice.org"
 
 
+#undef VERSION_COMMIT_SHA
+#undef VERSION_COMMIT_COUNT
+#define VERSION_COMMIT_COUNT "undefined version number"
+#define VERSION_COMMIT_SHA "undefined version commit"   
+
 
 
 #endif /* config_h */

@@ -24,3 +24,5 @@ unset NOCONFIGURE
 if [ -z "$NOCONFIGURE" ]; then
     ./configure "$@"
 fi
+./setBuildVersion.sh
+

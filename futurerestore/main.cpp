@@ -14,6 +14,8 @@
 #include "all_tsschecker.h"
 #include "tsschecker.h"
 
+#include "config.h"
+
 #define safeFree(buf) if (buf) free(buf), buf = NULL
 #define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
 
@@ -38,8 +40,9 @@ static struct option longopts[] = {
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
-    printf("Allows restoring nonmatching iOS/Sep/Baseband\n\n");
-    
+    printf("Allows restoring nonmatching iOS/Sep/Baseband\n");
+    printf("Version: " VERSION_COMMIT_SHA" - " VERSION_COMMIT_COUNT"\n\n");
+
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
     printf("  -p, --baseband-manifest PATH\tBuildmanifest for requesting baseband ticket\n");
