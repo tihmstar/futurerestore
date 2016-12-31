@@ -2,6 +2,16 @@ AC_PREREQ(2.64)
 AC_INIT([futurerestore], [1.0], [http://url.me/issues],, [http://url.me])
 
 AC_CANONICAL_SYSTEM
+
+AC_CANONICAL_HOST
+# Check for operating system
+AC_MSG_CHECKING([whether we need platform-specific build settings])
+case $host_os in
+  darwin* )
+        CXXFLAGS+=" -stdlib=libc++"
+        ;;
+esac
+
 AM_INIT_AUTOMAKE
 
 CFLAGS="-DIDEVICERESTORE_NOMAIN=1 -DIMG4TOOL_NOMAIN=1 -DTSSCHECKER_NOMAIN=1"
