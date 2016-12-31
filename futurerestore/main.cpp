@@ -41,7 +41,7 @@ static struct option longopts[] = {
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
     printf("Allows restoring nonmatching iOS/Sep/Baseband\n");
-    printf("Version: " VERSION_COMMIT_SHA" - " VERSION_COMMIT_COUNT"\n\n");
+    printf("Version: " VERSION_COMMIT_SHA_FUTURERESTORE" - " VERSION_COMMIT_COUNT_FUTURERESTORE"\n\n");
 
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
