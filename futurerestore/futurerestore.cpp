@@ -227,7 +227,10 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
 
 uint64_t futurerestore::getBasebandGoldCertIDFromDevice(){
     if (!_client->preflight_info){
-        normal_get_preflight_info(_client, &_client->preflight_info);
+        if (normal_get_preflight_info(_client, &_client->preflight_info) == -1){
+            printf("[WARNING] failed to read BasebandGoldCertID from device! Is it already in recovery?\n");
+            return 0;
+        }
     }
     plist_t node;
     node = plist_dict_get_item(_client->preflight_info, "CertID");

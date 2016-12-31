@@ -172,13 +172,13 @@ int main(int argc, const char * argv[]) {
         }
         
         versVals.basebandMode = kBasebandModeOnlyBaseband;
-        if ((devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
-            if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
-                reterror(-3,"baseband firmware isn't signed\n");
-            }
-        }else{
-            reterror(-3,"unable to get bbgcid from device\n");
+        if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
+            printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
         }
+        if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
+            reterror(-3,"baseband firmware isn't signed\n");
+        }
+
         
         client.putDeviceIntoRecovery();
         if (flags & FLAG_WAIT){
