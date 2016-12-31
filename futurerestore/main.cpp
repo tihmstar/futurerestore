@@ -150,6 +150,7 @@ int main(int argc, const char * argv[]) {
             }
             goto error;
         }
+        devVals.deviceModel = (char*)client.getDeviceModelNoCopy();
         
         
         if (flags & FLAG_LATEST_SEP){
@@ -167,7 +168,6 @@ int main(int argc, const char * argv[]) {
             client.setBasebandManifestPath(basebandManifestPath);
         }
         
-        devVals.deviceModel = (char*)client.getDeviceModelNoCopy();
         
         versVals.basebandMode = kBasebandModeWithoutBaseband;
         if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){

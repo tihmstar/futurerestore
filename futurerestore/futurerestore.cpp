@@ -74,7 +74,7 @@ uint64_t futurerestore::getDeviceEcid(){
 
 int futurerestore::getDeviceMode(bool reRequest){
     if (!_didInit) reterror(-1, "did not init\n");
-    if (!reRequest && _client->mode->index != MODE_UNKNOWN) {
+    if (!reRequest && _client->mode && _client->mode->index != MODE_UNKNOWN) {
         return _client->mode->index;
     }else{
         normal_client_free(_client);
@@ -242,23 +242,6 @@ uint64_t futurerestore::getBasebandGoldCertIDFromDevice(){
     plist_get_uint_val(node, &val);
     return val;
 }
-
-const char *futurerestore::getDeviceModelNoCopy(){
-    if (!_client->device || !_client->device->product_type){
-        if (check_mode(_client) < 0) {
-            error("ERROR: Unable to discover device mode. Please make sure a device is attached.\n");
-            return NULL;
-        }
-        
-        if (check_hardware_model(_client) == NULL || _client->device == NULL) {
-            error("ERROR: Unable to discover device model\n");
-            return NULL;
-        }
-    }
-        
-    return _client->device->product_type;
-}
-
 
 int futurerestore::doRestore(const char *ipsw, bool noerase){
     int err = 0;
@@ -547,7 +530,7 @@ void futurerestore::loadFirmwareTokens(){
     }
 }
 
-const char *futurerestore::getConnectedDeviceModel(){
+const char *futurerestore::getDeviceModelNoCopy(){
     if (!_client->device || !_client->device->product_type){
         
         int mode = getDeviceMode(true);
@@ -565,7 +548,7 @@ char *futurerestore::getLatestManifest(){
     if (!__latestManifest){
         loadFirmwareTokens();
 
-        const char *device = getConnectedDeviceModel();
+        const char *device = getDeviceModelNoCopy();
         t_iosVersion versVals;
         memset(&versVals, 0, sizeof(versVals));
         
@@ -602,7 +585,7 @@ char *futurerestore::getLatestFirmwareUrl(){
 
 void futurerestore::loadLatestBaseband(){
     char * manifeststr = getLatestManifest();
-    char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr, getConnectedDeviceModel(), 0);
+    char *pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr, getDeviceModelNoCopy(), 0);
     info("downloading Baseband\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
         reterror(-32, "could not download baseband\n");
@@ -611,7 +594,7 @@ void futurerestore::loadLatestBaseband(){
 
 void futurerestore::loadLatestSep(){
     char * manifeststr = getLatestManifest();
-    char *pathStr = getPathOfElementInManifest("SEP", manifeststr, getConnectedDeviceModel(), 0);
+    char *pathStr = getPathOfElementInManifest("SEP", manifeststr, getDeviceModelNoCopy(), 0);
     info("downloading SEP\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
         reterror(-33, "could not download SEP\n");

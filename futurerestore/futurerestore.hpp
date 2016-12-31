@@ -63,7 +63,7 @@ public:
     plist_t nonceMatchesApTickets();
 
     void loadFirmwareTokens();
-    const char *getConnectedDeviceModel();
+    const char *getDeviceModelNoCopy();
     char *getLatestManifest();
     char *getLatestFirmwareUrl();
     void loadLatestBaseband();
@@ -81,7 +81,6 @@ public:
     const char *basebandPath(){return _basebandPath;};
     
     uint64_t getBasebandGoldCertIDFromDevice();
-    const char *getDeviceModelNoCopy();
     
     int doRestore(const char *ipsw, bool noerase);
     
