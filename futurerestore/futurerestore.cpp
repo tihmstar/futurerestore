@@ -244,6 +244,18 @@ uint64_t futurerestore::getBasebandGoldCertIDFromDevice(){
 }
 
 const char *futurerestore::getDeviceModelNoCopy(){
+    if (!_client->device || !_client->device->product_type){
+        if (check_mode(_client) < 0) {
+            error("ERROR: Unable to discover device mode. Please make sure a device is attached.\n");
+            return NULL;
+        }
+        
+        if (check_hardware_model(_client) == NULL || _client->device == NULL) {
+            error("ERROR: Unable to discover device model\n");
+            return NULL;
+        }
+    }
+        
     return _client->device->product_type;
 }
 
