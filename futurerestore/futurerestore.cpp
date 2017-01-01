@@ -469,7 +469,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }
     
     
-    client->basebandBuildIdentity = getBuildidentity(_basebandbuildmanifest, getDeviceModelNoCopy(), noerase);
+    client->basebandBuildIdentity = getBuildidentity(_basebandbuildmanifest, getDeviceModelNoCopy(), 0);
     
     if (!_client->basebandBuildIdentity)
         reterror(-55, "BasebandBuildIdentity not loaded, refusing to continue");
