@@ -127,6 +127,8 @@ int main(int argc, const char * argv[]) {
         argv += optind;
         
         ipsw = argv[0];
+    }else if (argc == optind && flags & FLAG_WAIT) {
+        info("User requested to only wait for APNonce to match, but not actually restoring\n");
     }else{
         error("argument parsing failed! agrc=%d optind=%d\n",argc,optind);
         if (idevicerestore_debug){
@@ -204,18 +206,20 @@ int main(int argc, const char * argv[]) {
         goto error;
     }
     
-    try {
-        res = client.doRestore(ipsw, flags & FLAG_UPDATE);
-    } catch (int error) {
-        if (error == -20) error("maybe you forgot -w ?\n");
-        err = error;
+    if (ipsw) {
+        try {
+            res = client.doRestore(ipsw, flags & FLAG_UPDATE);
+        } catch (int error) {
+            if (error == -20) error("maybe you forgot -w ?\n");
+            err = error;
+        }
+        cout << "Done: restoring "<< (!res ? "succeeded" : "failed")<<"." <<endl;
+    }else if (flags & FLAG_WAIT){
+        cout << "Done"<<endl;
     }
     
-    cout << "Done: restoring "<< (!res ? "succeeded" : "failed");
-    if (res) cout << ". Errorcode="<<err;
-    cout<<endl;
 error:
-
+    if (res) cout << "Failed with errorcode="<<err << endl;
     return err;
 #undef reterror
 }
