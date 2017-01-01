@@ -219,7 +219,7 @@ int main(int argc, const char * argv[]) {
     }
     
 error:
-    if (res) cout << "Failed with errorcode="<<err << endl;
+    if (err) cout << "Failed with errorcode="<<err << endl;
     return err;
 #undef reterror
 }
