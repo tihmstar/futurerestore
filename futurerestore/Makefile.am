@@ -3,5 +3,5 @@ AM_LDFLAGS = $(libplist_LIBS) $(libzip_LIBS) $(libimobiledevice_LIBS) $(libfragm
 
 bin_PROGRAMS	= futurerestore
 futurerestore_CXXFLAGS = $(AM_CFLAGS)
-futurerestore_LDADD = $(AM_LDFLAGS) $(top_srcdir)/external/idevicerestore/src/libidevicerestore.la $(top_srcdir)/external/img4tool/img4tool/libimg4tool.la $(top_srcdir)/external/tsschecker/tsschecker/libtsschecker.la
+futurerestore_LDADD = $(top_srcdir)/external/idevicerestore/src/libidevicerestore.la $(top_srcdir)/external/img4tool/img4tool/libimg4tool.la $(top_srcdir)/external/tsschecker/tsschecker/libtsschecker.la $(AM_LDFLAGS)
 futurerestore_SOURCES = futurerestore.cpp main.cpp
