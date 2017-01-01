@@ -457,9 +457,16 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         if (client->srnm == NULL) {
             reterror(-9,"ERROR: could not retrieve device serial number. Can't continue.\n");
         }
+        if (irecv_send_command(client->recovery->client, "bgcolor 0 255 0") != IRECV_E_SUCCESS) {
+            error("ERROR: Unable to set bgcolor\n");
+            return -1;
+        }
+        warning("[WARNING] Setting bgcolor to green! If you don't see a green screen, then your ticket probably doesn't match the firmware you're trying to restore to\n");
+        sleep(2); //show the user a green screen!
         if (recovery_enter_restore(client, build_identity) < 0) {
             reterror(-10,"ERROR: Unable to place device into restore mode\n");
         }
+        
         recovery_client_free(client);
     }
     
