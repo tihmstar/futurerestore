@@ -30,7 +30,6 @@ static struct option longopts[] = {
     { "debug",              no_argument,            NULL, 'd' },
     { "latest-sep",         no_argument,            NULL, '0' },
     { "latest-baseband",    no_argument,            NULL, '1' },
-    { "bbgcid",             required_argument,      NULL, '2' },
     { NULL, 0, NULL, 0 }
 };
 
@@ -115,10 +114,6 @@ int main(int argc, const char * argv[]) {
             case '1': // long option: "latest-baseband";
                 flags |= FLAG_LATEST_BASEBAND;
                 break;
-            case '2': // long option: "latest-baseband";
-                devVals.bbgcid = (uint64_t)atoll(optarg);
-                printf("manually set bbgcid to %llu\n",(unsigned long long)devVals.bbgcid);
-                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -191,10 +186,8 @@ int main(int argc, const char * argv[]) {
         }
         
         versVals.basebandMode = kBasebandModeOnlyBaseband;
-        if (!devVals.bbgcid) {
-            if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
-                printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
-            }
+        if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
+            printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
         }
         if (!(isBasebandSigned = isManifestSignedForDevice(basebandManifestPath, &devVals, &versVals))) {
             reterror(-3,"baseband firmware isn't signed\n");
