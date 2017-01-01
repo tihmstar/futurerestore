@@ -254,8 +254,6 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     int delete_fs = 0;
     char* filesystem = NULL;
     plist_t buildmanifest = NULL;
-    plist_t sepbuildmanifest = NULL;
-    plist_t basebandbuildmanifest = NULL;
     plist_t build_identity = NULL;
     plist_t sep_build_identity = NULL;
     plist_t bb_build_identity = NULL;
@@ -312,16 +310,14 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         }
     }
     
-    sepbuildmanifest = loadPlistFromFile(_sepManifestPath);
-    sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(sepbuildmanifest, client->device->hardware_model, "Erase");
-    if (!sep_build_identity) sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(sepbuildmanifest, client->device->hardware_model, "Update");
+    sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_sepbuildmanifest, client->device->hardware_model, "Erase");
+    if (!sep_build_identity) sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_sepbuildmanifest, client->device->hardware_model, "Update");
     if (sep_build_identity == NULL) {
         reterror(-5,"ERROR: Unable to find any build identities for sep\n");
     }
     
-    basebandbuildmanifest = loadPlistFromFile(_basebandManifestPath);
-    bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(basebandbuildmanifest, client->device->hardware_model, "Erase");
-    if (!bb_build_identity) bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(basebandbuildmanifest, client->device->hardware_model, "Update");
+    bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_basebandbuildmanifest, client->device->hardware_model, "Erase");
+    if (!bb_build_identity) bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_basebandbuildmanifest, client->device->hardware_model, "Update");
     if (bb_build_identity == NULL) {
         reterror(-5,"ERROR: Unable to find any build identities for baseband\n");
     }
@@ -472,13 +468,16 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         reterror(-11,"ERROR: Unable to get SHSH blobs for SEP\n");
     }
     
-    FILE *fsep = fopen(_sepPath, "r");
-    fseek(fsep, 0, SEEK_END);
-    client->sepfwdatasize = ftell(fsep);
-    fseek(fsep, 0, SEEK_SET);
-    client->sepfwdata = (char*)malloc(client->sepfwdatasize);
-    fread(client->sepfwdata, 1, client->sepfwdatasize, fsep);
-    fclose(fsep);
+    
+    client->basebandBuildIdentity = getBuildidentity(_basebandbuildmanifest, getDeviceModelNoCopy(), noerase);
+    
+    if (!_client->basebandBuildIdentity)
+        reterror(-55, "BasebandBuildIdentity not loaded, refusing to continue");
+    
+    
+    if (!_client->sepfwdatasize || !_client->sepfwdata)
+        reterror(-55, "SEP not loaded, refusing to continue");
+    
     
     
     if (client->mode->index == MODE_RESTORE) {
@@ -495,8 +494,6 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
 error:
     safeFree(client->sepfwdata);
     safePlistFree(buildmanifest);
-    safePlistFree(sepbuildmanifest);
-    safePlistFree(basebandbuildmanifest);
     safePlistFree(build_identity);
     safePlistFree(sep_build_identity);
     safePlistFree(bb_build_identity);
@@ -520,6 +517,8 @@ futurerestore::~futurerestore(){
     for (auto plist : _aptickets){
          safePlistFree(plist);
     }
+    safePlistFree(_sepbuildmanifest);
+    safePlistFree(_basebandbuildmanifest);
 }
 
 void futurerestore::loadFirmwareTokens(){
@@ -590,16 +589,56 @@ void futurerestore::loadLatestBaseband(){
     info("downloading Baseband\n\n");
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
         reterror(-32, "could not download baseband\n");
-    saveStringToFile(manifeststr, _basebandManifestPath = BASEBAND_MANIFEST_TMP_PATH);
+    saveStringToFile(manifeststr, BASEBAND_MANIFEST_TMP_PATH);
+    setBasebandManifestPath(BASEBAND_TMP_PATH);
 }
 
 void futurerestore::loadLatestSep(){
     char * manifeststr = getLatestManifest();
     char *pathStr = getPathOfElementInManifest("SEP", manifeststr, getDeviceModelNoCopy(), 0);
     info("downloading SEP\n\n");
-    if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _sepPath = SEP_TMP_PATH))
+    if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, SEP_TMP_PATH))
         reterror(-33, "could not download SEP\n");
-    saveStringToFile(manifeststr, _sepManifestPath = SEP_MANIFEST_TMP_PATH);
+    loadSep(SEP_TMP_PATH);
+    saveStringToFile(manifeststr, SEP_MANIFEST_TMP_PATH);
+    setSepManifestPath(SEP_MANIFEST_TMP_PATH);
+}
+
+void futurerestore::setSepManifestPath(const char *sepManifestPath){
+    if (!(_sepbuildmanifest = loadPlistFromFile(sepManifestPath)))
+        reterror(-14, "failed to load SEPManifest");
+}
+
+void futurerestore::setBasebandManifestPath(const char *basebandManifestPath){
+    if (!(_basebandbuildmanifest = loadPlistFromFile(basebandManifestPath)))
+        reterror(-14, "failed to load BasebandManifest");
+};
+
+void futurerestore::loadSep(const char *sepPath){
+    FILE *fsep = fopen(sepPath, "r");
+    if (!fsep)
+        reterror(-15, "failed to read SEP\n");
+    
+    fseek(fsep, 0, SEEK_END);
+    _client->sepfwdatasize = ftell(fsep);
+    fseek(fsep, 0, SEEK_SET);
+    
+    if (!(_client->sepfwdata = (char*)malloc(_client->sepfwdatasize)))
+        reterror(-15, "failed to malloc memory for SEP\n");
+    
+    if (fread(_client->sepfwdata, 1, _client->sepfwdatasize, fsep) != _client->sepfwdatasize)
+        reterror(-15, "failed to load SEP\n");
+    
+    fclose(fsep);
+}
+
+
+void futurerestore::setBasebandPath(const char *basebandPath){
+    FILE *fbb = fopen(basebandPath, "r");
+    if (!fbb)
+        reterror(-15, "failed to read Baseband");
+    _basebandPath = basebandPath;
+    fclose(fbb);
 }
 
 
@@ -692,7 +731,7 @@ plist_t futurerestore::loadPlistFromFile(const char *path){
     char *buf = (char*)malloc(bufSize);
     if (!buf){
         error("failed to alloc memory\n");
-        return  NULL;
+        return NULL;
     }
     
     fread(buf, 1, bufSize, f);

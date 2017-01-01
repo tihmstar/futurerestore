@@ -15,6 +15,7 @@
 #include <vector>
 #include "idevicerestore.h"
 #include "jsmn.h"
+#include <plist/plist.h>
 
 using namespace std;
 
@@ -43,11 +44,10 @@ class futurerestore {
     char *__latestManifest = NULL;
     char *__latestFirmwareUrl = NULL;
     
-    const char *_sepManifestPath = NULL;
-    const char *_basebandManifestPath = NULL;
-    const char *_sepPath = NULL;
-    const char *_basebandPath = NULL;
+    plist_t _sepbuildmanifest = NULL;
+    plist_t _basebandbuildmanifest = NULL;
     
+    const char *_basebandPath;
     
 public:
     futurerestore();
@@ -69,16 +69,15 @@ public:
     void loadLatestBaseband();
     void loadLatestSep();
     
-    void setSepManifestPath(const char *sepManifestPath){_sepManifestPath = sepManifestPath;};
-    void setBasebandManifestPath(const char *basebandManifestPath){_basebandManifestPath = basebandManifestPath;};
-    void setSepPath(const char *sepPath){_sepPath = sepPath;};
-    void setBasebandPath(const char *basebandPath){_basebandPath = basebandPath;};
+    void setSepManifestPath(const char *sepManifestPath);
+    void setBasebandManifestPath(const char *basebandManifestPath);
+    void loadSep(const char *sepPath);
+    void setBasebandPath(const char *basebandPath);
     
     
-    const char *sepManifestPath(){return _sepManifestPath;};
-    const char *basebandManifestPath(){return _basebandManifestPath;};
-    const char *sepPath(){return _sepPath;};
-    const char *basebandPath(){return _basebandPath;};
+    plist_t sepManifest(){return _sepbuildmanifest;};
+    plist_t basebandManifest(){return _basebandbuildmanifest;};
+    
     
     uint64_t getBasebandGoldCertIDFromDevice();
     

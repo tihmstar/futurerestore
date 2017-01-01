@@ -132,6 +132,14 @@ int main(int argc, const char * argv[]) {
         argv += optind;
         
         ipsw = argv[0];
+    }else{
+        error("argument parsing failed! agrc=%d optind=%d\n",argc,optind);
+        if (idevicerestore_debug){
+            for (int i=0; i<argc; i++) {
+                printf("argv[%d]=%s\n",i,argv[i]);
+            }
+        }
+        return -5;
     }
     
     futurerestore client;
@@ -163,7 +171,7 @@ int main(int argc, const char * argv[]) {
             info("user specified to use latest signed sep\n");
             client.loadLatestSep();
         }else{
-            client.setSepPath(sepPath);
+            client.loadSep(sepPath);
             client.setSepManifestPath(sepManifestPath);
         }
         if (flags & FLAG_LATEST_BASEBAND){
@@ -178,7 +186,7 @@ int main(int argc, const char * argv[]) {
         
         
         versVals.basebandMode = kBasebandModeWithoutBaseband;
-        if (!(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
+        if (!(isSepManifestSigned = isManifestSignedForDevice(sepManifestPath, &devVals, &versVals))){
             reterror(-3,"sep firmware isn't signed\n");
         }
         
@@ -188,7 +196,7 @@ int main(int argc, const char * argv[]) {
                 printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
             }
         }
-        if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
+        if (!(isBasebandSigned = isManifestSignedForDevice(basebandManifestPath, &devVals, &versVals))) {
             reterror(-3,"baseband firmware isn't signed\n");
         }
 
