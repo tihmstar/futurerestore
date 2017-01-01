@@ -157,7 +157,7 @@ int main(int argc, const char * argv[]) {
             }else{
                 client.putDeviceIntoRecovery();
                 client.waitForNonce();
-                info("done\n");
+                info("Done\n");
             }
             goto error;
         }
@@ -206,17 +206,14 @@ int main(int argc, const char * argv[]) {
         goto error;
     }
     
-    if (ipsw) {
-        try {
-            res = client.doRestore(ipsw, flags & FLAG_UPDATE);
-        } catch (int error) {
-            if (error == -20) error("maybe you forgot -w ?\n");
-            err = error;
-        }
-        cout << "Done: restoring "<< (!res ? "succeeded" : "failed")<<"." <<endl;
-    }else if (flags & FLAG_WAIT){
-        cout << "Done"<<endl;
+    try {
+        res = client.doRestore(ipsw, flags & FLAG_UPDATE);
+    } catch (int error) {
+        if (error == -20) error("maybe you forgot -w ?\n");
+        err = error;
     }
+    cout << "Done: restoring "<< (!res ? "succeeded" : "failed")<<"." <<endl;
+
     
 error:
     if (err) cout << "Failed with errorcode="<<err << endl;
