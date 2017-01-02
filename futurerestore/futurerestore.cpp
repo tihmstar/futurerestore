@@ -298,13 +298,13 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
     
-    if (!(build_identity = getBuildidentity(buildmanifest, client->device->product_type, noerase)))
+    if (!(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for IPSW\n");
 
-    if (!(sep_build_identity = getBuildidentity(_sepbuildmanifest, client->device->product_type, noerase)))
+    if (!(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
 
-    if (!(bb_build_identity = getBuildidentity(_basebandbuildmanifest, client->device->product_type, noerase)))
+    if (!(bb_build_identity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
 
     
