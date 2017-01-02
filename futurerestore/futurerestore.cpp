@@ -298,30 +298,15 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
     
-    if (noerase) {
-        build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(buildmanifest, client->device->hardware_model, "Update");
-        if (!build_identity) {
-            build_identity = build_manifest_get_build_identity_for_model(buildmanifest, client->device->hardware_model);
-        }
-    }else{
-        build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(buildmanifest, client->device->hardware_model, "Erase");
-        if (build_identity == NULL) {
-            reterror(-5,"ERROR: Unable to find any build identities\n");
-        }
-    }
-    
-    sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_sepbuildmanifest, client->device->hardware_model, "Erase");
-    if (!sep_build_identity) sep_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_sepbuildmanifest, client->device->hardware_model, "Update");
-    if (sep_build_identity == NULL) {
-        reterror(-5,"ERROR: Unable to find any build identities for sep\n");
-    }
-    
-    bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_basebandbuildmanifest, client->device->hardware_model, "Erase");
-    if (!bb_build_identity) bb_build_identity = build_manifest_get_build_identity_for_model_with_restore_behavior(_basebandbuildmanifest, client->device->hardware_model, "Update");
-    if (bb_build_identity == NULL) {
-        reterror(-5,"ERROR: Unable to find any build identities for baseband\n");
-    }
-    
+    if (!(build_identity = getBuildidentity(buildmanifest, client->device->product_type, noerase)))
+        reterror(-5,"ERROR: Unable to find any build identities for IPSW\n");
+
+    if (!(sep_build_identity = getBuildidentity(_sepbuildmanifest, client->device->product_type, noerase)))
+        reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
+
+    if (!(bb_build_identity = getBuildidentity(_basebandbuildmanifest, client->device->product_type, noerase)))
+        reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
+
     
     plist_t bb_manifest = plist_dict_get_item(bb_build_identity, "Manifest");
     plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
@@ -501,9 +486,6 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
 error:
     safeFree(client->sepfwdata);
     safePlistFree(buildmanifest);
-    safePlistFree(build_identity);
-    safePlistFree(sep_build_identity);
-    safePlistFree(bb_build_identity);
     if (delete_fs && filesystem) unlink(filesystem);
     if (!result && !err) info("DONE\n");
     return result ? abs(result) : err;
