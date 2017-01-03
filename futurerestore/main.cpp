@@ -30,6 +30,7 @@ static struct option longopts[] = {
     { "debug",              no_argument,            NULL, 'd' },
     { "latest-sep",         no_argument,            NULL, '0' },
     { "latest-baseband",    no_argument,            NULL, '1' },
+    { "no-baseband",    no_argument,            NULL, '2' },
     { NULL, 0, NULL, 0 }
 };
 
@@ -37,6 +38,7 @@ static struct option longopts[] = {
 #define FLAG_UPDATE             1 << 1
 #define FLAG_LATEST_SEP         1 << 2
 #define FLAG_LATEST_BASEBAND    1 << 3
+#define FLAG_NO_BASEBAND        1 << 4
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
@@ -50,8 +52,10 @@ void cmd_help(){
     printf("  -m, --sep-manifest PATH\tBuildmanifest for requesting sep ticket\n");
     printf("  -w, --wait\t\t\tkeep rebooting until nonce matches APTicket\n");
     printf("  -u, --update\t\t\tupdate instead of erase install\n");
-    printf("      --latest-sep\t\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
-    printf("      --latest-baseband\t\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
+    printf("      --latest-sep\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
+    printf("      --latest-baseband\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
+    printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
+    printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n");
     printf("\n");
 }
 
@@ -114,6 +118,9 @@ int main(int argc, const char * argv[]) {
             case '1': // long option: "latest-baseband";
                 flags |= FLAG_LATEST_BASEBAND;
                 break;
+            case '2': // long option: "no-baseband";
+                flags |= FLAG_NO_BASEBAND;
+                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -148,7 +155,7 @@ int main(int argc, const char * argv[]) {
         if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
         
         if (!((apticketPaths.size() && ipsw)
-              && ((basebandPath && basebandManifestPath) || (flags & FLAG_LATEST_BASEBAND))
+              && ((basebandPath && basebandManifestPath) || ((flags & FLAG_LATEST_BASEBAND) || (flags & FLAG_NO_BASEBAND)))
               && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)))) {
             if (!(flags & FLAG_WAIT) || ipsw){
                 error("missing argument\n");
@@ -163,7 +170,6 @@ int main(int argc, const char * argv[]) {
         }
         devVals.deviceModel = (char*)client.getDeviceModelNoCopy();
         
-        
         if (flags & FLAG_LATEST_SEP){
             info("user specified to use latest signed sep\n");
             client.loadLatestSep();
@@ -171,30 +177,42 @@ int main(int argc, const char * argv[]) {
             client.loadSep(sepPath);
             client.setSepManifestPath(sepManifestPath);
         }
-        if (flags & FLAG_LATEST_BASEBAND){
-            info("user specified to use latest signed baseband (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
-            client.loadLatestBaseband();
-        }else{
-            client.setBasebandPath(basebandPath);
-            client.setBasebandManifestPath(basebandManifestPath);
-        }
-        
-        printf("Did set sep+baseband path and firmware\n");
-        
         
         versVals.basebandMode = kBasebandModeWithoutBaseband;
         if (!(isSepManifestSigned = isManifestSignedForDevice(sepManifestPath, &devVals, &versVals))){
             reterror(-3,"sep firmware isn't signed\n");
         }
         
-        versVals.basebandMode = kBasebandModeOnlyBaseband;
-        if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
-            printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
+        if (flags & FLAG_NO_BASEBAND){
+            printf("\nWARNING: user specified not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
+            printf("if you added this flag by mistake you can press CTRL-C now to cancel\n");
+            int c = 5;
+            printf("continuing restore in ");
+            while (c) {
+                printf("%d ",c--);
+                fflush(stdout);
+                sleep(1);
+            }
+            printf("\n");
+        }else{
+            if (flags & FLAG_LATEST_BASEBAND){
+                info("user specified to use latest signed baseband (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
+                client.loadLatestBaseband();
+            }else{
+                client.setBasebandPath(basebandPath);
+                client.setBasebandManifestPath(basebandManifestPath);
+                printf("Did set sep+baseband path and firmware\n");
+            }
+            
+            versVals.basebandMode = kBasebandModeOnlyBaseband;
+            if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
+                printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
+            }
+            if (!(isBasebandSigned = isManifestSignedForDevice(basebandManifestPath, &devVals, &versVals))) {
+                reterror(-3,"baseband firmware isn't signed\n");
+            }
         }
-        if (!(isBasebandSigned = isManifestSignedForDevice(basebandManifestPath, &devVals, &versVals))) {
-            reterror(-3,"baseband firmware isn't signed\n");
-        }
-
+        
         
         client.putDeviceIntoRecovery();
         if (flags & FLAG_WAIT){

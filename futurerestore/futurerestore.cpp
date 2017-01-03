@@ -304,21 +304,30 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     if (!(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
 
-    if (!(bb_build_identity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
-        reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
+    plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
 
     
-    plist_t bb_manifest = plist_dict_get_item(bb_build_identity, "Manifest");
-    plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
+    if (_basebandbuildmanifest){
+        if (!(bb_build_identity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
+            reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
+        
+        plist_t bb_manifest = plist_dict_get_item(bb_build_identity, "Manifest");
+        plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
+        plist_dict_set_item(manifest, "BasebandFirmware", bb_baseband);
+        client->bbfwtmp = (char*)_basebandPath;
+        client->basebandBuildIdentity = getBuildidentity(_basebandbuildmanifest, getDeviceModelNoCopy(), 0);
+        
+        if (!_client->basebandBuildIdentity)
+            reterror(-55, "BasebandBuildIdentity not loaded, refusing to continue");
+    }else{
+        warning("WARNING: we don't have a basebandbuildmanifest, not flashing baseband!\n");
+    }
     
     plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
     plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
-    
-    plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
-    plist_dict_set_item(manifest, "BasebandFirmware", bb_baseband);
     plist_dict_set_item(manifest, "SEP", sep_sep);
     
-    client->bbfwtmp = (char*)_basebandPath;
+    
     
     
     /* print information about current build identity */
@@ -460,11 +469,6 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         reterror(-11,"ERROR: Unable to get SHSH blobs for SEP\n");
     }
     
-    
-    client->basebandBuildIdentity = getBuildidentity(_basebandbuildmanifest, getDeviceModelNoCopy(), 0);
-    
-    if (!_client->basebandBuildIdentity)
-        reterror(-55, "BasebandBuildIdentity not loaded, refusing to continue");
     
     
     if (!_client->sepfwdatasize || !_client->sepfwdata)
