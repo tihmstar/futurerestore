@@ -23,7 +23,7 @@
 #include "restore.h"
 #include "tsschecker.h"
 
-#ifdef WIN32
+#if defined _WIN32 || defined __CYGWIN__ || defined WIN32
 #include <windows.h>
 #define __mkdir(path, mode) mkdir(path)
 #else
