@@ -61,6 +61,7 @@ public:
     void loadAPTickets(const vector<const char *> &apticketPaths);
     
     plist_t nonceMatchesApTickets();
+    const char *nonceMatchesIM4Ms();
 
     void loadFirmwareTokens();
     const char *getDeviceModelNoCopy();

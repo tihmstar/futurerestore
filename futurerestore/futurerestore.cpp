@@ -140,6 +140,25 @@ plist_t futurerestore::nonceMatchesApTickets(){
     return NULL;
 }
 
+const char *futurerestore::nonceMatchesIM4Ms(){
+    if (!_didInit) reterror(-1, "did not init\n");
+    if (getDeviceMode(true) != MODE_RECOVERY) reterror(-10, "Device not in recovery mode, can't check apnonce\n");
+    
+    unsigned char* realnonce;
+    int realNonceSize = 0;
+    recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
+    
+    vector<const char*>nonces;
+    
+    for (int i=0; i< _im4ms.size(); i++){
+        if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+    }
+    
+    return NULL;
+}
+
+
+
 void futurerestore::waitForNonce(vector<const char *>nonces, size_t nonceSize){
     if (!_didInit) reterror(-1, "did not init\n");
     setAutoboot(false);
@@ -304,8 +323,30 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     if (!(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
 
+    //this is the buildidentity used for restore
     plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
 
+    printf("checking APTicket to be valid for this restore...\n");
+    plist_t ticketIdentity = getBuildIdentityForIM4M(nonceMatchesIM4Ms(), buildmanifest);
+    
+    //TODO: make this nicer!
+    //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
+    if (ticketIdentity != build_identity){
+        error("BuildIdentity selected for restore does not match APTicket\n\n");
+        printf("BuildIdentity selected for restore:\n");
+        printGeneralBuildIdentityInformation(build_identity);
+        printf("\nBuildIdentiy valid for the APTicket:\n");
+        
+        if (ticketIdentity) printGeneralBuildIdentityInformation(ticketIdentity),putchar('\n');
+        else{
+            printf("IM4M is not valid for any restore within the Buildmanifest\n");
+            printf("This APTicket can't be used for restoring this firmware\n");
+        }
+        reterror(-44, "APTicket can't be used for this restore\n");
+    }else{
+        printf("Verified APTicket to be valid for this restore\n");
+    }
+    
     
     if (_basebandbuildmanifest){
         if (!(bb_build_identity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
