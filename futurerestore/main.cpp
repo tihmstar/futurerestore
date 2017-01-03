@@ -9,6 +9,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <string.h>
+#include <unistd.h>
 #include <vector>
 #include "futurerestore.hpp"
 #include "all_tsschecker.h"
