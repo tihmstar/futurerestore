@@ -537,6 +537,21 @@ const char *futurerestore::getDeviceModelNoCopy(){
     return _client->device->product_type;
 }
 
+const char *futurerestore::getDeviceBoardNoCopy(){
+    if (!_client->device || !_client->device->hardware_model){
+        
+        int mode = getDeviceMode(true);
+        if (mode != MODE_NORMAL && mode != MODE_RECOVERY)
+            reterror(-20, "unexpected device mode=%d\n",mode);
+        
+        if (check_hardware_model(_client) == NULL || _client->device == NULL)
+            reterror(-2,"ERROR: Unable to discover device model\n");
+    }
+    
+    return _client->device->hardware_model;
+}
+
+
 char *futurerestore::getLatestManifest(){
     if (!__latestManifest){
         loadFirmwareTokens();

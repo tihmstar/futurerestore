@@ -64,6 +64,7 @@ public:
 
     void loadFirmwareTokens();
     const char *getDeviceModelNoCopy();
+    const char *getDeviceBoardNoCopy();
     char *getLatestManifest();
     char *getLatestFirmwareUrl();
     void loadLatestBaseband();

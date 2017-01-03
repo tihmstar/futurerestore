@@ -169,6 +169,7 @@ int main(int argc, const char * argv[]) {
             goto error;
         }
         devVals.deviceModel = (char*)client.getDeviceModelNoCopy();
+        devVals.deviceBoard = (char*)client.getDeviceBoardNoCopy();
         
         if (flags & FLAG_LATEST_SEP){
             info("user specified to use latest signed sep\n");
