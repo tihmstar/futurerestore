@@ -6,6 +6,13 @@
 //  Copyright © 2016 tihmstar. All rights reserved.
 //
 
+#if defined _WIN32 || defined __CYGWIN__
+#ifndef WIN32
+//make sure WIN32 is defined if compiling for windows
+#define WIN32
+#endif
+#endif
+
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
@@ -23,11 +30,12 @@
 #include "restore.h"
 #include "tsschecker.h"
 
+
+//(re)define __mkdir
 #ifdef __mkdir
 #undef __mkdir
 #endif
-
-#if defined _WIN32 || defined __CYGWIN__ || defined WIN32
+#ifdef WIN32
 #include <windows.h>
 #define __mkdir(path, mode) mkdir(path)
 #else
