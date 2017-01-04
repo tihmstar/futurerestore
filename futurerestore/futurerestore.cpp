@@ -213,7 +213,7 @@ void futurerestore::waitForNonce(vector<const char *>nonces, size_t nonceSize){
 }
 void futurerestore::waitForNonce(){
     if (!_im4ms.size()) reterror(-1, "No IM4M loaded\n");
-    size_t nonceSize;
+    size_t nonceSize = 0;
     vector<const char*>nonces;
     
     for (auto im4m : _im4ms){
@@ -235,7 +235,12 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
         fseek(f, 0, SEEK_SET);
         char *buf = (char*)malloc(fSize+1);
         memset(buf, 0, fSize+1);
-        fread(buf, fSize, 1, f);
+        
+        size_t freadRet = 0;
+        if ((freadRet = fread(buf, 1, fSize, f)) != fSize){
+            reterror(-15,"fread=%zu but fSize=%zu",freadRet,fSize);
+        }
+        
         fclose(f);
         
         plist_t apticket = NULL;
@@ -802,7 +807,11 @@ plist_t futurerestore::loadPlistFromFile(const char *path){
         return NULL;
     }
     
-    fread(buf, 1, bufSize, f);
+    size_t freadRet = 0;
+    if ((freadRet = fread(buf, 1, bufSize, f)) != bufSize){
+        error("fread=%zu but bufsize=%zu",freadRet,bufSize);
+        return NULL;
+    }
     fclose(f);
     
     if (memcmp(buf, "bplist00", 8) == 0)
