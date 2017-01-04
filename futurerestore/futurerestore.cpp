@@ -681,7 +681,7 @@ void futurerestore::setBasebandManifestPath(const char *basebandManifestPath){
 };
 
 void futurerestore::loadSep(const char *sepPath){
-    FILE *fsep = fopen(sepPath, "r");
+    FILE *fsep = fopen(sepPath, "rb");
     if (!fsep)
         reterror(-15, "failed to read SEP\n");
     
@@ -693,21 +693,15 @@ void futurerestore::loadSep(const char *sepPath){
         reterror(-15, "failed to malloc memory for SEP\n");
     
     size_t freadRet=0;
-    //workaroung for windows bug!?!?
-    do {
-        size_t cread = fread(_client->sepfwdata, 1, _client->sepfwdatasize, fsep);
-        if (!cread)
-            reterror(-15, "failed to load SEP. _client->sepfwdatasize=%zu but fread returned=%zu\n",_client->sepfwdatasize,freadRet);
-        freadRet += cread;
-        printf("reading sep %zu of %zu bytes",freadRet,_client->sepfwdatasize);
-    } while (freadRet < _client->sepfwdatasize);
+    if ((freadRet = fread(_client->sepfwdata, 1, _client->sepfwdatasize, fsep)) != _client->sepfwdatasize)
+        reterror(-15, "failed to load SEP. size=%zu but fread returned %zu\n",_client->sepfwdatasize,freadRet);
     
     fclose(fsep);
 }
 
 
 void futurerestore::setBasebandPath(const char *basebandPath){
-    FILE *fbb = fopen(basebandPath, "r");
+    FILE *fbb = fopen(basebandPath, "rb");
     if (!fbb)
         reterror(-15, "failed to read Baseband");
     _basebandPath = basebandPath;
