@@ -688,11 +688,14 @@ void futurerestore::loadSep(const char *sepPath){
         reterror(-15, "failed to malloc memory for SEP\n");
     
     size_t freadRet=0;
-    if ((freadRet = fread(_client->sepfwdata, 1, _client->sepfwdatasize, fsep)) != _client->sepfwdatasize)
-#ifdef WIN32
-        printf("WARNING (WIN32) issue?  _client->sepfwdatasize=%d but fread returned=%d\n",_client->sepfwdatasize,freadRet),
-#endif
-        reterror(-15, "failed to load SEP\n");
+    //workaroung for windows bug!?!?
+    do {
+        size_t cread = fread(_client->sepfwdata, 1, _client->sepfwdatasize, fsep);
+        if (!cread)
+            reterror(-15, "failed to load SEP. _client->sepfwdatasize=%zu but fread returned=%zu\n",_client->sepfwdatasize,freadRet);
+        freadRet += cread;
+        printf("reading sep %zu of %zu bytes",freadRet,_client->sepfwdatasize);
+    } while (freadRet < _client->sepfwdatasize);
     
     fclose(fsep);
 }
