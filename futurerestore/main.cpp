@@ -45,7 +45,6 @@ void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
     printf("Allows restoring nonmatching iOS/Sep/Baseband\n\n");
     
-    printf("      --bbgcid ID\t\tmanually specify bbgcid\n");
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
     printf("  -p, --baseband-manifest PATH\tBuildmanifest for requesting baseband ticket\n");
