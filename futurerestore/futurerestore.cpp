@@ -656,7 +656,8 @@ void futurerestore::loadLatestBaseband(){
     if (downloadPartialzip(getLatestFirmwareUrl(), pathStr, _basebandPath = BASEBAND_TMP_PATH))
         reterror(-32, "could not download baseband\n");
     saveStringToFile(manifeststr, BASEBAND_MANIFEST_TMP_PATH);
-    setBasebandManifestPath(BASEBAND_TMP_PATH);
+    setBasebandManifestPath(BASEBAND_MANIFEST_TMP_PATH);
+    setBasebandPath(BASEBAND_TMP_PATH);
 }
 
 void futurerestore::loadLatestSep(){
