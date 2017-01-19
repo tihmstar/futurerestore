@@ -637,7 +637,7 @@ char *futurerestore::getLatestManifest(){
         __latestFirmwareUrl = getFirmwareUrl(device, &versVals, _firmwareJson, _firmwareTokens);
         if (!__latestFirmwareUrl) reterror(-21, "could not find url of latest firmware\n");
         
-        __latestManifest = getBuildManifest(__latestFirmwareUrl, device, versVals.version, 0);
+        __latestManifest = getBuildManifest(__latestFirmwareUrl, device, versVals.version, versVals.buildID, 0);
         if (!__latestManifest) reterror(-22, "could not get buildmanifest of latest firmware\n");
     }
     
