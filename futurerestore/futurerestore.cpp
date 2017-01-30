@@ -292,7 +292,6 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     plist_t buildmanifest = NULL;
     plist_t build_identity = NULL;
     plist_t sep_build_identity = NULL;
-    plist_t bb_build_identity = NULL;
     
     client->ipsw = strdup(ipsw);
     if (!noerase) client->flags |= FLAG_ERASE;
@@ -366,14 +365,13 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     
     
     if (_basebandbuildmanifest){
-        if (!(bb_build_identity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
+        if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
             reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
+        client->bbfwtmp = (char*)_basebandPath;
         
-        plist_t bb_manifest = plist_dict_get_item(bb_build_identity, "Manifest");
+        plist_t bb_manifest = plist_dict_get_item(client->basebandBuildIdentity, "Manifest");
         plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
         plist_dict_set_item(manifest, "BasebandFirmware", bb_baseband);
-        client->bbfwtmp = (char*)_basebandPath;
-        client->basebandBuildIdentity = getBuildidentity(_basebandbuildmanifest, getDeviceModelNoCopy(), 0);
         
         if (!_client->basebandBuildIdentity)
             reterror(-55, "BasebandBuildIdentity not loaded, refusing to continue");
