@@ -491,13 +491,17 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     if (recovery_send_ibec(client, build_identity) < 0) {
         reterror(-8,"ERROR: Unable to send iBEC\n");
     }
+    printf("waiting for device to reconnect... ");
     recovery_client_free(client);
     
     /* this must be long enough to allow the device to run the iBEC */
     /* FIXME: Probably better to detect if the device is back then */
     sleep(7);
+    for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
+    putchar('\n');
     
-    check_mode(client);
+    if (!check_mode(client))
+        reterror(-15, "failed to reconnect to device in recovery (iBEC) mode\n");
     
     //do magic
     get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
