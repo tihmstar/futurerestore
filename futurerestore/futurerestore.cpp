@@ -347,7 +347,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     
     //TODO: make this nicer!
     //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
-    if (ticketIdentity != build_identity){
+    if (ticketIdentity != build_identity ){
         error("BuildIdentity selected for restore does not match APTicket\n\n");
         printf("BuildIdentity selected for restore:\n");
         printGeneralBuildIdentityInformation(build_identity);
@@ -360,6 +360,10 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         }
         reterror(-44, "APTicket can't be used for this restore\n");
     }else{
+        if (verifyIM4MSignature(nonceMatchesIM4Ms())){
+            printf("IM4M signature is not valid!\n");
+            reterror(-44, "APTicket can't be used for this restore\n");
+        }
         printf("Verified APTicket to be valid for this restore\n");
     }
     
@@ -727,9 +731,9 @@ inline void futurerestore::saveStringToFile(const char *str, const char *path){
 
 char *futurerestore::getNonceFromIM4M(const char* im4m, size_t *nonceSize){
     char *ret = NULL;
-    t_asn1Tag *mainSet = NULL;
-    t_asn1Tag *manbSet = NULL;
-    t_asn1Tag *manpSet = NULL;
+    char *mainSet = NULL;
+    char *manbSet = NULL;
+    char *manpSet = NULL;
     char *nonceOctet = NULL;
     char *bnch = NULL;
     char *manb = NULL;

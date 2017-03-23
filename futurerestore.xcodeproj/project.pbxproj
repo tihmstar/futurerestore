@@ -459,12 +459,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
 					/usr/lib,
+					/usr/local/opt/openssl/lib,
 					"$(SDKROOT)/usr/lib/system",
-					/opt/local/lib,
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/include /opt/local/include";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include";
 			};
 			name = Debug;
 		};
@@ -476,12 +476,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
 					/usr/lib,
+					/usr/local/opt/openssl/lib,
 					"$(SDKROOT)/usr/lib/system",
-					/opt/local/lib,
 				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/include /opt/local/include";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include";
 			};
 			name = Release;
 		};
