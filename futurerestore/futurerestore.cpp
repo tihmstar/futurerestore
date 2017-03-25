@@ -343,7 +343,8 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
 
     printf("checking APTicket to be valid for this restore...\n");
-    plist_t ticketIdentity = getBuildIdentityForIM4M(nonceMatchesIM4Ms(), buildmanifest);
+    const char * im4m = nonceMatchesIM4Ms();
+    plist_t ticketIdentity = getBuildIdentityForIM4M(im4m, buildmanifest);
     
     //TODO: make this nicer!
     //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
@@ -360,7 +361,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         }
         reterror(-44, "APTicket can't be used for this restore\n");
     }else{
-        if (verifyIM4MSignature(nonceMatchesIM4Ms())){
+        if (verifyIM4MSignature(im4m)){
             printf("IM4M signature is not valid!\n");
             reterror(-44, "APTicket can't be used for this restore\n");
         }
