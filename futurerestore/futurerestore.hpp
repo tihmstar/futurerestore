@@ -88,6 +88,7 @@ public:
     ~futurerestore();
 
     static char *getNonceFromIM4M(const char* im4m, size_t *nonceSize);
+    static uint64_t getEcidFromIM4M(const char* im4m);
     static char *getNonceFromAPTicket(const char* apticketPath);
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(const char *str, const char *path);

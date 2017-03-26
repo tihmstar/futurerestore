@@ -344,8 +344,20 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
 
     printf("checking APTicket to be valid for this restore...\n");
     const char * im4m = nonceMatchesIM4Ms();
-    plist_t ticketIdentity = getBuildIdentityForIM4M(im4m, buildmanifest);
     
+    uint64_t deviceEcid = getDeviceEcid();
+    uint64_t im4mEcid = getEcidFromIM4M(im4m);
+    if (!im4mEcid)
+        reterror(-46, "Failed to read ECID from APTicket\n");
+    
+    if (im4mEcid != deviceEcid) {
+        error("ECID inside APTicket does not match device ECID\n");
+        printf("APTicket is valid for %16llx but device is %16llx\n",im4mEcid,deviceEcid);
+        reterror(-45, "APTicket can't be used for restoring this device\n");
+    }else
+        printf("Verified ECID in APTicket matches device ECID\n");
+    
+    plist_t ticketIdentity = getBuildIdentityForIM4M(im4m, buildmanifest);
     //TODO: make this nicer!
     //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
     if (ticketIdentity != build_identity ){
@@ -520,7 +532,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
             error("ERROR: Unable to set bgcolor\n");
             return -1;
         }
-        warning("[WARNING] Setting bgcolor to green! If you don't see a green screen, then your ticket probably doesn't match the firmware you're trying to restore to\n");
+        info("[WARNING] Setting bgcolor to green! If you don't see a green screen, then your device didn't boot iBEC correctly\n");
         sleep(2); //show the user a green screen!
         if (recovery_enter_restore(client, build_identity) < 0) {
             reterror(-10,"ERROR: Unable to place device into restore mode\n");
@@ -772,15 +784,69 @@ char *futurerestore::getNonceFromIM4M(const char* im4m, size_t *nonceSize){
     
     ret = (char*)malloc(asn1Len(nonceOctet).dataLen);
     if (ret){
-        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);        
+        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);
         if (nonceSize) *nonceSize = asn1Len(nonceOctet).dataLen;
     }
     
     
 error:
     return ret;
-
+    
 }
+
+uint64_t futurerestore::getEcidFromIM4M(const char* im4m){
+    uint64_t ret = 0;
+    char *mainSet = NULL;
+    char *manbSet = NULL;
+    char *manpSet = NULL;
+    char *ecidInt = NULL;
+    char *ecid = NULL;
+    char *manb = NULL;
+    char *manp = NULL;
+    t_asn1ElemLen len;
+    
+    if (!im4m) reterror(-15, "Got empty IM4M\n");
+    
+    if (asn1ElementsInObject(im4m)< 3){
+        error("unexpected number of Elements in IM4M sequence\n");
+        goto error;
+    }
+    mainSet = asn1ElementAtIndex(im4m, 2);
+    
+    manb = getValueForTagInSet((char*)mainSet, 0x4d414e42); //MANB priv Tag
+    if (asn1ElementsInObject(manb)< 2){
+        error("unexpected number of Elements in MANB sequence\n");
+        goto error;
+    }
+    manbSet = asn1ElementAtIndex(manb, 1);
+    
+    manp = getValueForTagInSet((char*)manbSet, 0x4d414e50); //MANP priv Tag
+    if (asn1ElementsInObject(manp)< 2){
+        error("unexpected number of Elements in MANP sequence\n");
+        goto error;
+    }
+    manpSet = asn1ElementAtIndex(manp, 1);
+    
+    ecid = getValueForTagInSet((char*)manpSet, *(uint32_t*)"DICE"); //ECID priv Tag
+    if (asn1ElementsInObject(ecid)< 2){
+        error("unexpected number of Elements in BNCH sequence\n");
+        goto error;
+    }
+    ecidInt = (char*)asn1ElementAtIndex(ecid, 1);
+    ecidInt++;
+    
+   
+    len = asn1Len(ecidInt);
+    ecidInt += len.sizeBytes;
+    while (len.dataLen--) {
+        ret *=0x100;
+        ret += *(unsigned char*)ecidInt++;
+    }
+    
+error:
+    return ret;
+}
+
 
 char *futurerestore::getNonceFromAPTicket(const char* apticketPath){
     char *ret = NULL;
