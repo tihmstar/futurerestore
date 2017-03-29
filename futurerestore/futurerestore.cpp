@@ -402,8 +402,13 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     
     
     if (_basebandbuildmanifest){
-        if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase)))
-            reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
+        if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase))){
+            if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, !noerase)))
+                reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
+            else
+                info("[WARNING] Unable to find Baseband buildidentities for restore type %s, using fallback %s\n", (noerase) ? "Update" : "Erase",(!noerase) ? "Update" : "Erase");
+        }
+            
         client->bbfwtmp = (char*)_basebandPath;
         
         plist_t bb_manifest = plist_dict_get_item(client->basebandBuildIdentity, "Manifest");
