@@ -35,6 +35,7 @@ public:
 class futurerestore {
     struct idevicerestore_client_t* _client;
     bool _didInit = false;
+    bool _is32bit = false;
     vector<plist_t> _aptickets;
     vector<char *>_im4ms;
     int _foundnonce = -1;
@@ -50,7 +51,9 @@ class futurerestore {
     const char *_basebandPath;
     
 public:
+    bool skipAPTicketChecks = false; //ignored on 64bit devices
     futurerestore();
+    futurerestore(bool is32bit);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();

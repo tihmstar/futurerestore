@@ -59,6 +59,10 @@
 #define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
 
 futurerestore::futurerestore(){
+    futurerestore(false);
+}
+
+futurerestore::futurerestore(bool is32bit) : _is32bit(is32bit) {
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
@@ -145,9 +149,13 @@ plist_t futurerestore::nonceMatchesApTickets(){
     
     vector<const char*>nonces;
     
-    for (int i=0; i< _im4ms.size(); i++){
-        if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
-    }
+    if (!_is32bit){
+        for (int i=0; i< _im4ms.size(); i++){
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
+        }
+    }else
+        reterror(-71, "nonceMatchesApTickets is not supported for 32bit devices!\n");
+    
     
     return NULL;
 }
@@ -305,7 +313,15 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }
     info("Identified device as %s, %s\n", client->device->hardware_model, client->device->product_type);
     
-    if (!(client->tss = nonceMatchesApTickets())) reterror(-20, "Devicenonce does not match APTicket nonce\n");
+    if (skipAPTicketChecks && _is32bit) {
+        info("[WARNING] skipping APNonce check. If devicenonce doesn't match ticketnonce, the restore will fail!\n");
+        if (_im4ms.size() != 1)
+            reterror(-72, "ERROR: user selected to skip APNonce checks but specified more than one APTicket.\n"\
+                          "Without inspecting APTickets it is not possible to choose the correct one, therfore this feature is disabled.\n"
+                          "Either re-enable APTicket checks, or only pass one APTicket\n");
+        client->tss = _aptickets[0];
+    }else if (!(client->tss = nonceMatchesApTickets()))
+        reterror(-20, "Devicenonce does not match APTicket nonce\n");
     
     
     // verify if ipsw file exists
@@ -336,48 +352,52 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     if (!(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for IPSW\n");
 
-    if (!(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
+    if (!_is32bit && !(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
 
     //this is the buildidentity used for restore
     plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
 
-    printf("checking APTicket to be valid for this restore...\n");
-    const char * im4m = nonceMatchesIM4Ms();
-    
-    uint64_t deviceEcid = getDeviceEcid();
-    uint64_t im4mEcid = getEcidFromIM4M(im4m);
-    if (!im4mEcid)
-        reterror(-46, "Failed to read ECID from APTicket\n");
-    
-    if (im4mEcid != deviceEcid) {
-        error("ECID inside APTicket does not match device ECID\n");
-        printf("APTicket is valid for %16llx but device is %16llx\n",im4mEcid,deviceEcid);
-        reterror(-45, "APTicket can't be used for restoring this device\n");
-    }else
-        printf("Verified ECID in APTicket matches device ECID\n");
-    
-    plist_t ticketIdentity = getBuildIdentityForIM4M(im4m, buildmanifest);
-    //TODO: make this nicer!
-    //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
-    if (ticketIdentity != build_identity ){
-        error("BuildIdentity selected for restore does not match APTicket\n\n");
-        printf("BuildIdentity selected for restore:\n");
-        printGeneralBuildIdentityInformation(build_identity);
-        printf("\nBuildIdentiy valid for the APTicket:\n");
+    if (skipAPTicketChecks && _is32bit) {
+        info("[WARNING] skipping ECID check. If deviceecid doesn't match ticketecid, the restore will fail!\n");
+    }else {
+        printf("checking APTicket to be valid for this restore...\n");
+        const char * im4m = nonceMatchesIM4Ms();
         
-        if (ticketIdentity) printGeneralBuildIdentityInformation(ticketIdentity),putchar('\n');
-        else{
-            printf("IM4M is not valid for any restore within the Buildmanifest\n");
-            printf("This APTicket can't be used for restoring this firmware\n");
-        }
-        reterror(-44, "APTicket can't be used for this restore\n");
-    }else{
-        if (verifyIM4MSignature(im4m)){
-            printf("IM4M signature is not valid!\n");
+        uint64_t deviceEcid = getDeviceEcid();
+        uint64_t im4mEcid = getEcidFromIM4M(im4m);
+        if (!im4mEcid)
+            reterror(-46, "Failed to read ECID from APTicket\n");
+        
+        if (im4mEcid != deviceEcid) {
+            error("ECID inside APTicket does not match device ECID\n");
+            printf("APTicket is valid for %16llx but device is %16llx\n",im4mEcid,deviceEcid);
+            reterror(-45, "APTicket can't be used for restoring this device\n");
+        }else
+            printf("Verified ECID in APTicket matches device ECID\n");
+        
+        plist_t ticketIdentity = getBuildIdentityForIM4M(im4m, buildmanifest);
+        //TODO: make this nicer!
+        //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
+        if (ticketIdentity != build_identity ){
+            error("BuildIdentity selected for restore does not match APTicket\n\n");
+            printf("BuildIdentity selected for restore:\n");
+            printGeneralBuildIdentityInformation(build_identity);
+            printf("\nBuildIdentiy valid for the APTicket:\n");
+            
+            if (ticketIdentity) printGeneralBuildIdentityInformation(ticketIdentity),putchar('\n');
+            else{
+                printf("IM4M is not valid for any restore within the Buildmanifest\n");
+                printf("This APTicket can't be used for restoring this firmware\n");
+            }
             reterror(-44, "APTicket can't be used for this restore\n");
+        }else{
+            if (verifyIM4MSignature(im4m)){
+                printf("IM4M signature is not valid!\n");
+                reterror(-44, "APTicket can't be used for this restore\n");
+            }
+            printf("Verified APTicket to be valid for this restore\n");
         }
-        printf("Verified APTicket to be valid for this restore\n");
     }
     
     
@@ -396,9 +416,11 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         warning("WARNING: we don't have a basebandbuildmanifest, not flashing baseband!\n");
     }
     
-    plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
-    plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
-    plist_dict_set_item(manifest, "SEP", sep_sep);
+    if (!_is32bit) {
+        plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
+        plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
+        plist_dict_set_item(manifest, "SEP", sep_sep);
+    }
     
     
     
@@ -521,7 +543,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         reterror(-15, "failed to reconnect to device in recovery (iBEC) mode\n");
     
     //do magic
-    get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
+    if (!_is32bit) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
     get_ap_nonce(client, &client->nonce, &client->nonce_size);
     get_ecid(client, &client->ecid);
     if (client->mode->index == MODE_RECOVERY) {
@@ -542,13 +564,13 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }
     
     
-    if (get_tss_response(client, sep_build_identity, &client->septss) < 0) {
+    if (!_is32bit && get_tss_response(client, sep_build_identity, &client->septss) < 0) {
         reterror(-11,"ERROR: Unable to get SHSH blobs for SEP\n");
     }
     
     
     
-    if (!_client->sepfwdatasize || !_client->sepfwdata)
+    if (!_is32bit && (!_client->sepfwdatasize || !_client->sepfwdata))
         reterror(-55, "SEP not loaded, refusing to continue");
     
     

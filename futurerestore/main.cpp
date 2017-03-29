@@ -31,7 +31,9 @@ static struct option longopts[] = {
     { "debug",              no_argument,            NULL, 'd' },
     { "latest-sep",         no_argument,            NULL, '0' },
     { "latest-baseband",    no_argument,            NULL, '1' },
-    { "no-baseband",    no_argument,            NULL, '2' },
+    { "no-baseband",        no_argument,            NULL, '2' },
+    { "is-32bit",           no_argument,            NULL, '3' },
+    { "skip-ticket-checks", no_argument,            NULL, '4' }, //use this for 32bit devices only, this flag is ignored on 64bit devices
     { NULL, 0, NULL, 0 }
 };
 
@@ -40,6 +42,8 @@ static struct option longopts[] = {
 #define FLAG_LATEST_SEP         1 << 2
 #define FLAG_LATEST_BASEBAND    1 << 3
 #define FLAG_NO_BASEBAND        1 << 4
+#define FLAG_IS_32_BIT          1 << 5
+#define FLAG_SKIP_TICKET_CHECKS 1 << 6
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
@@ -54,6 +58,7 @@ void cmd_help(){
     printf("  -u, --update\t\t\tupdate instead of erase install\n");
     printf("      --latest-sep\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
     printf("      --latest-baseband\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
+    printf("      --is-32bit\t\tuse this for restoring 32bit device without SEP\n");
     printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
     printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n");
     printf("\n");
@@ -121,6 +126,13 @@ int main(int argc, const char * argv[]) {
             case '2': // long option: "no-baseband";
                 flags |= FLAG_NO_BASEBAND;
                 break;
+            case '3': // long option: "is-32bit";
+                flags |= FLAG_IS_32_BIT;
+                printf("[INFO] setting 32bit device flag\n");
+                break;
+            case '4': // long option: "skip-apnonce-match-check";
+                flags |= FLAG_SKIP_TICKET_CHECKS;
+                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -146,7 +158,8 @@ int main(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client;
+    futurerestore client(flags & FLAG_IS_32_BIT);
+    client.skipAPTicketChecks = (flags & FLAG_SKIP_TICKET_CHECKS);
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
     printf("futurerestore init done\n");
@@ -156,7 +169,7 @@ int main(int argc, const char * argv[]) {
         
         if (!((apticketPaths.size() && ipsw)
               && ((basebandPath && basebandManifestPath) || ((flags & FLAG_LATEST_BASEBAND) || (flags & FLAG_NO_BASEBAND)))
-              && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP)))) {
+              && ((sepPath && sepManifestPath) || (flags & (FLAG_LATEST_SEP|FLAG_IS_32_BIT)))  )) {
             if (!(flags & FLAG_WAIT) || ipsw){
                 error("missing argument\n");
                 cmd_help();
@@ -174,13 +187,13 @@ int main(int argc, const char * argv[]) {
         if (flags & FLAG_LATEST_SEP){
             info("user specified to use latest signed sep\n");
             client.loadLatestSep();
-        }else{
+        }else if (!(flags & FLAG_IS_32_BIT)){
             client.loadSep(sepPath);
             client.setSepManifestPath(sepManifestPath);
         }
         
         versVals.basebandMode = kBasebandModeWithoutBaseband;
-        if (!(isSepManifestSigned = isManifestSignedForDevice(sepManifestPath, &devVals, &versVals))){
+        if (!(flags & FLAG_IS_32_BIT) && !(isSepManifestSigned = isManifestSignedForDevice(sepManifestPath, &devVals, &versVals))){
             reterror(-3,"sep firmware isn't signed\n");
         }
         
