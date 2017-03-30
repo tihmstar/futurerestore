@@ -33,7 +33,6 @@ static struct option longopts[] = {
     { "latest-baseband",    no_argument,            NULL, '1' },
     { "no-baseband",        no_argument,            NULL, '2' },
     { "is-32bit",           no_argument,            NULL, '3' },
-    { "skip-ticket-checks", no_argument,            NULL, '4' }, //use this for 32bit devices only, this flag is ignored on 64bit devices
     { NULL, 0, NULL, 0 }
 };
 
@@ -43,7 +42,6 @@ static struct option longopts[] = {
 #define FLAG_LATEST_BASEBAND    1 << 3
 #define FLAG_NO_BASEBAND        1 << 4
 #define FLAG_IS_32_BIT          1 << 5
-#define FLAG_SKIP_TICKET_CHECKS 1 << 6
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
@@ -130,9 +128,6 @@ int main(int argc, const char * argv[]) {
                 flags |= FLAG_IS_32_BIT;
                 printf("[INFO] setting 32bit device flag\n");
                 break;
-            case '4': // long option: "skip-apnonce-match-check";
-                flags |= FLAG_SKIP_TICKET_CHECKS;
-                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -159,7 +154,6 @@ int main(int argc, const char * argv[]) {
     }
     
     futurerestore client(flags & FLAG_IS_32_BIT);
-    client.skipAPTicketChecks = (flags & FLAG_SKIP_TICKET_CHECKS);
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
     printf("futurerestore init done\n");

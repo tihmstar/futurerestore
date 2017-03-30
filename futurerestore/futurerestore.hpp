@@ -51,7 +51,6 @@ class futurerestore {
     const char *_basebandPath;
     
 public:
-    bool skipAPTicketChecks = false; //ignored on 64bit devices
     futurerestore();
     futurerestore(bool is32bit);
     bool init();

@@ -323,14 +323,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }
     info("Identified device as %s, %s\n", client->device->hardware_model, client->device->product_type);
     
-    if (skipAPTicketChecks && _is32bit) {
-        info("[WARNING] skipping APNonce check. If devicenonce doesn't match ticketnonce, the restore will fail!\n");
-        if (_im4ms.size() != 1)
-            reterror(-72, "ERROR: user selected to skip APNonce checks but specified more than one APTicket.\n"\
-                          "Without inspecting APTickets it is not possible to choose the correct one, therfore this feature is disabled.\n"
-                          "Either re-enable APTicket checks, or only pass one APTicket\n");
-        client->tss = _aptickets[0];
-    }else if (!(client->tss = nonceMatchesApTickets()))
+    if (!(client->tss = nonceMatchesApTickets()))
         reterror(-20, "Devicenonce does not match APTicket nonce\n");
     
     
