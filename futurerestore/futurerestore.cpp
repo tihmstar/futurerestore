@@ -274,6 +274,9 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
         uint64_t im4msize=0;
         plist_get_data_val(ticket, &im4m, &im4msize);
         
+        if (!im4msize)
+            reterror(-38, "Error: failed to load shsh file %s\n",apticketPath);
+        
         _im4ms.push_back(im4m);
         _aptickets.push_back(apticket);
         printf("reading ticket %s done\n",apticketPath);
