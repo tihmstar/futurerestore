@@ -153,8 +153,11 @@ plist_t futurerestore::nonceMatchesApTickets(){
         for (int i=0; i< _im4ms.size(); i++){
             if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
         }
-    }else
-        reterror(-71, "nonceMatchesApTickets is not supported for 32bit devices!\n");
+    }else{
+        for (int i=0; i< _im4ms.size(); i++){
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
+        }
+    }
     
     
     return NULL;
@@ -170,9 +173,16 @@ const char *futurerestore::nonceMatchesIM4Ms(){
     
     vector<const char*>nonces;
     
-    for (int i=0; i< _im4ms.size(); i++){
-        if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+    if (_is32bit) {
+        for (int i=0; i< _im4ms.size(); i++){
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+        }
+    }else{
+        for (int i=0; i< _im4ms.size(); i++){
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+        }
     }
+    
     
     return NULL;
 }
@@ -260,7 +270,7 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
             plist_from_xml(buf, (uint32_t)fSize, &apticket);
         
         
-        plist_t ticket = plist_dict_get_item(apticket, "ApImg4Ticket");
+        plist_t ticket = plist_dict_get_item(apticket, (_is32bit) ? "APTicket" : "ApImg4Ticket");
         uint64_t im4msize=0;
         plist_get_data_val(ticket, &im4m, &im4msize);
         
@@ -358,20 +368,33 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     //this is the buildidentity used for restore
     plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
 
-    if (skipAPTicketChecks && _is32bit) {
-        info("[WARNING] skipping ECID check. If deviceecid doesn't match ticketecid, the restore will fail!\n");
-    }else {
+    printf("checking APTicket to be valid for this restore...\n");
+    const char * im4m = nonceMatchesIM4Ms();
+    
+    uint64_t deviceEcid = getDeviceEcid();
+    uint64_t im4mEcid = (_is32bit) ? getEcidFromSCAB(im4m) : getEcidFromIM4M(im4m);
+    if (!im4mEcid)
+        reterror(-46, "Failed to read ECID from APTicket\n");
+    
+    if (im4mEcid != deviceEcid) {
+        error("ECID inside APTicket does not match device ECID\n");
+        printf("APTicket is valid for %16llu (dec) but device is %16llu (dec)\n",im4mEcid,deviceEcid);
+        reterror(-45, "APTicket can't be used for restoring this device\n");
+    }else
+        printf("Verified ECID in APTicket matches device ECID\n");
+    
+    if (!_is32bit) {
         printf("checking APTicket to be valid for this restore...\n");
         const char * im4m = nonceMatchesIM4Ms();
         
         uint64_t deviceEcid = getDeviceEcid();
-        uint64_t im4mEcid = getEcidFromIM4M(im4m);
+        uint64_t im4mEcid = (_is32bit) ? getEcidFromSCAB(im4m) : getEcidFromIM4M(im4m);
         if (!im4mEcid)
             reterror(-46, "Failed to read ECID from APTicket\n");
         
         if (im4mEcid != deviceEcid) {
             error("ECID inside APTicket does not match device ECID\n");
-            printf("APTicket is valid for 0x%16llu (dec) but device is 0x%16llu (dec)\n",im4mEcid,deviceEcid);
+            printf("APTicket is valid for %16llu (dec) but device is %16llu (dec)\n",im4mEcid,deviceEcid);
             reterror(-45, "APTicket can't be used for restoring this device\n");
         }else
             printf("Verified ECID in APTicket matches device ECID\n");
@@ -398,6 +421,11 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
             }
             printf("Verified APTicket to be valid for this restore\n");
         }
+    }else{
+        info("[WARNING] skipping buildIdentity check for 32bit devices!\n"
+             "If the APTicket doesn't match the selected buildidentity, restore WILL NOT WORK!!!!!!!\n"
+             "continuing in 5 seconds ...\n");
+        sleep(5);
     }
     
     
@@ -767,6 +795,85 @@ inline void futurerestore::saveStringToFile(const char *str, const char *path){
         fclose(f);
         if (len != wlen) reterror(-42, "saving file failed, wrote=%zu actual=%zu\n",wlen,len);
     }
+}
+
+char *futurerestore::getNonceFromSCAB(const char* scab, size_t *nonceSize){
+    char *ret = NULL;
+    char *mainSet = NULL;
+    int elems = 0;
+    char *nonceOctet = NULL;
+    
+    if (!scab) reterror(-15, "Got empty SCAB\n");
+    
+    if (asn1ElementsInObject(scab)< 4){
+        error("unexpected number of Elements in SCAB sequence\n");
+        goto error;
+    }
+    mainSet = asn1ElementAtIndex(scab, 1);
+    
+    elems = asn1ElementsInObject(mainSet);
+    
+    for (int i=0; i<elems; i++) {
+        nonceOctet = asn1ElementAtIndex(mainSet, i);
+        if (*nonceOctet == (char)0x92)
+            goto parsebnch;
+    }
+    return NULL;
+    
+    
+parsebnch:
+    nonceOctet++;
+    
+    ret = (char*)malloc(asn1Len(nonceOctet).dataLen);
+    if (ret){
+        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);
+        if (nonceSize) *nonceSize = asn1Len(nonceOctet).dataLen;
+    }
+    
+    
+error:
+    return ret;
+    
+}
+
+uint64_t futurerestore::getEcidFromSCAB(const char* scab){
+    uint64_t ret = 0;
+    char *mainSet = NULL;
+    int elems = 0;
+    char *ecidInt = NULL;
+    t_asn1ElemLen len;
+    
+    if (!scab) reterror(-15, "Got empty SCAB\n");
+    
+    if (asn1ElementsInObject(scab)< 4){
+        error("unexpected number of Elements in SCAB sequence\n");
+        goto error;
+    }
+    mainSet = asn1ElementAtIndex(scab, 1);
+    
+    elems = asn1ElementsInObject(mainSet);
+    
+    for (int i=0; i<elems; i++) {
+        ecidInt = asn1ElementAtIndex(mainSet, i);
+        if (*ecidInt == (char)0x81)
+            goto parseEcid;
+    }
+    reterror(-76, "Error: can't read ecid from SCAB\n");
+    
+    
+parseEcid:
+    ecidInt++;
+    
+    
+    len = asn1Len(ecidInt);
+    ecidInt += len.sizeBytes + len.dataLen;
+    while (len.dataLen--) {
+        ret *=0x100;
+        ret += *(unsigned char*)--ecidInt;
+    }
+    
+error:
+    return ret;
 }
 
 char *futurerestore::getNonceFromIM4M(const char* im4m, size_t *nonceSize){

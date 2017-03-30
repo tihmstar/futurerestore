@@ -90,6 +90,8 @@ public:
     
     ~futurerestore();
 
+    static char *getNonceFromSCAB(const char* scab, size_t *nonceSize);
+    static uint64_t getEcidFromSCAB(const char* scab);
     static char *getNonceFromIM4M(const char* im4m, size_t *nonceSize);
     static uint64_t getEcidFromIM4M(const char* im4m);
     static char *getNonceFromAPTicket(const char* apticketPath);
