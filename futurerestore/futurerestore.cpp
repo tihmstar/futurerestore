@@ -235,7 +235,7 @@ void futurerestore::waitForNonce(){
     vector<const char*>nonces;
     
     for (auto im4m : _im4ms){
-        nonces.push_back(getNonceFromIM4M(im4m,&nonceSize));
+        nonces.push_back(_is32bit ? getNonceFromSCAB(im4m,&nonceSize) : getNonceFromIM4M(im4m,&nonceSize));
     }
     
     waitForNonce(nonces,nonceSize);
