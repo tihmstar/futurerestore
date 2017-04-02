@@ -32,7 +32,6 @@ static struct option longopts[] = {
     { "latest-sep",         no_argument,            NULL, '0' },
     { "latest-baseband",    no_argument,            NULL, '1' },
     { "no-baseband",        no_argument,            NULL, '2' },
-    { "is-32bit",           no_argument,            NULL, '3' },
     { NULL, 0, NULL, 0 }
 };
 
@@ -41,7 +40,6 @@ static struct option longopts[] = {
 #define FLAG_LATEST_SEP         1 << 2
 #define FLAG_LATEST_BASEBAND    1 << 3
 #define FLAG_NO_BASEBAND        1 << 4
-#define FLAG_IS_32_BIT          1 << 5
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
@@ -124,10 +122,6 @@ int main(int argc, const char * argv[]) {
             case '2': // long option: "no-baseband";
                 flags |= FLAG_NO_BASEBAND;
                 break;
-            case '3': // long option: "is-32bit";
-                flags |= FLAG_IS_32_BIT;
-                printf("[INFO] setting 32bit device flag\n");
-                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -153,7 +147,7 @@ int main(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client(flags & FLAG_IS_32_BIT);
+    futurerestore client;
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
     printf("futurerestore init done\n");
@@ -163,7 +157,7 @@ int main(int argc, const char * argv[]) {
         
         if (!((apticketPaths.size() && ipsw)
               && ((basebandPath && basebandManifestPath) || ((flags & FLAG_LATEST_BASEBAND) || (flags & FLAG_NO_BASEBAND)))
-              && ((sepPath && sepManifestPath) || (flags & (FLAG_LATEST_SEP|FLAG_IS_32_BIT)))  )) {
+              && ((sepPath && sepManifestPath) || (flags & FLAG_LATEST_SEP) || client.is32bit())  )) {
             if (!(flags & FLAG_WAIT) || ipsw){
                 error("missing argument\n");
                 cmd_help();
@@ -181,13 +175,13 @@ int main(int argc, const char * argv[]) {
         if (flags & FLAG_LATEST_SEP){
             info("user specified to use latest signed sep\n");
             client.loadLatestSep();
-        }else if (!(flags & FLAG_IS_32_BIT)){
+        }else if (!client.is32bit()){
             client.loadSep(sepPath);
             client.setSepManifestPath(sepManifestPath);
         }
         
         versVals.basebandMode = kBasebandModeWithoutBaseband;
-        if (!(flags & FLAG_IS_32_BIT) && !(isSepManifestSigned = isManifestSignedForDevice(sepManifestPath, &devVals, &versVals))){
+        if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
             reterror(-3,"sep firmware isn't signed\n");
         }
         
@@ -216,7 +210,7 @@ int main(int argc, const char * argv[]) {
             if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
                 printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
             }
-            if (!(isBasebandSigned = isManifestSignedForDevice(basebandManifestPath, &devVals, &versVals))) {
+            if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
                 reterror(-3,"baseband firmware isn't signed\n");
             }
         }

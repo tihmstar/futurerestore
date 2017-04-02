@@ -35,7 +35,6 @@ public:
 class futurerestore {
     struct idevicerestore_client_t* _client;
     bool _didInit = false;
-    bool _is32bit = false;
     vector<plist_t> _aptickets;
     vector<char *>_im4ms;
     int _foundnonce = -1;
@@ -48,11 +47,13 @@ class futurerestore {
     plist_t _sepbuildmanifest = NULL;
     plist_t _basebandbuildmanifest = NULL;
     
-    const char *_basebandPath;
+    const char *_basebandPath = NULL;;
+    const char *_sepbuildmanifestPath = NULL;
+    const char *_basebandbuildmanifestPath = NULL;
+    
     
 public:
     futurerestore();
-    futurerestore(bool is32bit);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();
@@ -81,6 +82,9 @@ public:
     
     plist_t sepManifest(){return _sepbuildmanifest;};
     plist_t basebandManifest(){return _basebandbuildmanifest;};
+    const char *sepManifestPath(){return _sepbuildmanifestPath;};
+    const char *basebandManifestPath(){return _basebandbuildmanifestPath;};
+    bool is32bit(){return !is_image4_supported(_client);};
     
     
     uint64_t getBasebandGoldCertIDFromDevice();

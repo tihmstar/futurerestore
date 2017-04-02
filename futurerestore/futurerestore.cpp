@@ -59,15 +59,14 @@
 #define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
 
 futurerestore::futurerestore(){
-    futurerestore(false);
-}
-
-futurerestore::futurerestore(bool is32bit) : _is32bit(is32bit) {
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
     struct stat st{0};
     if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) __mkdir(FUTURERESTORE_TMP_PATH, 0755);
+    if (!_client->image4supported){
+        info("[INFO] 32bit device detected\n");
+    }
     
     //tsschecker nocache
     nocache = 1;
@@ -149,13 +148,13 @@ plist_t futurerestore::nonceMatchesApTickets(){
     
     vector<const char*>nonces;
     
-    if (!_is32bit){
+    if (_client->image4supported){
         for (int i=0; i< _im4ms.size(); i++){
             if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
         }
     }else{
         for (int i=0; i< _im4ms.size(); i++){
-            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],(size_t*)&realNonceSize), realNonceSize) == 0) return _aptickets[i];
         }
     }
     
@@ -173,13 +172,13 @@ const char *futurerestore::nonceMatchesIM4Ms(){
     
     vector<const char*>nonces;
     
-    if (_is32bit) {
+    if (_client->image4supported) {
         for (int i=0; i< _im4ms.size(); i++){
-            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
         }
     }else{
         for (int i=0; i< _im4ms.size(); i++){
-            if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],(size_t*)&realNonceSize), realNonceSize) == 0) return _im4ms[i];
         }
     }
     
@@ -234,8 +233,11 @@ void futurerestore::waitForNonce(){
     size_t nonceSize = 0;
     vector<const char*>nonces;
     
+    if (!_client->image4supported)
+        reterror(-77, "Error: waitForNonce is not supported on 32bit devices\n");
+    
     for (auto im4m : _im4ms){
-        nonces.push_back(_is32bit ? getNonceFromSCAB(im4m,&nonceSize) : getNonceFromIM4M(im4m,&nonceSize));
+        nonces.push_back(getNonceFromIM4M(im4m,&nonceSize));
     }
     
     waitForNonce(nonces,nonceSize);
@@ -270,7 +272,7 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
             plist_from_xml(buf, (uint32_t)fSize, &apticket);
         
         
-        plist_t ticket = plist_dict_get_item(apticket, (_is32bit) ? "APTicket" : "ApImg4Ticket");
+        plist_t ticket = plist_dict_get_item(apticket, (_client->image4supported) ? "ApImg4Ticket" : "APTicket");
         uint64_t im4msize=0;
         plist_get_data_val(ticket, &im4m, &im4msize);
         
@@ -358,7 +360,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     if (!(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for IPSW\n");
 
-    if (!_is32bit && !(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
+    if (_client->image4supported && !(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
         reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
 
     //this is the buildidentity used for restore
@@ -368,7 +370,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     const char * im4m = nonceMatchesIM4Ms();
     
     uint64_t deviceEcid = getDeviceEcid();
-    uint64_t im4mEcid = (_is32bit) ? getEcidFromSCAB(im4m) : getEcidFromIM4M(im4m);
+    uint64_t im4mEcid = (_client->image4supported) ? getEcidFromIM4M(im4m) : getEcidFromSCAB(im4m);
     if (!im4mEcid)
         reterror(-46, "Failed to read ECID from APTicket\n");
     
@@ -379,12 +381,12 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }else
         printf("Verified ECID in APTicket matches device ECID\n");
     
-    if (!_is32bit) {
+    if (_client->image4supported) {
         printf("checking APTicket to be valid for this restore...\n");
         const char * im4m = nonceMatchesIM4Ms();
         
         uint64_t deviceEcid = getDeviceEcid();
-        uint64_t im4mEcid = (_is32bit) ? getEcidFromSCAB(im4m) : getEcidFromIM4M(im4m);
+        uint64_t im4mEcid = (_client->image4supported) ? getEcidFromIM4M(im4m) : getEcidFromSCAB(im4m);
         if (!im4mEcid)
             reterror(-46, "Failed to read ECID from APTicket\n");
         
@@ -445,7 +447,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         warning("WARNING: we don't have a basebandbuildmanifest, not flashing baseband!\n");
     }
     
-    if (!_is32bit) {
+    if (_client->image4supported) {
         plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
         plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
         plist_dict_set_item(manifest, "SEP", sep_sep);
@@ -572,7 +574,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
         reterror(-15, "failed to reconnect to device in recovery (iBEC) mode\n");
     
     //do magic
-    if (!_is32bit) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
+    if (_client->image4supported) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
     get_ap_nonce(client, &client->nonce, &client->nonce_size);
     get_ecid(client, &client->ecid);
     if (client->mode->index == MODE_RECOVERY) {
@@ -593,13 +595,13 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     }
     
     
-    if (!_is32bit && get_tss_response(client, sep_build_identity, &client->septss) < 0) {
+    if (_client->image4supported && get_tss_response(client, sep_build_identity, &client->septss) < 0) {
         reterror(-11,"ERROR: Unable to get SHSH blobs for SEP\n");
     }
     
     
     
-    if (!_is32bit && (!_client->sepfwdatasize || !_client->sepfwdata))
+    if (_client->image4supported && (!_client->sepfwdatasize || !_client->sepfwdata))
         reterror(-55, "SEP not loaded, refusing to continue");
     
     
@@ -742,12 +744,12 @@ void futurerestore::loadLatestSep(){
 }
 
 void futurerestore::setSepManifestPath(const char *sepManifestPath){
-    if (!(_sepbuildmanifest = loadPlistFromFile(sepManifestPath)))
+    if (!(_sepbuildmanifest = loadPlistFromFile(_sepbuildmanifestPath = sepManifestPath)))
         reterror(-14, "failed to load SEPManifest");
 }
 
 void futurerestore::setBasebandManifestPath(const char *basebandManifestPath){
-    if (!(_basebandbuildmanifest = loadPlistFromFile(basebandManifestPath)))
+    if (!(_basebandbuildmanifest = loadPlistFromFile(_basebandbuildmanifestPath = basebandManifestPath)))
         reterror(-14, "failed to load BasebandManifest");
 };
 
@@ -805,6 +807,8 @@ char *futurerestore::getNonceFromSCAB(const char* scab, size_t *nonceSize){
         error("unexpected number of Elements in SCAB sequence\n");
         goto error;
     }
+    if (nonceSize) *nonceSize = 0;
+    
     mainSet = asn1ElementAtIndex(scab, 1);
     
     elems = asn1ElementsInObject(mainSet);
