@@ -54,7 +54,6 @@ void cmd_help(){
     printf("  -u, --update\t\t\tupdate instead of erase install\n");
     printf("      --latest-sep\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
     printf("      --latest-baseband\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
-    printf("      --is-32bit\t\tuse this for restoring 32bit device without SEP\n");
     printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
     printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n");
     printf("\n");
