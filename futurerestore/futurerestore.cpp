@@ -64,7 +64,7 @@ futurerestore::futurerestore(){
     
     struct stat st{0};
     if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) __mkdir(FUTURERESTORE_TMP_PATH, 0755);
-    if (!_client->image4supported){
+    if (!is_image4_supported(_client)){
         info("[INFO] 32bit device detected\n");
     }
     
