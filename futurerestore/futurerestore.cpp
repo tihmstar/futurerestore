@@ -18,6 +18,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <zlib.h>
 #include "futurerestore.hpp"
 #include "common.h"
 #include "all_tsschecker.h"
@@ -59,6 +60,10 @@
 #define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
 
 futurerestore::futurerestore(){
+    futurerestore(false);
+}
+
+futurerestore::futurerestore(bool isUpdateInstall) : _isUpdateInstall(isUpdateInstall){
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
@@ -243,34 +248,58 @@ void futurerestore::waitForNonce(){
     waitForNonce(nonces,nonceSize);
 }
 
-
 void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
     for (auto apticketPath : apticketPaths){
-        
-        FILE *f = fopen(apticketPath,"rb");
-        if (!f) reterror(-9, "failed to load apticket at %s\n",apticketPath);
-        fseek(f, 0, SEEK_END);
-        
-        size_t fSize = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        char *buf = (char*)malloc(fSize+1);
-        memset(buf, 0, fSize+1);
-        
-        size_t freadRet = 0;
-        if ((freadRet = fread(buf, 1, fSize, f)) != fSize){
-            reterror(-15,"fread=%zu but fSize=%zu",freadRet,fSize);
-        }
-        
-        fclose(f);
-        
         plist_t apticket = NULL;
         char *im4m = NULL;
         
-        if (memcmp(buf, "bplist00", 8) == 0)
-            plist_from_bin(buf, (uint32_t)fSize, &apticket);
-        else
-            plist_from_xml(buf, (uint32_t)fSize, &apticket);
+        struct stat fst;
+        if (stat(apticketPath, &fst))
+            reterror(-9, "failed to load apticket at %s\n",apticketPath);
         
+        gzFile zf = gzopen(apticketPath, "rb");
+        if (zf) {
+            int blen = 0;
+            int readsize = 16384; //0x4000
+            int bufsize = readsize;
+            char* bin = (char*)malloc(bufsize);
+            char* p = bin;
+            do {
+                int bytes_read = gzread(zf, p, readsize);
+                if (bytes_read < 0)
+                    reterror(-39, "Error reading gz compressed data\n");
+                blen += bytes_read;
+                if (bytes_read < readsize) {
+                    if (gzeof(zf)) {
+                        bufsize += bytes_read;
+                        break;
+                    }
+                }
+                bufsize += readsize;
+                bin = (char*)realloc(bin, bufsize);
+                p = bin + blen;
+            } while (!gzeof(zf));
+            gzclose(zf);
+            if (blen > 0) {
+                if (memcmp(bin, "bplist00", 8) == 0)
+                    plist_from_bin(bin, blen, &apticket);
+                else
+                    plist_from_xml(bin, blen, &apticket);
+            }
+            free(bin);
+        }
+        
+        if (_isUpdateInstall) {
+            if(plist_t update =  plist_dict_get_item(apticket, "updateInstall")){
+                plist_t cpy = plist_copy(update);
+                plist_free(apticket);
+                apticket = cpy;
+            }
+        }else if (plist_t noNonce = plist_dict_get_item(apticket, "noNonce")){
+            plist_t cpy = plist_copy(noNonce);
+            plist_free(apticket);
+            apticket = cpy;
+        }
         
         plist_t ticket = plist_dict_get_item(apticket, (_client->image4supported) ? "ApImg4Ticket" : "APTicket");
         uint64_t im4msize=0;
@@ -303,7 +332,7 @@ uint64_t futurerestore::getBasebandGoldCertIDFromDevice(){
     return val;
 }
 
-int futurerestore::doRestore(const char *ipsw, bool noerase){
+int futurerestore::doRestore(const char *ipsw){
     int err = 0;
     //some memory might not get freed if this function throws an exception, but you probably don't want to catch that anyway.
     
@@ -317,7 +346,7 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     plist_t sep_build_identity = NULL;
     
     client->ipsw = strdup(ipsw);
-    if (!noerase) client->flags |= FLAG_ERASE;
+    if (!_isUpdateInstall) client->flags |= FLAG_ERASE;
     
     getDeviceMode(true);
     info("Found device in %s mode\n", client->mode->string);
@@ -357,10 +386,10 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
     
-    if (!(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, noerase)))
+    if (!(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, _isUpdateInstall)))
         reterror(-5,"ERROR: Unable to find any build identities for IPSW\n");
 
-    if (_client->image4supported && !(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, noerase)))
+    if (_client->image4supported && !(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, _isUpdateInstall)))
         reterror(-5,"ERROR: Unable to find any build identities for SEP\n");
 
     //this is the buildidentity used for restore
@@ -444,11 +473,11 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
     
     
     if (_basebandbuildmanifest){
-        if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, noerase))){
-            if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, !noerase)))
+        if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, _isUpdateInstall))){
+            if (!(client->basebandBuildIdentity = getBuildidentityWithBoardconfig(_basebandbuildmanifest, client->device->hardware_model, !_isUpdateInstall)))
                 reterror(-5,"ERROR: Unable to find any build identities for Baseband\n");
             else
-                info("[WARNING] Unable to find Baseband buildidentities for restore type %s, using fallback %s\n", (noerase) ? "Update" : "Erase",(!noerase) ? "Update" : "Erase");
+                info("[WARNING] Unable to find Baseband buildidentities for restore type %s, using fallback %s\n", (_isUpdateInstall) ? "Update" : "Erase",(!_isUpdateInstall) ? "Update" : "Erase");
         }
             
         client->bbfwtmp = (char*)_basebandPath;

@@ -146,7 +146,7 @@ int main(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client;
+    futurerestore client(flags & FLAG_UPDATE);
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
     printf("futurerestore init done\n");
@@ -226,7 +226,7 @@ int main(int argc, const char * argv[]) {
     }
     
     try {
-        res = client.doRestore(ipsw, flags & FLAG_UPDATE);
+        res = client.doRestore(ipsw);
     } catch (int error) {
         if (error == -20) error("maybe you forgot -w ?\n");
         err = error;

@@ -38,6 +38,7 @@ class futurerestore {
     vector<plist_t> _aptickets;
     vector<char *>_im4ms;
     int _foundnonce = -1;
+    bool _isUpdateInstall = false;
     
     char *_firmwareJson = NULL;
     jsmntok_t *_firmwareTokens = NULL;;
@@ -54,6 +55,7 @@ class futurerestore {
     
 public:
     futurerestore();
+    futurerestore(bool isUpdateInstall);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();
@@ -78,6 +80,7 @@ public:
     void setBasebandManifestPath(const char *basebandManifestPath);
     void loadSep(const char *sepPath);
     void setBasebandPath(const char *basebandPath);
+    bool isUpdateInstall(){return _isUpdateInstall;};
     
     
     plist_t sepManifest(){return _sepbuildmanifest;};
@@ -89,7 +92,7 @@ public:
     
     uint64_t getBasebandGoldCertIDFromDevice();
     
-    int doRestore(const char *ipsw, bool noerase);
+    int doRestore(const char *ipsw);
     
     ~futurerestore();
     
