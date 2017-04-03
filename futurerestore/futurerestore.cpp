@@ -295,10 +295,6 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
                 plist_free(apticket);
                 apticket = cpy;
             }
-        }else if (plist_t noNonce = plist_dict_get_item(apticket, "noNonce")){
-            plist_t cpy = plist_copy(noNonce);
-            plist_free(apticket);
-            apticket = cpy;
         }
         
         plist_t ticket = plist_dict_get_item(apticket, (_client->image4supported) ? "ApImg4Ticket" : "APTicket");
@@ -593,30 +589,30 @@ int futurerestore::doRestore(const char *ipsw){
         }
     }
     
-    if ((client->build_major > 8)) {
-        if (!client->image4supported) {
-            /* send ApTicket */
-            if (recovery_send_ticket(client) < 0) {
-                error("WARNING: Unable to send APTicket\n");
-            }
-        }
-    }
+//    if ((client->build_major > 8)) {
+//        if (!client->image4supported) {
+//            /* send ApTicket */
+//            if (recovery_send_ticket(client) < 0) {
+//                error("WARNING: Unable to send APTicket\n");
+//            }
+//        }
+//    }
     
     /* now we load the iBEC */
-    if (recovery_send_ibec(client, build_identity) < 0) {
-        reterror(-8,"ERROR: Unable to send iBEC\n");
-    }
-    printf("waiting for device to reconnect... ");
-    recovery_client_free(client);
-    
-    /* this must be long enough to allow the device to run the iBEC */
-    /* FIXME: Probably better to detect if the device is back then */
-    sleep(7);
-    for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
-    putchar('\n');
-    
-    if (!check_mode(client))
-        reterror(-15, "failed to reconnect to device in recovery (iBEC) mode\n");
+//    if (recovery_send_ibec(client, build_identity) < 0) {
+//        reterror(-8,"ERROR: Unable to send iBEC\n");
+//    }
+//    printf("waiting for device to reconnect... ");
+//    recovery_client_free(client);
+//    
+//    /* this must be long enough to allow the device to run the iBEC */
+//    /* FIXME: Probably better to detect if the device is back then */
+//    sleep(7);
+//    for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
+//    putchar('\n');
+//    
+//    if (!check_mode(client))
+//        reterror(-15, "failed to reconnect to device in recovery (iBEC) mode\n");
     
     //do magic
     if (_client->image4supported) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
