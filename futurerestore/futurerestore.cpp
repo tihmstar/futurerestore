@@ -420,10 +420,26 @@ int futurerestore::doRestore(const char *ipsw, bool noerase){
             printf("Verified APTicket to be valid for this restore\n");
         }
     }else{
-        info("[WARNING] skipping buildIdentity check for 32bit devices!\n"
-             "If the APTicket doesn't match the selected buildidentity, restore WILL NOT WORK!!!!!!!\n"
-             "continuing in 5 seconds ...\n");
-        sleep(5);
+        info("[WARNING] full buildidentity check is not implemented, only comparing ramdisk hash.\n");
+        size_t tickethashSize = 0;
+        const char *tickethash = getRamdiskHashFromSCAB(im4m, &tickethashSize);
+        uint64_t manifestDigestSize = 0;
+        char *manifestDigest = NULL;
+        
+        plist_t restoreRamdisk = plist_dict_get_item(manifest, "RestoreRamDisk");
+        plist_t digest = plist_dict_get_item(restoreRamdisk, "Digest");
+        
+        plist_get_data_val(digest, &manifestDigest, &manifestDigestSize);
+        
+        
+        if (tickethashSize == manifestDigestSize && memcmp(tickethash, manifestDigest, tickethashSize) == 0){
+            printf("Verified APTicket to be valid for this restore\n");
+            free(manifestDigest);
+        }else{
+            free(manifestDigest);
+            printf("APTicket ramdisk hash does not match the ramdisk we are trying to boot. Are you using correct install type (Update/Erase)?\n");
+            reterror(-44, "APTicket can't be used for this restore\n");
+        }
     }
     
     
@@ -871,6 +887,44 @@ parseEcid:
         ret *=0x100;
         ret += *(unsigned char*)--ecidInt;
     }
+    
+error:
+    return ret;
+}
+
+const char *futurerestore::getRamdiskHashFromSCAB(const char* scab, size_t *hashSize){
+    char *ret = NULL;
+    char *mainSet = NULL;
+    int elems = 0;
+    char *nonceOctet = NULL;
+    
+    if (!scab) reterror(-15, "Got empty SCAB\n");
+    
+    if (asn1ElementsInObject(scab)< 4){
+        error("unexpected number of Elements in SCAB sequence\n");
+        goto error;
+    }
+    if (hashSize) *hashSize = 0;
+    
+    mainSet = asn1ElementAtIndex(scab, 1);
+    
+    elems = asn1ElementsInObject(mainSet);
+    
+    for (int i=0; i<elems; i++) {
+        nonceOctet = asn1ElementAtIndex(mainSet, i);
+        if (*nonceOctet == (char)0x9A)
+            goto parsebnch;
+    }
+    return NULL;
+    
+    
+parsebnch:
+    nonceOctet++;
+    
+    ret = nonceOctet + asn1Len(nonceOctet).sizeBytes;
+    if (hashSize)
+        *hashSize = asn1Len(nonceOctet).dataLen;
+    
     
 error:
     return ret;
