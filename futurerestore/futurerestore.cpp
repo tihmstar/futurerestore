@@ -69,9 +69,6 @@ futurerestore::futurerestore(bool isUpdateInstall) : _isUpdateInstall(isUpdateIn
     
     struct stat st{0};
     if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) __mkdir(FUTURERESTORE_TMP_PATH, 0755);
-    if (!is_image4_supported(_client)){
-        info("[INFO] 32bit device detected\n");
-    }
     
     //tsschecker nocache
     nocache = 1;
@@ -80,7 +77,13 @@ futurerestore::futurerestore(bool isUpdateInstall) : _isUpdateInstall(isUpdateIn
 
 bool futurerestore::init(){
     if (_didInit) return _didInit;
-    return _didInit = (check_mode(_client) != MODE_UNKNOWN);
+    _didInit = (check_mode(_client) != MODE_UNKNOWN);
+    if (!(_client->image4supported = is_image4_supported(_client))){
+        info("[INFO] 32bit device detected\n");
+    }else{
+        info("[INFO] 64bit device detected\n");
+    }
+    return _didInit;
 }
 
 uint64_t futurerestore::getDeviceEcid(){
