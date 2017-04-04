@@ -154,6 +154,13 @@ plist_t futurerestore::nonceMatchesApTickets(){
     int realNonceSize = 0;
     recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
     
+    info("Got APNonce from device: ");
+    int i = 0;
+    for (i = 0; i < realNonceSize; i++) {
+        info("%02x ", ((unsigned char *)realnonce)[i]);
+    }
+    info("\n");
+    
     vector<const char*>nonces;
     
     if (_client->image4supported){
