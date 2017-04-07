@@ -34,6 +34,7 @@ public:
 
 class futurerestore {
     struct idevicerestore_client_t* _client;
+    char *_ibootBuild = NULL;
     bool _didInit = false;
     vector<plist_t> _aptickets;
     vector<char *>_im4ms;
@@ -64,6 +65,7 @@ public:
     void waitForNonce();
     void waitForNonce(vector<const char *>nonces, size_t nonceSize);
     void loadAPTickets(const vector<const char *> &apticketPaths);
+    char *getiBootBuild();
     
     plist_t nonceMatchesApTickets();
     const char *nonceMatchesIM4Ms();

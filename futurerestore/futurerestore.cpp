@@ -20,8 +20,8 @@
 #include <libgen.h>
 #include <zlib.h>
 #include "futurerestore.hpp"
+extern "C"{
 #include "common.h"
-#include "all_tsschecker.h"
 #include "../external/img4tool/img4tool/img4.h"
 #include "img4tool.h"
 #include "normal.h"
@@ -30,6 +30,8 @@
 #include "locking.h"
 #include "restore.h"
 #include "tsschecker.h"
+#include "all_tsschecker.h"
+}
 
 
 //(re)define __mkdir
@@ -169,7 +171,12 @@ plist_t futurerestore::nonceMatchesApTickets(){
         }
     }else{
         for (int i=0; i< _im4ms.size(); i++){
-            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i],(size_t*)&realNonceSize), realNonceSize) == 0) return _aptickets[i];
+            size_t ticketNonceSize = 0;
+            if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i], &ticketNonceSize), ticketNonceSize) == 0 &&
+                 ( ticketNonceSize == realNonceSize || (!ticketNonceSize && *_client->version == '9' && !strncmp(getiBootBuild(), "iBoot-2817", strlen("iBoot-2817"))) )
+               )
+                //either nonce needs to match or using re-restore bug in iOS 9
+                return _aptickets[i];
         }
     }
     
@@ -338,6 +345,21 @@ uint64_t futurerestore::getBasebandGoldCertIDFromDevice(){
     return val;
 }
 
+char *futurerestore::getiBootBuild(){
+    if (!_ibootBuild){
+        if (_client->recovery == NULL) {
+            if (recovery_client_new(_client) < 0) {
+                reterror(-77, "Error: can't create new recovery client");
+            }
+        }
+        irecv_getenv(_client->recovery->client, "build-version", &_ibootBuild);
+        if (!_ibootBuild)
+            reterror(-78, "Error: can't get build-version");
+    }
+    return _ibootBuild;
+}
+
+
 int futurerestore::doRestore(const char *ipsw){
     int err = 0;
     //some memory might not get freed if this function throws an exception, but you probably don't want to catch that anyway.
@@ -363,10 +385,6 @@ int futurerestore::doRestore(const char *ipsw){
     }
     info("Identified device as %s, %s\n", client->device->hardware_model, client->device->product_type);
     
-    if (!(client->tss = nonceMatchesApTickets()))
-        reterror(-20, "Devicenonce does not match APTicket nonce\n");
-    
-    
     // verify if ipsw file exists
     if (access(client->ipsw, F_OK) < 0) {
         error("ERROR: Firmware file %s does not exist.\n", client->ipsw);
@@ -388,6 +406,10 @@ int futurerestore::doRestore(const char *ipsw){
     
     client->image4supported = is_image4_supported(client);
     info("Device supports Image4: %s\n", (client->image4supported) ? "true" : "false");
+    
+    
+    if (!(client->tss = nonceMatchesApTickets()))
+        reterror(-20, "Devicenonce does not match APTicket nonce\n");
     
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
@@ -684,6 +706,7 @@ futurerestore::~futurerestore(){
     for (auto im4m : _im4ms){
         safeFree(im4m);
     }
+    safeFree(_ibootBuild);
     safeFree(_firmwareJson);
     safeFree(_firmwareTokens);
     safeFree(__latestManifest);
