@@ -167,7 +167,7 @@ plist_t futurerestore::nonceMatchesApTickets(){
     
     if (_client->image4supported){
         for (int i=0; i< _im4ms.size(); i++){
-            if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
+            if (memcmp(realnonce, (unsigned const char*)getBNCHFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _aptickets[i];
         }
     }else{
         for (int i=0; i< _im4ms.size(); i++){
@@ -196,7 +196,7 @@ const char *futurerestore::nonceMatchesIM4Ms(){
     
     if (_client->image4supported) {
         for (int i=0; i< _im4ms.size(); i++){
-            if (memcmp(realnonce, (unsigned const char*)getNonceFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
+            if (memcmp(realnonce, (unsigned const char*)getBNCHFromIM4M(_im4ms[i],NULL), realNonceSize) == 0) return _im4ms[i];
         }
     }else{
         for (int i=0; i< _im4ms.size(); i++){
@@ -259,7 +259,7 @@ void futurerestore::waitForNonce(){
         reterror(-77, "Error: waitForNonce is not supported on 32bit devices\n");
     
     for (auto im4m : _im4ms){
-        nonces.push_back(getNonceFromIM4M(im4m,&nonceSize));
+        nonces.push_back(getBNCHFromIM4M(im4m,&nonceSize));
     }
     
     waitForNonce(nonces,nonceSize);
@@ -988,58 +988,6 @@ error:
     return ret;
 }
 
-char *futurerestore::getNonceFromIM4M(const char* im4m, size_t *nonceSize){
-    char *ret = NULL;
-    char *mainSet = NULL;
-    char *manbSet = NULL;
-    char *manpSet = NULL;
-    char *nonceOctet = NULL;
-    char *bnch = NULL;
-    char *manb = NULL;
-    char *manp = NULL;
-    
-    if (!im4m) reterror(-15, "Got empty IM4M\n");
-    
-    if (asn1ElementsInObject(im4m)< 3){
-        error("unexpected number of Elements in IM4M sequence\n");
-        goto error;
-    }
-    mainSet = asn1ElementAtIndex(im4m, 2);
-    
-    manb = getValueForTagInSet((char*)mainSet, 0x4d414e42); //MANB priv Tag
-    if (asn1ElementsInObject(manb)< 2){
-        error("unexpected number of Elements in MANB sequence\n");
-        goto error;
-    }
-    manbSet = asn1ElementAtIndex(manb, 1);
-    
-    manp = getValueForTagInSet((char*)manbSet, 0x4d414e50); //MANP priv Tag
-    if (asn1ElementsInObject(manp)< 2){
-        error("unexpected number of Elements in MANP sequence\n");
-        goto error;
-    }
-    manpSet = asn1ElementAtIndex(manp, 1);
-    
-    bnch = getValueForTagInSet((char*)manpSet, 0x424e4348); //BNCH priv Tag
-    if (asn1ElementsInObject(bnch)< 2){
-        error("unexpected number of Elements in BNCH sequence\n");
-        goto error;
-    }
-    nonceOctet = (char*)asn1ElementAtIndex(bnch, 1);
-    nonceOctet++;
-    
-    ret = (char*)malloc(asn1Len(nonceOctet).dataLen);
-    if (ret){
-        memcpy(ret, nonceOctet + asn1Len(nonceOctet).sizeBytes, asn1Len(nonceOctet).dataLen);
-        if (nonceSize) *nonceSize = asn1Len(nonceOctet).dataLen;
-    }
-    
-    
-error:
-    return ret;
-    
-}
-
 uint64_t futurerestore::getEcidFromIM4M(const char* im4m){
     uint64_t ret = 0;
     char *mainSet = NULL;
@@ -1096,8 +1044,8 @@ error:
 
 char *futurerestore::getNonceFromAPTicket(const char* apticketPath){
     char *ret = NULL;
-    if (char *im4m = im4mFormShshFile(apticketPath)){
-        ret = getNonceFromIM4M(im4m,NULL);
+    if (char *im4m = im4mFormShshFile(apticketPath,NULL)){
+        ret = getBNCHFromIM4M(im4m,NULL);
         free(im4m);
     }
     return ret;
