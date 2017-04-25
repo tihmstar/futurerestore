@@ -12,7 +12,7 @@ http://api.tihmstar.net/builds/futurerestore/futurerestore-latest.zip
 
 # Dependencies
 *  ## Bundled Libs
-    Those don't need to be installed manually
+  Those don't need to be installed manually
   * jsmn
 * ## External Libs
   Make sure these are installed
