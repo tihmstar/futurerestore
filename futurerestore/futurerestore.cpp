@@ -56,6 +56,14 @@ extern "C"{
 #define SEP_TMP_PATH FUTURERESTORE_TMP_PATH"/sep.im4p"
 #define SEP_MANIFEST_TMP_PATH FUTURERESTORE_TMP_PATH"/sepManifest.plist"
 
+#ifdef __APPLE__
+#   include <CommonCrypto/CommonDigest.h>
+#   define SHA1(d, n, md) CC_SHA1(d, n, md)
+#   define SHA384(d, n, md) CC_SHA384(d, n, md)
+#else
+#   include <openssl/sha.h>
+#endif // __APPLE__
+
 
 #define reterror(code,msg ...) error(msg),throw int(code)
 #define safeFree(buf) if (buf) free(buf), buf = NULL
@@ -524,10 +532,23 @@ int futurerestore::doRestore(const char *ipsw){
         plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
         plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
         plist_dict_set_item(manifest, "SEP", sep_sep);
+        //check SEP
+        unsigned char genHash[48]; //SHA384 digest length
+        ptr_smart<char *>sephash = NULL;
+        uint64_t sephashlen = 0;
+        plist_t digest = plist_dict_get_item(sep_sep, "Digest");
+        if (!digest || plist_get_node_type(digest) != PLIST_DATA)
+            reterror(-66, "ERROR: can't find sep digest\n");
+        
+        plist_get_data_val(digest, &sephash, &sephashlen);
+        
+        if (sephashlen == 20)
+            SHA1(_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
+        else
+            SHA384(_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
+        if (memcmp(genHash, static_cast<const char *>(sephash), sephashlen))
+            reterror(-67, "ERROR: SEP does not match sepmanifest\n");
     }
-    
-    
-    
     
     /* print information about current build identity */
     build_identity_print_information(build_identity);
