@@ -543,9 +543,9 @@ int futurerestore::doRestore(const char *ipsw){
         plist_get_data_val(digest, reinterpret_cast<char **>(&sephash), &sephashlen);
         
         if (sephashlen == 20)
-            SHA1(_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
+            SHA1((unsigned char*)_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
         else
-            SHA384(_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
+            SHA384((unsigned char*)_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
         if (memcmp(genHash, sephash, sephashlen))
             reterror(-67, "ERROR: SEP does not match sepmanifest\n");
     }
