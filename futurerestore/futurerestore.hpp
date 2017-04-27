@@ -29,7 +29,8 @@ public:
     ptr_smart(){_p = NULL;}
     T operator=(T p){return _p = p;}
     T *operator&(){return &_p;}
-    explicit operator const char*() const {return _p;}
+    operator const T() const {return _p;}
+    operator const void*() const {return _p;}
     ~ptr_smart(){if (_p) (_ptr_free) ? _ptr_free(_p) : free((void*)_p);}
 };
 

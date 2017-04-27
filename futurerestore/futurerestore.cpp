@@ -534,19 +534,19 @@ int futurerestore::doRestore(const char *ipsw){
         plist_dict_set_item(manifest, "SEP", sep_sep);
         //check SEP
         unsigned char genHash[48]; //SHA384 digest length
-        ptr_smart<char *>sephash = NULL;
+        ptr_smart<unsigned char *>sephash = NULL;
         uint64_t sephashlen = 0;
         plist_t digest = plist_dict_get_item(sep_sep, "Digest");
         if (!digest || plist_get_node_type(digest) != PLIST_DATA)
             reterror(-66, "ERROR: can't find sep digest\n");
         
-        plist_get_data_val(digest, &sephash, &sephashlen);
+        plist_get_data_val(digest, reinterpret_cast<char **>(&sephash), &sephashlen);
         
         if (sephashlen == 20)
             SHA1(_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
         else
             SHA384(_client->sepfwdata, (unsigned int)_client->sepfwdatasize, genHash);
-        if (memcmp(genHash, static_cast<const char *>(sephash), sephashlen))
+        if (memcmp(genHash, sephash, sephashlen))
             reterror(-67, "ERROR: SEP does not match sepmanifest\n");
     }
     
