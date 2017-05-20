@@ -43,5 +43,4 @@ Usage: `futurerestore [OPTIONS] IPSW`
 |  -u | --update		 |	update instead of erase install |
 |     |--latest-sep	 |	use latest signed sep instead of manually specifying  one(may cause bad restore) |
 |     | --latest-baseband |		se latest signed baseband instead of manually  specifying one(may cause bad restore) |
-|     | --is-32bit	 |	use this for restoring 32bit device without SEP |
 |     | --no-baseband	 |	skip checks and don't flash baseband. WARNING: only use this for device without baseband (eg iPod or some wifi only iPads) |
