@@ -27,9 +27,12 @@ public:
     ptr_smart(T p, function<void(T)> ptr_free){static_assert(is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
     ptr_smart(T p){_p = p;}
     ptr_smart(){_p = NULL;}
-    T operator=(T p){return _p = p;}
+    ptr_smart(ptr_smart &&p){ _p = p._p; _ptr_free = p._ptr_free; p._p = NULL; p._ptr_free = NULL;}
+    ptr_smart& operator =(ptr_smart &&p){_p = p._p; _ptr_free = p._ptr_free; p._p = NULL; p._ptr_free = NULL; return *this;}
+    T operator =(T p){ _p = p; return _p;}
+    T operator =(T &p){_p = p; p = NULL; return _p;}
     T *operator&(){return &_p;}
-    operator const T() const {return _p;}
+    explicit operator const T() const {return _p;}
     operator const void*() const {return _p;}
     ~ptr_smart(){if (_p) (_ptr_free) ? _ptr_free(_p) : free((void*)_p);}
 };
@@ -42,6 +45,7 @@ class futurerestore {
     vector<char *>_im4ms;
     int _foundnonce = -1;
     bool _isUpdateInstall = false;
+    bool _isPwnDfu = false;
     
     char *_firmwareJson = NULL;
     jsmntok_t *_firmwareTokens = NULL;;
@@ -55,10 +59,13 @@ class futurerestore {
     const char *_sepbuildmanifestPath = NULL;
     const char *_basebandbuildmanifestPath = NULL;
     
+    bool _enterPwnRecoveryRequested = false;
+    //methods
+    void enterPwnRecovery(plist_t build_identity);
+    
     
 public:
-    futurerestore();
-    futurerestore(bool isUpdateInstall);
+    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();

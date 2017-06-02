@@ -20,17 +20,22 @@
 #include <libgen.h>
 #include <zlib.h>
 #include "futurerestore.hpp"
+#ifdef HAVE_LIBIPATCHER
+#include <libipatcher/libipatcher.hpp>
+#endif
 extern "C"{
 #include "common.h"
 #include "../external/img4tool/img4tool/img4.h"
 #include "img4tool.h"
 #include "normal.h"
 #include "recovery.h"
+#include "dfu.h"
 #include "ipsw.h"
 #include "locking.h"
 #include "restore.h"
 #include "tsschecker.h"
 #include "all_tsschecker.h"
+#include <libirecovery.h>
 }
 
 
@@ -64,16 +69,15 @@ extern "C"{
 #   include <openssl/sha.h>
 #endif // __APPLE__
 
+#ifndef HAVE_LIBIPATCHER
+#define _enterPwnRecoveryRequested false
+#endif
 
 #define reterror(code,msg ...) error(msg),throw int(code)
 #define safeFree(buf) if (buf) free(buf), buf = NULL
 #define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
 
-futurerestore::futurerestore(){
-    futurerestore(false);
-}
-
-futurerestore::futurerestore(bool isUpdateInstall) : _isUpdateInstall(isUpdateInstall){
+futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu){
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
@@ -92,6 +96,7 @@ bool futurerestore::init(){
         info("[INFO] 32bit device detected\n");
     }else{
         info("[INFO] 64bit device detected\n");
+        if (_isPwnDfu) reterror(-90, "isPwnDfu is only allowed for 32bit devices\n");
     }
     return _didInit;
 }
@@ -111,6 +116,7 @@ int futurerestore::getDeviceMode(bool reRequest){
         return _client->mode->index;
     }else{
         normal_client_free(_client);
+        dfu_client_free(_client);
         recovery_client_free(_client);
         return check_mode(_client);
     }
@@ -128,6 +134,14 @@ void futurerestore::putDeviceIntoRecovery(){
         }
     }else if (_client->mode->index == MODE_RECOVERY){
         info("Device already in Recovery mode\n");
+    }else if (_client->mode->index == MODE_DFU && _isPwnDfu &&
+#ifdef HAVE_LIBIPATCHER
+              (_enterPwnRecoveryRequested = true)
+#else
+              false
+#endif
+              ){
+        info("requesting to get into pwnRecovery later\n");
     }else{
         reterror(-3, "unsupported devicemode, please put device in recovery mode or normal mode\n");
     }
@@ -137,6 +151,7 @@ void futurerestore::putDeviceIntoRecovery(){
     
     //these get also freed by destructor
     normal_client_free(_client);
+    dfu_client_free(_client);
     recovery_client_free(_client);
 }
 
@@ -368,6 +383,114 @@ char *futurerestore::getiBootBuild(){
 }
 
 
+pair<ptr_smart<char*>, size_t> getIPSWComponent(struct idevicerestore_client_t* client, plist_t build_identity, string component){
+    ptr_smart<char *> path;
+    unsigned char* component_data = NULL;
+    unsigned int component_size = 0;
+
+    if (!(char*)path) {
+        if (build_identity_get_component_path(build_identity, component.c_str(), &path) < 0) {
+            reterror(-95,"ERROR: Unable to get path for component '%s'\n", component.c_str());
+        }
+    }
+    
+    if (extract_component(client->ipsw, (char*)path, &component_data, &component_size) < 0) {
+        reterror(-95,"ERROR: Unable to extract component: %s\n", component.c_str());
+    }
+    
+    return {(char*)component_data,component_size};
+}
+
+
+void futurerestore::enterPwnRecovery(plist_t build_identity){
+#ifndef HAVE_LIBIPATCHER
+    reterror(-404, "compiled without libipatcher");
+#else
+    int mode = 0;
+    
+    if (dfu_client_new(_client) < 0)
+        reterror(-91,"Unable to connect to DFU device\n");
+    
+    irecv_get_mode(_client->dfu->client, &mode);
+    
+    if (mode != IRECV_K_DFU_MODE) {
+        info("NOTE: device is not in DFU mode, assuming recovery mode.\n");
+        _client->mode = &idevicerestore_modes[MODE_RECOVERY];
+        reterror(-91, "Device is in wrong mode\n");
+    }
+    
+    auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
+    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS")));
+    
+    
+    auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
+    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC")));
+    
+    
+    info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
+    // FIXME: Did I do this right????
+    irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
+    if (err != IRECV_E_SUCCESS) {
+        reterror(-92,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+    }
+    
+    if (_client->build_major > 8) {
+        /* reconnect */
+        dfu_client_free(_client);
+        sleep(3);
+        dfu_client_new(_client);
+        
+        if (irecv_usb_set_configuration(_client->dfu->client, 1) < 0) {
+           reterror(-92,"ERROR: set configuration failed\n");
+        }
+        
+        /* send iBEC */
+        info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
+        // FIXME: Did I do this right????
+        irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
+        if (err != IRECV_E_SUCCESS) {
+            reterror(-92,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+        }
+    }
+    
+    dfu_client_free(_client);
+    
+    sleep(7);
+    
+    // Reconnect to device, but this time make sure we're not still in DFU mode
+    if (recovery_client_new(_client) < 0) {
+        if (_client->recovery->client) {
+            irecv_close(_client->recovery->client);
+            _client->recovery->client = NULL;
+        }
+        reterror(-93,"ERROR: Unable to connect to recovery device\n");
+    }
+    
+    irecv_get_mode(_client->recovery->client, &mode);
+    
+    if (mode == IRECV_K_DFU_MODE) {
+        if (_client->recovery->client) {
+            irecv_close(_client->recovery->client);
+            _client->recovery->client = NULL;
+        }
+        reterror(-94,"ERROR: Unable to connect to recovery device\n");
+    }
+#endif
+}
+
+void get_custom_component(struct idevicerestore_client_t* client, plist_t build_identity, const char* component, unsigned char** data, unsigned int *size){
+#ifndef HAVE_LIBIPATCHER
+    reterror(-404, "compiled without libipatcher");
+#else
+    auto comp = getIPSWComponent(client, build_identity, component);
+    comp = move(libipatcher::decryptFile3((char*)comp.first, comp.second, libipatcher::getFirmwareKey(client->device->product_type, client->build, component)));
+    *data = (unsigned char*)(char*)comp.first;
+    *size = comp.second;
+    comp.first = NULL; //don't free on destruction
+#endif
+}
+
+
 int futurerestore::doRestore(const char *ipsw){
     int err = 0;
     //some memory might not get freed if this function throws an exception, but you probably don't want to catch that anyway.
@@ -386,7 +509,9 @@ int futurerestore::doRestore(const char *ipsw){
     
     getDeviceMode(true);
     info("Found device in %s mode\n", client->mode->string);
-    if (client->mode->index != MODE_RECOVERY) reterror(-6, "device not in recovery mode\n");
+
+    if (client->mode->index != MODE_RECOVERY && client->mode->index != MODE_DFU && !_enterPwnRecoveryRequested)
+        reterror(-6, "device not in recovery mode\n");
     // discover the device type
     if (check_hardware_model(client) == NULL || client->device == NULL) {
         reterror(-2,"ERROR: Unable to discover device model\n");
@@ -415,8 +540,9 @@ int futurerestore::doRestore(const char *ipsw){
     client->image4supported = is_image4_supported(client);
     info("Device supports Image4: %s\n", (client->image4supported) ? "true" : "false");
     
-    
-    if (!(client->tss = nonceMatchesApTickets()))
+    if (_enterPwnRecoveryRequested) //we are in pwnDFU, so we don't need to check nonces
+        client->tss = _aptickets.at(0);
+    else if (!(client->tss = nonceMatchesApTickets()))
         reterror(-20, "Devicenonce does not match APTicket nonce\n");
     
     plist_dict_remove_item(client->tss, "BBTicket");
@@ -432,7 +558,8 @@ int futurerestore::doRestore(const char *ipsw){
     plist_t manifest = plist_dict_get_item(build_identity, "Manifest");
 
     printf("checking APTicket to be valid for this restore...\n");
-    const char * im4m = nonceMatchesIM4Ms();
+    //if we are in pwnDFU, just use first apticket. no need to check nonces
+    const char * im4m = (!_enterPwnRecoveryRequested) ? nonceMatchesIM4Ms() : _im4ms.at(0);
     
     uint64_t deviceEcid = getDeviceEcid();
     uint64_t im4mEcid = (_client->image4supported) ? getEcidFromIM4M(im4m) : getEcidFromSCAB(im4m);
@@ -484,6 +611,9 @@ int futurerestore::doRestore(const char *ipsw){
             }
             printf("Verified APTicket to be valid for this restore\n");
         }
+    }else if (_enterPwnRecoveryRequested){
+        info("[WARNING] skipping ramdisk hash check, since device is in pwnDFU according to user\n");
+        
     }else{
         info("[WARNING] full buildidentity check is not implemented, only comparing ramdisk hash.\n");
         size_t tickethashSize = 0;
@@ -552,6 +682,14 @@ int futurerestore::doRestore(const char *ipsw){
     
     /* print information about current build identity */
     build_identity_print_information(build_identity);
+    
+    //check for enterpwnrecovery, because we could be in DFU mode
+    if (_enterPwnRecoveryRequested){
+        if (getDeviceMode(true) != MODE_DFU)
+            reterror(-6, "unexpected device mode");
+        enterPwnRecovery(build_identity);
+    }
+    
     
     // Get filesystem name from build identity
     char* fsname = NULL;
@@ -651,16 +789,19 @@ int futurerestore::doRestore(const char *ipsw){
         }
     }
     
-    /* now we load the iBEC */
-    if (recovery_send_ibec(client, build_identity) < 0) {
-        reterror(-8,"ERROR: Unable to send iBEC\n");
-    }
-    printf("waiting for device to reconnect... ");
-    recovery_client_free(client);
-    
-    /* this must be long enough to allow the device to run the iBEC */
-    /* FIXME: Probably better to detect if the device is back then */
-    sleep(7);
+    if (!_enterPwnRecoveryRequested) {
+        /* now we load the iBEC */
+        if (recovery_send_ibec(client, build_identity) < 0) {
+            reterror(-8,"ERROR: Unable to send iBEC\n");
+        }
+        printf("waiting for device to reconnect... ");
+        recovery_client_free(client);
+        /* this must be long enough to allow the device to run the iBEC */
+        /* FIXME: Probably better to detect if the device is back then */
+        sleep(7);
+    }else //if pwnrecovery send all components decrypted
+        client->recovery_custom_component_function = get_custom_component;
+   
     for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
     putchar('\n');
     
@@ -670,7 +811,9 @@ int futurerestore::doRestore(const char *ipsw){
     //do magic
     if (_client->image4supported) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
     get_ap_nonce(client, &client->nonce, &client->nonce_size);
+    
     get_ecid(client, &client->ecid);
+    
     if (client->mode->index == MODE_RECOVERY) {
         if (client->srnm == NULL) {
             reterror(-9,"ERROR: could not retrieve device serial number. Can't continue.\n");
@@ -719,7 +862,6 @@ error:
     return result ? abs(result) : err;
 }
 
-
 futurerestore::~futurerestore(){
     normal_client_free(_client);
     recovery_client_free(_client);
@@ -752,7 +894,7 @@ const char *futurerestore::getDeviceModelNoCopy(){
     if (!_client->device || !_client->device->product_type){
         
         int mode = getDeviceMode(true);
-        if (mode != MODE_NORMAL && mode != MODE_RECOVERY)
+        if (mode == MODE_NORMAL && mode != MODE_RECOVERY && mode != MODE_DFU)
             reterror(-20, "unexpected device mode=%d\n",mode);
         
         if (check_hardware_model(_client) == NULL || _client->device == NULL)

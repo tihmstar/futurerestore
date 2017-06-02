@@ -32,6 +32,9 @@ static struct option longopts[] = {
     { "latest-sep",         no_argument,            NULL, '0' },
     { "latest-baseband",    no_argument,            NULL, '1' },
     { "no-baseband",        no_argument,            NULL, '2' },
+#ifdef HAVE_LIBIPATCHER
+    { "use-pwndfu",          no_argument,            NULL, '3' },
+#endif
     { NULL, 0, NULL, 0 }
 };
 
@@ -40,10 +43,18 @@ static struct option longopts[] = {
 #define FLAG_LATEST_SEP         1 << 2
 #define FLAG_LATEST_BASEBAND    1 << 3
 #define FLAG_NO_BASEBAND        1 << 4
+#define FLAG_IS_PWN_DFU         1 << 5
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
-    printf("Allows restoring nonmatching iOS/Sep/Baseband\n\n");
+    printf("Allows restoring nonmatching iOS/Sep/Baseband\n");
+    printf("Odysseus Support: %s\n\n",
+#ifdef HAVE_LIBIPATCHER
+           "yes"
+#else
+           "no"
+#endif
+           );
     
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
@@ -55,6 +66,9 @@ void cmd_help(){
     printf("      --latest-sep\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
     printf("      --latest-baseband\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
     printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
+#ifdef HAVE_LIBIPATCHER
+    printf("      --use-pwndfu\t\tuse this for restoring devices with odysseus method. Device needs to be in kDFU mode already\n");
+#endif
     printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n");
     printf("\n");
 }
@@ -88,6 +102,7 @@ int main(int argc, const char * argv[]) {
         cmd_help();
         return -1;
     }
+
     
     while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud01", longopts, &optindex)) > 0) {
         switch (opt) {
@@ -121,6 +136,9 @@ int main(int argc, const char * argv[]) {
             case '2': // long option: "no-baseband";
                 flags |= FLAG_NO_BASEBAND;
                 break;
+            case '3': // long option: "no-baseband";
+                flags |= FLAG_IS_PWN_DFU;
+                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -146,7 +164,7 @@ int main(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client(flags & FLAG_UPDATE);
+    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU);
     if (!client.init()) reterror(-3,"can't init, no device found\n");
     
     printf("futurerestore init done\n");
