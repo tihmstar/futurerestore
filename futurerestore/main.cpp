@@ -136,9 +136,11 @@ int main(int argc, const char * argv[]) {
             case '2': // long option: "no-baseband";
                 flags |= FLAG_NO_BASEBAND;
                 break;
+#ifdef HAVE_LIBIPATCHER
             case '3': // long option: "no-baseband";
                 flags |= FLAG_IS_PWN_DFU;
                 break;
+#endif
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
