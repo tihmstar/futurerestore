@@ -64,12 +64,11 @@ void cmd_help(){
     printf("  -w, --wait\t\t\tkeep rebooting until nonce matches APTicket\n");
     printf("  -u, --update\t\t\tupdate instead of erase install\n");
     printf("      --latest-sep\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
-    
-    printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
+    printf("      --latest-baseband\t\tuse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
 #ifdef HAVE_LIBIPATCHER
     printf("      --use-pwndfu\t\tuse this for restoring devices with odysseus method. Device needs to be in kDFU mode already\n");
 #endif
-    printf("      --latest-baseband\t\tse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
+    printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
     printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n");
     printf("\n");
 }
