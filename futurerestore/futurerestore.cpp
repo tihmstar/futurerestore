@@ -407,6 +407,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity){
     reterror(-404, "compiled without libipatcher");
 #else
     int mode = 0;
+    libipatcher::fw_key iBSSKeys;
+    libipatcher::fw_key iBECKeys;
     
     if (dfu_client_new(_client) < 0)
         reterror(-91,"Unable to connect to DFU device\n");
@@ -419,12 +421,21 @@ void futurerestore::enterPwnRecovery(plist_t build_identity){
         reterror(-91, "Device is in wrong mode\n");
     }
     
+    try {
+        iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
+        iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+    } catch (libipatcher::exception e) {
+        string err = "failed getting keys with error: " + to_string(e.code()) + "( " + e.what() + " ) ";
+        reterror(e.code(), "getting keys failed. Are keys publicly available?");
+    }
+    
+    
     auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
-    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS")));
+    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
     
     
     auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
-    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC")));
+    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys));
     
     
     info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
