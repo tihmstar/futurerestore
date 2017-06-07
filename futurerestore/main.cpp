@@ -76,7 +76,8 @@ int main(int argc, const char * argv[]) {
     int res = -1;
     printf("Version: " VERSION_COMMIT_SHA_FUTURERESTORE" - " VERSION_COMMIT_COUNT_FUTURERESTORE"\n");
 #ifdef HAVE_LIBIPATCHER
-    printf("Odysseus Support: yes -- %s\n", libipatcher::version().c_str());
+    printf("%s\n",libipatcher::version().c_str());
+    printf("Odysseus Support: yes\n");
 #else
     printf("Odysseus Support: no\n");
 #endif
