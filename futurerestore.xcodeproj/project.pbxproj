@@ -14,6 +14,7 @@
 		878587AF1D89D5A5008689F0 /* libcurl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587AE1D89D5A5008689F0 /* libcurl.tbd */; };
 		878587B31D89D5D5008689F0 /* libzip.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587B21D89D5D5008689F0 /* libzip.4.dylib */; };
 		878587B71D89D637008689F0 /* libirecovery.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587B61D89D637008689F0 /* libirecovery.2.dylib */; };
+		8788A6811EE8426A00138E07 /* libipatcher.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8788A6801EE8426A00138E07 /* libipatcher.0.dylib */; };
 		8799B0B21D89D99D002F4D5F /* futurerestore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8799B0B01D89D99D002F4D5F /* futurerestore.cpp */; };
 		8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875C1D89D1C1008689F0 /* idevicerestore.c */; settings = {COMPILER_FLAGS = "-D HAVE_CONFIG_H=1 "; }; };
 		8799B0B41D89DAF6002F4D5F /* tss.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587761D89D1C1008689F0 /* tss.c */; };
@@ -119,6 +120,7 @@
 		878587B21D89D5D5008689F0 /* libzip.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzip.4.dylib; path = ../../../../usr/local/lib/libzip.4.dylib; sourceTree = "<group>"; };
 		878587B41D89D5E6008689F0 /* libpartialzip-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libpartialzip-1.0.0.dylib"; path = "../../../../usr/local/lib/libpartialzip-1.0.0.dylib"; sourceTree = "<group>"; };
 		878587B61D89D637008689F0 /* libirecovery.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libirecovery.2.dylib; path = ../../../../usr/local/lib/libirecovery.2.dylib; sourceTree = "<group>"; };
+		8788A6801EE8426A00138E07 /* libipatcher.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libipatcher.0.dylib; path = ../../../../usr/local/lib/libipatcher.0.dylib; sourceTree = "<group>"; };
 		8799B0B01D89D99D002F4D5F /* futurerestore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = futurerestore.cpp; sourceTree = "<group>"; };
 		8799B0B11D89D99D002F4D5F /* futurerestore.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = futurerestore.hpp; sourceTree = "<group>"; };
 		87F574C51E151D42008D5C4D /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = ../../../../usr/lib/libcrypto.dylib; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8788A6811EE8426A00138E07 /* libipatcher.0.dylib in Frameworks */,
 				87F574D01E151F44008D5C4D /* libcrypto.dylib in Frameworks */,
 				87F574CB1E151E97008D5C4D /* libfragmentzip.0.dylib in Frameworks */,
 				878587B71D89D637008689F0 /* libirecovery.2.dylib in Frameworks */,
@@ -273,6 +276,7 @@
 		87F574C21E151CDE008D5C4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8788A6801EE8426A00138E07 /* libipatcher.0.dylib */,
 				87F574CE1E151F11008D5C4D /* libSystem.tbd */,
 				87F574CC1E151EF8008D5C4D /* libcorecrypto.tbd */,
 				87F574CA1E151E97008D5C4D /* libfragmentzip.0.dylib */,
@@ -462,7 +466,7 @@
 					/usr/local/opt/openssl/lib,
 					"$(SDKROOT)/usr/lib/system",
 				);
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include";
 			};
@@ -479,7 +483,7 @@
 					/usr/local/opt/openssl/lib,
 					"$(SDKROOT)/usr/lib/system",
 				);
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include";
 			};

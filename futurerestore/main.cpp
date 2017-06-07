@@ -14,7 +14,9 @@
 #include "futurerestore.hpp"
 #include "all_tsschecker.h"
 #include "tsschecker.h"
-
+#ifdef HAVE_LIBIPATCHER
+#include <libipatcher/libipatcher.hpp>
+#endif
 #include "config.h"
 
 #define safeFree(buf) if (buf) free(buf), buf = NULL
@@ -47,14 +49,8 @@ static struct option longopts[] = {
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] IPSW\n");
-    printf("Allows restoring nonmatching iOS/Sep/Baseband\n");
-    printf("Odysseus Support: %s\n\n",
-#ifdef HAVE_LIBIPATCHER
-           "yes"
-#else
-           "no"
-#endif
-           );
+    printf("Allows restoring nonmatching iOS/Sep/Baseband\n\n");
+
     
     printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
@@ -79,6 +75,11 @@ int main(int argc, const char * argv[]) {
     int err=0;
     int res = -1;
     printf("Version: " VERSION_COMMIT_SHA_FUTURERESTORE" - " VERSION_COMMIT_COUNT_FUTURERESTORE"\n");
+#ifdef HAVE_LIBIPATCHER
+    printf("Odysseus Support: yes -- %s\n", libipatcher::version().c_str());
+#else
+    printf("Odysseus Support: no\n");
+#endif
 
     int optindex = 0;
     int opt = 0;
