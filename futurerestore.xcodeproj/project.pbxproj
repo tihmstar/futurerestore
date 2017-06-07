@@ -15,6 +15,7 @@
 		878587B31D89D5D5008689F0 /* libzip.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587B21D89D5D5008689F0 /* libzip.4.dylib */; };
 		878587B71D89D637008689F0 /* libirecovery.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587B61D89D637008689F0 /* libirecovery.2.dylib */; };
 		8788A6811EE8426A00138E07 /* libipatcher.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8788A6801EE8426A00138E07 /* libipatcher.0.dylib */; };
+		8788A6831EE8544000138E07 /* jssy.c in Sources */ = {isa = PBXBuildFile; fileRef = 8788A6821EE8544000138E07 /* jssy.c */; };
 		8799B0B21D89D99D002F4D5F /* futurerestore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8799B0B01D89D99D002F4D5F /* futurerestore.cpp */; };
 		8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875C1D89D1C1008689F0 /* idevicerestore.c */; settings = {COMPILER_FLAGS = "-D HAVE_CONFIG_H=1 "; }; };
 		8799B0B41D89DAF6002F4D5F /* tss.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587761D89D1C1008689F0 /* tss.c */; };
@@ -39,7 +40,6 @@
 		8799B0CA1D89E371002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587601D89D1C1008689F0 /* img4.c */; };
 		8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785879F1D89D2BA008689F0 /* tsschecker.c */; };
 		8799B0CC1D89F7B9002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587981D89D2BA008689F0 /* download.c */; };
-		8799B0CD1D89F7B9002F4D5F /* jsmn.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785879A1D89D2BA008689F0 /* jsmn.c */; };
 		87F574CB1E151E97008D5C4D /* libfragmentzip.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 87F574CA1E151E97008D5C4D /* libfragmentzip.0.dylib */; };
 		87F574D01E151F44008D5C4D /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 87F574C51E151D42008D5C4D /* libcrypto.dylib */; };
 /* End PBXBuildFile section */
@@ -121,6 +121,7 @@
 		878587B41D89D5E6008689F0 /* libpartialzip-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libpartialzip-1.0.0.dylib"; path = "../../../../usr/local/lib/libpartialzip-1.0.0.dylib"; sourceTree = "<group>"; };
 		878587B61D89D637008689F0 /* libirecovery.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libirecovery.2.dylib; path = ../../../../usr/local/lib/libirecovery.2.dylib; sourceTree = "<group>"; };
 		8788A6801EE8426A00138E07 /* libipatcher.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libipatcher.0.dylib; path = ../../../../usr/local/lib/libipatcher.0.dylib; sourceTree = "<group>"; };
+		8788A6821EE8544000138E07 /* jssy.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = jssy.c; path = external/tsschecker/external/jssy/jssy/jssy.c; sourceTree = "<group>"; };
 		8799B0B01D89D99D002F4D5F /* futurerestore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = futurerestore.cpp; sourceTree = "<group>"; };
 		8799B0B11D89D99D002F4D5F /* futurerestore.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = futurerestore.hpp; sourceTree = "<group>"; };
 		87F574C51E151D42008D5C4D /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = ../../../../usr/lib/libcrypto.dylib; sourceTree = "<group>"; };
@@ -153,6 +154,7 @@
 		8785873A1D89CFDC008689F0 = {
 			isa = PBXGroup;
 			children = (
+				8788A6821EE8544000138E07 /* jssy.c */,
 				878587B61D89D637008689F0 /* libirecovery.2.dylib */,
 				878587B41D89D5E6008689F0 /* libpartialzip-1.0.0.dylib */,
 				878587B21D89D5D5008689F0 /* libzip.4.dylib */,
@@ -342,6 +344,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8788A6831EE8544000138E07 /* jssy.c in Sources */,
 				8799B0C11D89DB38002F4D5F /* fls.c in Sources */,
 				8799B0B41D89DAF6002F4D5F /* tss.c in Sources */,
 				8799B0C01D89DB38002F4D5F /* fdr.c in Sources */,
@@ -355,7 +358,6 @@
 				8799B0C81D89E2BD002F4D5F /* img4tool.c in Sources */,
 				8799B0BB1D89DB12002F4D5F /* download.c in Sources */,
 				8799B0B71D89DAFF002F4D5F /* normal.c in Sources */,
-				8799B0CD1D89F7B9002F4D5F /* jsmn.c in Sources */,
 				8799B0C31D89DB4B002F4D5F /* socket.c in Sources */,
 				8799B0C21D89DB46002F4D5F /* thread.c in Sources */,
 				8799B0B61D89DAFF002F4D5F /* dfu.c in Sources */,
@@ -468,7 +470,7 @@
 				);
 				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/tsschecker/external/jssy/jssy";
 			};
 			name = Debug;
 		};
@@ -485,7 +487,7 @@
 				);
 				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/tsschecker/external/jssy/jssy";
 			};
 			name = Release;
 		};

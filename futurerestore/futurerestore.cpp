@@ -940,7 +940,7 @@ char *futurerestore::getLatestManifest(){
         
         int versionCnt = 0;
         int i = 0;
-        char **versions = getListOfiOSForDevice(_firmwareJson, _firmwareTokens, device, 0, &versionCnt);
+        char **versions = getListOfiOSForDevice(_firmwareTokens, device, 0, &versionCnt);
         if (!versionCnt) reterror(-8, "[TSSC] failed finding latest iOS\n");
         char *bpos = NULL;
         while((bpos = strstr((char*)(versVals.version = strdup(versions[i++])),"[B]")) != 0){
@@ -954,7 +954,7 @@ char *futurerestore::getLatestManifest(){
         //make sure it get's freed after function finishes execution by either reaching end or throwing exception
         ptr_smart<const char*>autofree(versVals.version);
         
-        __latestFirmwareUrl = getFirmwareUrl(device, &versVals, _firmwareJson, _firmwareTokens);
+        __latestFirmwareUrl = getFirmwareUrl(device, &versVals, _firmwareTokens);
         if (!__latestFirmwareUrl) reterror(-21, "could not find url of latest firmware\n");
         
         __latestManifest = getBuildManifest(__latestFirmwareUrl, device, versVals.version, versVals.buildID, 0);

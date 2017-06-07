@@ -14,7 +14,7 @@
 #include <functional>
 #include <vector>
 #include "idevicerestore.h"
-#include "jsmn.h"
+#include <jssy.h>
 #include <plist/plist.h>
 
 using namespace std;
@@ -48,7 +48,7 @@ class futurerestore {
     bool _isPwnDfu = false;
     
     char *_firmwareJson = NULL;
-    jsmntok_t *_firmwareTokens = NULL;;
+    jssytok_t *_firmwareTokens = NULL;;
     char *__latestManifest = NULL;
     char *__latestFirmwareUrl = NULL;
     
