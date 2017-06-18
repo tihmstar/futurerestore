@@ -493,11 +493,16 @@ void get_custom_component(struct idevicerestore_client_t* client, plist_t build_
 #ifndef HAVE_LIBIPATCHER
     reterror(-404, "compiled without libipatcher");
 #else
-    auto comp = getIPSWComponent(client, build_identity, component);
-    comp = move(libipatcher::decryptFile3((char*)comp.first, comp.second, libipatcher::getFirmwareKey(client->device->product_type, client->build, component)));
-    *data = (unsigned char*)(char*)comp.first;
-    *size = comp.second;
-    comp.first = NULL; //don't free on destruction
+    try {
+        auto comp = getIPSWComponent(client, build_identity, component);
+        comp = move(libipatcher::decryptFile3((char*)comp.first, comp.second, libipatcher::getFirmwareKey(client->device->product_type, client->build, component)));
+        *data = (unsigned char*)(char*)comp.first;
+        *size = comp.second;
+        comp.first = NULL; //don't free on destruction
+    } catch (libipatcher::exception &e) {
+        reterror(e.code(),"ERROR: libipatcher failed with reason %s\n",e.what());
+    }
+    
 #endif
 }
 
