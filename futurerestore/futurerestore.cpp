@@ -910,7 +910,7 @@ const char *futurerestore::getDeviceModelNoCopy(){
     if (!_client->device || !_client->device->product_type){
         
         int mode = getDeviceMode(true);
-        if (mode == MODE_NORMAL && mode != MODE_RECOVERY && mode != MODE_DFU)
+        if (mode != MODE_NORMAL && mode != MODE_RECOVERY && mode != MODE_DFU)
             reterror(-20, "unexpected device mode=%d\n",mode);
         
         if (check_hardware_model(_client) == NULL || _client->device == NULL)
