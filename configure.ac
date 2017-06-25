@@ -46,7 +46,7 @@ AC_ARG_WITH([libipatcher],
             [build_libipatcher=true])
 
 PKG_PROG_PKG_CONFIG
-LIBIPATCHER_FLAGS=$(pkg-config --cflags libipatcher)
+LIBIPATCHER_FLAGS=$($PKG_CONFIG --cflags libipatcher)
 if [test -z "$LIBIPATCHER_FLAGS"]; then
     do_libipatcher=no
 else
