@@ -52,7 +52,7 @@ if [test -z "$LIBIPATCHER_FLAGS"]; then
 else
     AC_MSG_CHECKING([for futurerestore libipatcher])
     if test "$build_libipatcher" = "true"; then
-            PKG_CHECK_MODULES(libipatcher, libipatcher >= 30)
+            PKG_CHECK_MODULES(libipatcher, libipatcher >= 32)
             do_libipatcher=yes    
     else
             do_libipatcher=no
