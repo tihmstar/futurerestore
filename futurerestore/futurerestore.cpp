@@ -142,6 +142,8 @@ void futurerestore::putDeviceIntoRecovery(){
 #endif
               ){
         info("requesting to get into pwnRecovery later\n");
+    }else if (!_client->image4supported){
+        info("32bit device in DFU mode found, assuming user wants to use iOS9 re-restore bug. Not failing here\n");
     }else{
         reterror(-3, "unsupported devicemode, please put device in recovery mode or normal mode\n");
     }
@@ -173,18 +175,28 @@ void futurerestore::setAutoboot(bool val){
 
 plist_t futurerestore::nonceMatchesApTickets(){
     if (!_didInit) reterror(-1, "did not init\n");
-    if (getDeviceMode(true) != MODE_RECOVERY) reterror(-10, "Device not in recovery mode, can't check apnonce\n");
+    if (getDeviceMode(true) != MODE_RECOVERY){
+        if (getDeviceMode(false) != MODE_DFU || *_client->version != '9')
+            reterror(-10, "Device not in recovery mode, can't check apnonce\n");
+        else
+            _rerestoreiOS9 = (info("Detected iOS 9 re-restore, proceeding in DFU mode\n"),true);
+    }
+    
     
     unsigned char* realnonce;
     int realNonceSize = 0;
-    recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
-    
-    info("Got APNonce from device: ");
-    int i = 0;
-    for (i = 0; i < realNonceSize; i++) {
-        info("%02x ", ((unsigned char *)realnonce)[i]);
+    if (_rerestoreiOS9) {
+        info("Skipping APNonce check\n");
+    }else{
+        recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
+        
+        info("Got APNonce from device: ");
+        int i = 0;
+        for (i = 0; i < realNonceSize; i++) {
+            info("%02x ", ((unsigned char *)realnonce)[i]);
+        }
+        info("\n");
     }
-    info("\n");
     
     vector<const char*>nonces;
     
@@ -196,7 +208,13 @@ plist_t futurerestore::nonceMatchesApTickets(){
         for (int i=0; i< _im4ms.size(); i++){
             size_t ticketNonceSize = 0;
             if (memcmp(realnonce, (unsigned const char*)getNonceFromSCAB(_im4ms[i], &ticketNonceSize), ticketNonceSize) == 0 &&
-                 ( ticketNonceSize == realNonceSize || (!ticketNonceSize && *_client->version == '9' && !strncmp(getiBootBuild(), "iBoot-2817", strlen("iBoot-2817"))) )
+                 (  (ticketNonceSize == realNonceSize && realNonceSize+ticketNonceSize > 0) ||
+                        (!ticketNonceSize && *_client->version == '9' &&
+                            (getDeviceMode(false) == MODE_DFU ||
+                                ( getDeviceMode(false) == MODE_RECOVERY && !strncmp(getiBootBuild(), "iBoot-2817", strlen("iBoot-2817")) )
+                            )
+                         )
+                 )
                )
                 //either nonce needs to match or using re-restore bug in iOS 9
                 return _aptickets[i];
@@ -575,7 +593,7 @@ int futurerestore::doRestore(const char *ipsw){
 
     printf("checking APTicket to be valid for this restore...\n");
     //if we are in pwnDFU, just use first apticket. no need to check nonces
-    const char * im4m = (!_enterPwnRecoveryRequested) ? nonceMatchesIM4Ms() : _im4ms.at(0);
+    const char * im4m = (_enterPwnRecoveryRequested || _rerestoreiOS9) ? _im4ms.at(0) : nonceMatchesIM4Ms();
     
     uint64_t deviceEcid = getDeviceEcid();
     uint64_t im4mEcid = (_client->image4supported) ? getEcidFromIM4M(im4m) : getEcidFromSCAB(im4m);
@@ -796,16 +814,42 @@ int futurerestore::doRestore(const char *ipsw){
         }
     }
     
-    if ((client->build_major > 8)) {
-        if (!client->image4supported) {
-            /* send ApTicket */
-            if (recovery_send_ticket(client) < 0) {
-                error("WARNING: Unable to send APTicket\n");
+    if (_rerestoreiOS9) {
+        if (dfu_send_component(client, build_identity, "iBSS") < 0) {
+            error("ERROR: Unable to send iBSS to device\n");
+            irecv_close(client->dfu->client);
+            client->dfu->client = NULL;
+            return -1;
+        }
+        
+        /* reconnect */
+        dfu_client_free(client);
+        sleep(2);
+        dfu_client_new(client);
+        
+        /* send iBEC */
+        if (dfu_send_component(client, build_identity, "iBEC") < 0) {
+            error("ERROR: Unable to send iBEC to device\n");
+            irecv_close(client->dfu->client);
+            client->dfu->client = NULL;
+            return -1;
+        }
+    }else{
+        if ((client->build_major > 8)) {
+            if (!client->image4supported) {
+                /* send ApTicket */
+                if (recovery_send_ticket(client) < 0) {
+                    error("WARNING: Unable to send APTicket\n");
+                }
             }
         }
     }
     
-    if (!_enterPwnRecoveryRequested) {
+    
+    
+    if (_enterPwnRecoveryRequested) //if pwnrecovery send all components decrypted
+        client->recovery_custom_component_function = get_custom_component;
+    else if (!_rerestoreiOS9){
         /* now we load the iBEC */
         if (recovery_send_ibec(client, build_identity) < 0) {
             reterror(-8,"ERROR: Unable to send iBEC\n");
@@ -815,8 +859,8 @@ int futurerestore::doRestore(const char *ipsw){
         /* this must be long enough to allow the device to run the iBEC */
         /* FIXME: Probably better to detect if the device is back then */
         sleep(7);
-    }else //if pwnrecovery send all components decrypted
-        client->recovery_custom_component_function = get_custom_component;
+    }
+        
    
     for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
     putchar('\n');

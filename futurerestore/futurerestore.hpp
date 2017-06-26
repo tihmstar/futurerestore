@@ -60,6 +60,7 @@ class futurerestore {
     const char *_basebandbuildmanifestPath = NULL;
     
     bool _enterPwnRecoveryRequested = false;
+    bool _rerestoreiOS9 = false;
     //methods
     void enterPwnRecovery(plist_t build_identity);
     
