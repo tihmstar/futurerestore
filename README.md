@@ -41,6 +41,7 @@ Usage: `futurerestore [OPTIONS] IPSW`
 |  -m | --sep-manifest PATH |	Buildmanifest for requesting sep ticket |
 |  -w | --wait		 |	keep rebooting until nonce matches APTicket |
 |  -u | --update		 |	update instead of erase install |
+|  -d | --debug		 |	show all code, use to save a log for debug testing |
 |     |--latest-sep	 |	use latest signed sep instead of manually specifying  one(may cause bad restore) |
-|     | --latest-baseband |		se latest signed baseband instead of manually  specifying one(may cause bad restore) |
+|     | --latest-baseband |		use latest signed baseband instead of manually  specifying one(may cause bad restore) |
 |     | --no-baseband	 |	skip checks and don't flash baseband. WARNING: only use this for device without baseband (eg iPod or some wifi only iPads) |
