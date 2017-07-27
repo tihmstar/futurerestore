@@ -125,9 +125,17 @@ int futurerestore::getDeviceMode(bool reRequest){
 void futurerestore::putDeviceIntoRecovery(){
     if (!_didInit) reterror(-1, "did not init\n");
     
+#ifdef HAVE_LIBIPATCHER
+    _enterPwnRecoveryRequested = _isPwnDfu;
+#endif
+    
     getDeviceMode(false);
     info("Found device in %s mode\n", _client->mode->string);
-    if (_client->mode->index == MODE_NORMAL) {
+    if (_client->mode->index == MODE_NORMAL){
+#ifdef HAVE_LIBIPATCHER
+        if (_isPwnDfu)
+            reterror(-501, "isPwnDfu enabled, but device was found in normal mode\n");
+#endif
         info("Entering recovery mode...\n");
         if (normal_enter_recovery(_client) < 0) {
             reterror(-2,"Unable to place device into recovery mode from %s mode\n", _client->mode->string);
@@ -136,7 +144,7 @@ void futurerestore::putDeviceIntoRecovery(){
         info("Device already in Recovery mode\n");
     }else if (_client->mode->index == MODE_DFU && _isPwnDfu &&
 #ifdef HAVE_LIBIPATCHER
-              (_enterPwnRecoveryRequested = true)
+              true
 #else
               false
 #endif
@@ -420,7 +428,7 @@ pair<ptr_smart<char*>, size_t> getIPSWComponent(struct idevicerestore_client_t* 
 }
 
 
-void futurerestore::enterPwnRecovery(plist_t build_identity){
+void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 #ifndef HAVE_LIBIPATCHER
     reterror(-404, "compiled without libipatcher");
 #else
@@ -430,14 +438,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity){
     
     if (dfu_client_new(_client) < 0)
         reterror(-91,"Unable to connect to DFU device\n");
-    
     irecv_get_mode(_client->dfu->client, &mode);
-    
-    if (mode != IRECV_K_DFU_MODE) {
-        info("NOTE: device is not in DFU mode, assuming recovery mode.\n");
-        _client->mode = &idevicerestore_modes[MODE_RECOVERY];
-        reterror(-91, "Device is in wrong mode\n");
-    }
     
     try {
         iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
@@ -453,14 +454,24 @@ void futurerestore::enterPwnRecovery(plist_t build_identity){
     
     
     auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
-    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys));
+    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
     
-    
-    info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
-    // FIXME: Did I do this right????
-    irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
-    if (err != IRECV_E_SUCCESS) {
-        reterror(-92,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+    bool modeIsRecovery = false;
+    if (mode != IRECV_K_DFU_MODE) {
+        info("NOTE: device is not in DFU mode, assuming pwn recovery mode.\n");
+        for (int i=IRECV_K_RECOVERY_MODE_1; i<=IRECV_K_RECOVERY_MODE_4; i++) {
+            if (mode == i)
+                modeIsRecovery = true;
+        }
+        if (!modeIsRecovery)
+            reterror(-505, "device not in recovery mode\n");
+    }else{
+        info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
+        // FIXME: Did I do this right????
+        irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
+        if (err != IRECV_E_SUCCESS) {
+            reterror(-92,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+        }
     }
     
     if (_client->build_major > 8) {
@@ -480,6 +491,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity){
         if (err != IRECV_E_SUCCESS) {
             reterror(-92,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
         }
+        if (modeIsRecovery)
+            irecv_send_command(_client->dfu->client, "go");
     }
     
     dfu_client_free(_client);
@@ -918,6 +931,106 @@ error:
     safeFree(client->sepfwdata);
     safePlistFree(buildmanifest);
     if (delete_fs && filesystem) unlink(filesystem);
+    if (!result && !err) info("DONE\n");
+    return result ? abs(result) : err;
+}
+
+int futurerestore::doJustBoot(const char *ipsw, string bootargs){
+    int err = 0;
+    //some memory might not get freed if this function throws an exception, but you probably don't want to catch that anyway.
+    
+    struct idevicerestore_client_t* client = _client;
+    int unused;
+    int result = 0;
+    plist_t buildmanifest = NULL;
+    plist_t build_identity = NULL;
+    
+    client->ipsw = strdup(ipsw);
+    
+    getDeviceMode(true);
+    info("Found device in %s mode\n", client->mode->string);
+    
+    if (!(client->mode->index == MODE_DFU || client->mode->index == MODE_RECOVERY) || !_enterPwnRecoveryRequested)
+        reterror(-6, "device not in DFU/Recovery mode\n");
+    // discover the device type
+    if (check_hardware_model(client) == NULL || client->device == NULL) {
+        reterror(-2,"ERROR: Unable to discover device model\n");
+    }
+    info("Identified device as %s, %s\n", client->device->hardware_model, client->device->product_type);
+    
+    // verify if ipsw file exists
+    if (access(client->ipsw, F_OK) < 0) {
+        error("ERROR: Firmware file %s does not exist.\n", client->ipsw);
+        return -1;
+    }
+    info("Extracting BuildManifest from IPSW\n");
+    if (ipsw_extract_build_manifest(client->ipsw, &buildmanifest, &unused) < 0) {
+        reterror(-3,"ERROR: Unable to extract BuildManifest from %s. Firmware file might be corrupt.\n", client->ipsw);
+    }
+    /* check if device type is supported by the given build manifest */
+    if (build_manifest_check_compatibility(buildmanifest, client->device->product_type) < 0) {
+        reterror(-4,"ERROR: Could not make sure this firmware is suitable for the current device. Refusing to continue.\n");
+    }
+    /* print iOS information from the manifest */
+    build_manifest_get_version_information(buildmanifest, client);
+    
+    info("Product Version: %s\n", client->version);
+    info("Product Build: %s Major: %d\n", client->build, client->build_major);
+    
+    client->image4supported = is_image4_supported(client);
+    info("Device supports Image4: %s\n", (client->image4supported) ? "true" : "false");
+    
+    if (!(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, 0)))
+        reterror(-5,"ERROR: Unable to find any build identities for IPSW\n");
+
+    
+    /* print information about current build identity */
+    build_identity_print_information(build_identity);
+    
+    
+    //check for enterpwnrecovery, because we could be in DFU mode
+    if (!_enterPwnRecoveryRequested)
+        reterror(-6, "enterPwnRecoveryRequested is not set, but required");
+        
+    if (getDeviceMode(true) != MODE_DFU && getDeviceMode(false) != MODE_RECOVERY)
+        reterror(-6, "unexpected device mode");
+    enterPwnRecovery(build_identity, bootargs);
+    
+    client->recovery_custom_component_function = get_custom_component;
+    
+    for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
+    putchar('\n');
+    
+    if (!check_mode(client))
+        reterror(-15, "failed to reconnect to device in recovery (iBEC) mode\n");
+    
+    get_ecid(client, &client->ecid);
+    
+    client->flags |= FLAG_BOOT;
+    
+    if (client->mode->index == MODE_RECOVERY) {
+        if (client->srnm == NULL) {
+            reterror(-9,"ERROR: could not retrieve device serial number. Can't continue.\n");
+        }
+        if (irecv_send_command(client->recovery->client, "bgcolor 0 255 0") != IRECV_E_SUCCESS) {
+            error("ERROR: Unable to set bgcolor\n");
+            return -1;
+        }
+        info("[WARNING] Setting bgcolor to green! If you don't see a green screen, then your device didn't boot iBEC correctly\n");
+        sleep(2); //show the user a green screen!
+        client->image4supported = true; //dirty hack to not require apticket
+        if (recovery_enter_restore(client, build_identity) < 0) {
+            reterror(-10,"ERROR: Unable to place device into restore mode\n");
+        }
+        client->image4supported = false;
+        recovery_client_free(client);
+    }
+    
+    info("Cleaning up...\n");
+    
+error:
+    safeFree(client->sepfwdata);
+    safePlistFree(buildmanifest);
     if (!result && !err) info("DONE\n");
     return result ? abs(result) : err;
 }

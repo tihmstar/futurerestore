@@ -62,7 +62,7 @@ class futurerestore {
     bool _enterPwnRecoveryRequested = false;
     bool _rerestoreiOS9 = false;
     //methods
-    void enterPwnRecovery(plist_t build_identity);
+    void enterPwnRecovery(plist_t build_identity, std::string bootargs = "");
     
     
 public:
@@ -105,6 +105,7 @@ public:
     uint64_t getBasebandGoldCertIDFromDevice();
     
     int doRestore(const char *ipsw);
+    int doJustBoot(const char *ipsw, std::string bootargs = "");
     
     ~futurerestore();
     
