@@ -553,6 +553,9 @@ int futurerestore::doRestore(const char *ipsw){
     
     client->ipsw = strdup(ipsw);
     if (!_isUpdateInstall) client->flags |= FLAG_ERASE;
+    else if (_enterPwnRecoveryRequested){
+        reterror(577, "ERROR: Update install is not supported in pwnDFU mode\n");
+    }
     
     getDeviceMode(true);
     info("Found device in %s mode\n", client->mode->string);
