@@ -863,7 +863,7 @@ int futurerestore::doRestore(const char *ipsw){
     
     
     
-    if (_enterPwnRecoveryRequested) //if pwnrecovery send all components decrypted
+    if (_enterPwnRecoveryRequested && strncmp(client->version, "10.", 3)) //if pwnrecovery send all components decrypted, unless we're dealing with iOS 10
         client->recovery_custom_component_function = get_custom_component;
     else if (!_rerestoreiOS9){
         /* now we load the iBEC */
