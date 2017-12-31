@@ -440,6 +440,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         reterror(-91,"Unable to connect to DFU device\n");
     irecv_get_mode(_client->dfu->client, &mode);
     
+    
     try {
         iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
         iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
@@ -736,7 +737,7 @@ int futurerestore::doRestore(const char *ipsw){
     //check for enterpwnrecovery, because we could be in DFU mode
     if (_enterPwnRecoveryRequested){
         if (getDeviceMode(true) != MODE_DFU)
-            reterror(-6, "unexpected device mode");
+            reterror(-6, "unexpected device mode\n");
         enterPwnRecovery(build_identity);
     }
     
@@ -863,9 +864,10 @@ int futurerestore::doRestore(const char *ipsw){
     
     
     
-    if (_enterPwnRecoveryRequested && strncmp(client->version, "10.", 3)) //if pwnrecovery send all components decrypted, unless we're dealing with iOS 10
-        client->recovery_custom_component_function = get_custom_component;
-    else if (!_rerestoreiOS9){
+    if (_enterPwnRecoveryRequested){ //if pwnrecovery send all components decrypted, unless we're dealing with iOS 10
+        if (strncmp(client->version, "10.", 3))
+            client->recovery_custom_component_function = get_custom_component;
+    }else if (!_rerestoreiOS9){
         /* now we load the iBEC */
         if (recovery_send_ibec(client, build_identity) < 0) {
             reterror(-8,"ERROR: Unable to send iBEC\n");
@@ -996,9 +998,9 @@ int futurerestore::doJustBoot(const char *ipsw, string bootargs){
         reterror(-6, "enterPwnRecoveryRequested is not set, but required");
         
     if (getDeviceMode(true) != MODE_DFU && getDeviceMode(false) != MODE_RECOVERY)
-        reterror(-6, "unexpected device mode");
+        reterror(-6, "unexpected device mode\n");
     enterPwnRecovery(build_identity, bootargs);
-    
+
     client->recovery_custom_component_function = get_custom_component;
     
     for (int i=0;getDeviceMode(true) != MODE_RECOVERY && i<40; i++) putchar('.'),usleep(USEC_PER_SEC*0.5);
