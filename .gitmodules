@@ -1,6 +1,3 @@
-[submodule "external/img4tool"]
-	path = external/img4tool
-	url = https://github.com/tihmstar/img4tool.git
 [submodule "external/tsschecker"]
 	path = external/tsschecker
 	url = https://github.com/tihmstar/tsschecker.git
