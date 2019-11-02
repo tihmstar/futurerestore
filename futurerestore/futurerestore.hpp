@@ -9,7 +9,6 @@
 #ifndef futurerestore_hpp
 #define futurerestore_hpp
 
-#include "config.h"
 #include <stdio.h>
 #include <functional>
 #include <vector>
@@ -42,7 +41,7 @@ class futurerestore {
     char *_ibootBuild = NULL;
     bool _didInit = false;
     vector<plist_t> _aptickets;
-    vector<char *>_im4ms;
+    vector<pair<char *, size_t>>_im4ms;
     int _foundnonce = -1;
     bool _isUpdateInstall = false;
     bool _isPwnDfu = false;
@@ -78,7 +77,7 @@ public:
     char *getiBootBuild();
     
     plist_t nonceMatchesApTickets();
-    const char *nonceMatchesIM4Ms();
+    std::pair<const char *,size_t> nonceMatchesIM4Ms();
 
     void loadFirmwareTokens();
     const char *getDeviceModelNoCopy();
@@ -109,11 +108,9 @@ public:
     
     ~futurerestore();
     
-    static const char *getRamdiskHashFromSCAB(const char* scab, size_t *hashSize);
-    static char *getNonceFromSCAB(const char* scab, size_t *nonceSize);
-    static uint64_t getEcidFromSCAB(const char* scab);
-    static uint64_t getEcidFromIM4M(const char* im4m);
-    static char *getNonceFromAPTicket(const char* apticketPath);
+    static std::pair<const char *,size_t> getRamdiskHashFromSCAB(const char* scab, size_t scabSize);
+    static std::pair<const char *,size_t> getNonceFromSCAB(const char* scab, size_t scabSize);
+    static uint64_t getEcidFromSCAB(const char* scab, size_t scabSize);
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(const char *str, const char *path);
     static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *model, int isUpdateInstall);

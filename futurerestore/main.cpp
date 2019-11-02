@@ -6,21 +6,21 @@
 //  Copyright © 2016 tihmstar. All rights reserved.
 //
 
+#include <libgeneral/macros.h>
+
 #include <iostream>
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
 #include <vector>
 #include "futurerestore.hpp"
-#include "all_tsschecker.h"
-#include "tsschecker.h"
 #ifdef HAVE_LIBIPATCHER
 #include <libipatcher/libipatcher.hpp>
 #endif
-#include "config.h"
 
-#define safeFree(buf) if (buf) free(buf), buf = NULL
-#define safePlistFree(buf) if (buf) plist_free(buf), buf = NULL
+extern "C"{
+#include "tsschecker.h"
+};
 
 static struct option longopts[] = {
     { "apticket",           required_argument,      NULL, 't' },
@@ -72,14 +72,15 @@ void cmd_help(){
 }
 
 using namespace std;
-int main(int argc, const char * argv[]) {
-#define reterror(code,a ...) do {error(a); err = code; goto error;} while (0)
+using namespace tihmstar;
+int main_r(int argc, const char * argv[]) {
     int err=0;
     int res = -1;
-    printf("Version: " VERSION_COMMIT_SHA_FUTURERESTORE" - " VERSION_COMMIT_COUNT_FUTURERESTORE"\n");
+    printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
 #ifdef HAVE_LIBIPATCHER
     printf("%s\n",libipatcher::version().c_str());
     printf("Odysseus Support: yes\n");
+    printf("Odysseus 64bit support: %s\n",(libipatcher::has64bitSupport() ? "yes" : "no"));
 #else
     printf("Odysseus Support: no\n");
 #endif
@@ -176,12 +177,10 @@ int main(int argc, const char * argv[]) {
     }
     
     futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU);
-    if (!client.init()) reterror(-3,"can't init, no device found\n");
+    retassure(client.init(),"can't init, no device found\n");
     
     printf("futurerestore init done\n");
-    if (bootargs && !(flags & FLAG_IS_PWN_DFU)) {
-        reterror(-2,"--just-boot required --use-pwndfu\n");
-    }
+    retassure(!bootargs || (flags & FLAG_IS_PWN_DFU),"--just-boot requires --use-pwndfu\n");
     
     try {
         if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
@@ -220,7 +219,7 @@ int main(int argc, const char * argv[]) {
             
             versVals.basebandMode = kBasebandModeWithoutBaseband;
             if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
-                reterror(-3,"sep firmware isn't signed\n");
+                reterror("sep firmware isn't signed\n");
             }
             
             if (flags & FLAG_NO_BASEBAND){
@@ -249,7 +248,7 @@ int main(int argc, const char * argv[]) {
                     printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
                 }
                 if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
-                    reterror(-3,"baseband firmware isn't signed\n");
+                    reterror("baseband firmware isn't signed\n");
                 }
             }
         }
@@ -279,4 +278,18 @@ error:
     if (err) cout << "Failed with errorcode="<<err << endl;
     return err;
 #undef reterror
+}
+
+int main(int argc, const char * argv[]) {
+#ifdef DEBUG
+    return main_r(argc, argv);
+#else
+    try {
+        return main_r(argc, argv);
+    } catch (tihmstar::exception &e) {
+        printf("%s: failed with exception:\n",PACKAGE_NAME);
+        e.dump();
+        return e.code();
+    }
+#endif
 }

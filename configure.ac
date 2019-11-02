@@ -1,9 +1,23 @@
-AC_PREREQ(2.64)
-AC_INIT([futurerestore], [1.0], [http://url.me/issues],, [http://url.me])
+AC_PREREQ([2.69])
+AC_INIT([futurerestore], m4_esyscmd([git rev-list --count HEAD | tr -d '\n']), [tihmstar@gmail.com])
 
 AC_CANONICAL_SYSTEM
-
 AC_CANONICAL_HOST
+
+AM_INIT_AUTOMAKE([subdir-objects])
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIRS([m4])
+
+AC_DEFINE([VERSION_COMMIT_COUNT], "m4_esyscmd([git rev-list --count HEAD | tr -d '\n'])", [Git commit count])
+AC_DEFINE([VERSION_COMMIT_SHA], "m4_esyscmd([git rev-parse HEAD | tr -d '\n'])", [Git commit sha])
+AC_SUBST([VERSION_COMMIT_COUNT], ["m4_esyscmd([git rev-list --count HEAD | tr -d '\n'])"])
+AC_SUBST([VERSION_COMMIT_SHA], ["m4_esyscmd([git rev-parse HEAD | tr -d '\n'])"])
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+
+
 # Check for operating system
 AC_MSG_CHECKING([whether we need platform-specific build settings])
 case $host_os in
@@ -12,30 +26,29 @@ case $host_os in
         ;;
 esac
 
-AM_INIT_AUTOMAKE
 
-CFLAGS="-DIDEVICERESTORE_NOMAIN=1 -DIMG4TOOL_NOMAIN=1 -DTSSCHECKER_NOMAIN=1"
+CFLAGS="-DIDEVICERESTORE_NOMAIN=1 -DTSSCHECKER_NOMAIN=1"
+
+CXXFLAGS+=" -std=c++11"
+CFLAGS+=" -std=c11"
+
 
 AC_DEFUN([AX_UNPRECIOUS], [
-    m4_define([_AC_PRECIOUS_VARS], m4_bpatsubst(_AC_PRECIOUS_VARS, [$1
-], []))
+    m4_define([_AC_PRECIOUS_VARS], m4_bpatsubst(_AC_PRECIOUS_VARS, [$1], []))
 ])
 AX_UNPRECIOUS([CFLAGS])
 export CFLAGS
 
-AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_MACRO_DIRS([m4])
-AC_CONFIG_SUBDIRS(external/idevicerestore external/img4tool external/tsschecker)
+AC_CONFIG_SUBDIRS(external/idevicerestore external/tsschecker)
 AC_CONFIG_SRCDIR([futurerestore])
+
 
 PKG_CHECK_MODULES(libplist, libplist >= 1.12)
 PKG_CHECK_MODULES(libzip, libzip >= 0.10)
 PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.2.1)
 PKG_CHECK_MODULES(libfragmentzip, libfragmentzip >= 1.0)
 PKG_CHECK_MODULES(libirecovery, libirecovery >= 0.2.0)
-
-AC_PROG_CC
-AC_PROG_CXX
+PKG_CHECK_MODULES(libimg4tool, libimg4tool >= 158)
 
 
 # Optional module libipatcher
@@ -53,12 +66,15 @@ else
     AC_MSG_CHECKING([for futurerestore libipatcher])
     if test "$build_libipatcher" = "true"; then
             PKG_CHECK_MODULES(libipatcher, libipatcher >= 47)
-            do_libipatcher=yes    
+            AC_DEFINE(HAVE_LIBIPATCHER, 1, [Define if you have libipatcher])
+            do_libipatcher=yes
     else
             do_libipatcher=no
     fi
 fi
 AM_CONDITIONAL([HAVE_LIBIPATCHER],[test "x$do_libipatcher" = "xyes"])
+
+AC_DEFINE(CUSTOM_LOGGING, 1, [required for futurerestore])
 
 
 LT_INIT

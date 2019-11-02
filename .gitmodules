@@ -4,3 +4,6 @@
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
 	url = https://github.com/tihmstar/idevicerestore.git
+[submodule "external/libgeneral"]
+	path = external/libgeneral
+	url = https://github.com/tihmstar/libgeneral

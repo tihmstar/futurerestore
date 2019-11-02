@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8762F344236DF4D900F42FDB /* libimg4tool.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */; };
+		8762F345236DF4D900F42FDB /* libimg4tool.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		878587471D89CFDC008689F0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 878587461D89CFDC008689F0 /* main.cpp */; };
 		878587A71D89D56E008689F0 /* libplist.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587A61D89D56E008689F0 /* libplist.3.dylib */; };
 		878587AB1D89D590008689F0 /* libimobiledevice.6.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587AA1D89D590008689F0 /* libimobiledevice.6.dylib */; };
@@ -14,10 +16,9 @@
 		878587AF1D89D5A5008689F0 /* libcurl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587AE1D89D5A5008689F0 /* libcurl.tbd */; };
 		878587B71D89D637008689F0 /* libirecovery.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878587B61D89D637008689F0 /* libirecovery.2.dylib */; };
 		8788A6811EE8426A00138E07 /* libipatcher.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8788A6801EE8426A00138E07 /* libipatcher.0.dylib */; };
-		8788A6831EE8544000138E07 /* jssy.c in Sources */ = {isa = PBXBuildFile; fileRef = 8788A6821EE8544000138E07 /* jssy.c */; };
 		878E1AC51F73EB3F00B1565B /* libzip.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 878E1AC41F73EB3F00B1565B /* libzip.5.dylib */; };
 		8799B0B21D89D99D002F4D5F /* futurerestore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8799B0B01D89D99D002F4D5F /* futurerestore.cpp */; };
-		8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875C1D89D1C1008689F0 /* idevicerestore.c */; settings = {COMPILER_FLAGS = "-D HAVE_CONFIG_H=1 "; }; };
+		8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875C1D89D1C1008689F0 /* idevicerestore.c */; };
 		8799B0B41D89DAF6002F4D5F /* tss.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587761D89D1C1008689F0 /* tss.c */; };
 		8799B0B51D89DAFF002F4D5F /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587511D89D1C1008689F0 /* common.c */; };
 		8799B0B61D89DAFF002F4D5F /* dfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587531D89D1C1008689F0 /* dfu.c */; };
@@ -35,8 +36,6 @@
 		8799B0C31D89DB4B002F4D5F /* socket.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587721D89D1C1008689F0 /* socket.c */; };
 		8799B0C41D89DB55002F4D5F /* mbn.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876A1D89D1C1008689F0 /* mbn.c */; };
 		8799B0C51D89DB67002F4D5F /* locking.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587671D89D1C1008689F0 /* locking.c */; };
-		8799B0C81D89E2BD002F4D5F /* img4tool.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587901D89D1ED008689F0 /* img4tool.c */; settings = {COMPILER_FLAGS = "-D HAVE_CONFIG_H=1 "; }; };
-		8799B0C91D89E2C3002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785878E1D89D1ED008689F0 /* img4.c */; };
 		8799B0CA1D89E371002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587601D89D1C1008689F0 /* img4.c */; };
 		8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785879F1D89D2BA008689F0 /* tsschecker.c */; };
 		8799B0CC1D89F7B9002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587981D89D2BA008689F0 /* download.c */; };
@@ -45,6 +44,17 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		8762F346236DF4D900F42FDB /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				8762F345236DF4D900F42FDB /* libimg4tool.0.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		878587411D89CFDC008689F0 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -57,6 +67,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libimg4tool.0.dylib; path = ../../../../usr/local/lib/libimg4tool.0.dylib; sourceTree = "<group>"; };
 		878587431D89CFDC008689F0 /* futurerestore */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = futurerestore; sourceTree = BUILT_PRODUCTS_DIR; };
 		878587461D89CFDC008689F0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		8785874F1D89D1C1008689F0 /* asr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = asr.c; sourceTree = "<group>"; };
@@ -99,17 +110,11 @@
 		878587751D89D1C1008689F0 /* thread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = thread.h; sourceTree = "<group>"; };
 		878587761D89D1C1008689F0 /* tss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tss.c; sourceTree = "<group>"; };
 		878587771D89D1C1008689F0 /* tss.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tss.h; sourceTree = "<group>"; };
-		8785878C1D89D1ED008689F0 /* all_img4tool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = all_img4tool.h; sourceTree = "<group>"; };
-		8785878E1D89D1ED008689F0 /* img4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = img4.c; sourceTree = "<group>"; };
-		8785878F1D89D1ED008689F0 /* img4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = img4.h; sourceTree = "<group>"; };
-		878587901D89D1ED008689F0 /* img4tool.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = img4tool.c; sourceTree = "<group>"; };
-		878587941D89D243008689F0 /* img4tool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = img4tool.h; sourceTree = "<group>"; };
-		878587951D89D290008689F0 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		878587971D89D2BA008689F0 /* all_tsschecker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = all_tsschecker.h; sourceTree = "<group>"; };
 		878587981D89D2BA008689F0 /* download.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = download.c; sourceTree = "<group>"; };
 		878587991D89D2BA008689F0 /* download.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = download.h; sourceTree = "<group>"; };
-		8785879A1D89D2BA008689F0 /* jsmn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jsmn.c; sourceTree = "<group>"; };
-		8785879B1D89D2BA008689F0 /* jsmn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jsmn.h; sourceTree = "<group>"; };
+		8785879A1D89D2BA008689F0 /* jssy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = jssy.c; path = ../external/jssy/jssy/jssy.c; sourceTree = "<group>"; };
+		8785879B1D89D2BA008689F0 /* jssy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = jssy.h; path = ../external/jssy/jssy/jssy.h; sourceTree = "<group>"; };
 		8785879F1D89D2BA008689F0 /* tsschecker.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tsschecker.c; sourceTree = "<group>"; };
 		878587A01D89D2BA008689F0 /* tsschecker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tsschecker.h; sourceTree = "<group>"; };
 		878587A61D89D56E008689F0 /* libplist.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplist.3.dylib; path = ../../../../usr/local/lib/libplist.3.dylib; sourceTree = "<group>"; };
@@ -121,7 +126,6 @@
 		878587B41D89D5E6008689F0 /* libpartialzip-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libpartialzip-1.0.0.dylib"; path = "../../../../usr/local/lib/libpartialzip-1.0.0.dylib"; sourceTree = "<group>"; };
 		878587B61D89D637008689F0 /* libirecovery.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libirecovery.2.dylib; path = ../../../../usr/local/lib/libirecovery.2.dylib; sourceTree = "<group>"; };
 		8788A6801EE8426A00138E07 /* libipatcher.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libipatcher.0.dylib; path = ../../../../usr/local/lib/libipatcher.0.dylib; sourceTree = "<group>"; };
-		8788A6821EE8544000138E07 /* jssy.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = jssy.c; path = external/tsschecker/external/jssy/jssy/jssy.c; sourceTree = "<group>"; };
 		878E1AC41F73EB3F00B1565B /* libzip.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzip.5.dylib; path = ../../../../usr/local/Cellar/libzip/1.3.0/lib/libzip.5.dylib; sourceTree = "<group>"; };
 		8799B0B01D89D99D002F4D5F /* futurerestore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = futurerestore.cpp; sourceTree = "<group>"; };
 		8799B0B11D89D99D002F4D5F /* futurerestore.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = futurerestore.hpp; sourceTree = "<group>"; };
@@ -140,6 +144,7 @@
 				878E1AC51F73EB3F00B1565B /* libzip.5.dylib in Frameworks */,
 				878587AD1D89D59E008689F0 /* libz.tbd in Frameworks */,
 				8788A6811EE8426A00138E07 /* libipatcher.0.dylib in Frameworks */,
+				8762F344236DF4D900F42FDB /* libimg4tool.0.dylib in Frameworks */,
 				87F574D01E151F44008D5C4D /* libcrypto.dylib in Frameworks */,
 				87F574CB1E151E97008D5C4D /* libfragmentzip.0.dylib in Frameworks */,
 				878587B71D89D637008689F0 /* libirecovery.2.dylib in Frameworks */,
@@ -155,7 +160,6 @@
 		8785873A1D89CFDC008689F0 = {
 			isa = PBXGroup;
 			children = (
-				8788A6821EE8544000138E07 /* jssy.c */,
 				878587B61D89D637008689F0 /* libirecovery.2.dylib */,
 				878587B41D89D5E6008689F0 /* libpartialzip-1.0.0.dylib */,
 				878587B21D89D5D5008689F0 /* libzip.4.dylib */,
@@ -181,7 +185,6 @@
 		878587451D89CFDC008689F0 /* futurerestore */ = {
 			isa = PBXGroup;
 			children = (
-				878587951D89D290008689F0 /* config.h */,
 				8785874D1D89D1A4008689F0 /* external */,
 				8799B0B11D89D99D002F4D5F /* futurerestore.hpp */,
 				8799B0B01D89D99D002F4D5F /* futurerestore.cpp */,
@@ -194,7 +197,6 @@
 			isa = PBXGroup;
 			children = (
 				878587961D89D2BA008689F0 /* tsschecker */,
-				8785878B1D89D1ED008689F0 /* img4tool */,
 				8785874E1D89D1C1008689F0 /* idevicerestore */,
 			);
 			name = external;
@@ -248,27 +250,14 @@
 			path = external/idevicerestore/src;
 			sourceTree = SOURCE_ROOT;
 		};
-		8785878B1D89D1ED008689F0 /* img4tool */ = {
-			isa = PBXGroup;
-			children = (
-				8785878C1D89D1ED008689F0 /* all_img4tool.h */,
-				8785878F1D89D1ED008689F0 /* img4.h */,
-				8785878E1D89D1ED008689F0 /* img4.c */,
-				878587941D89D243008689F0 /* img4tool.h */,
-				878587901D89D1ED008689F0 /* img4tool.c */,
-			);
-			name = img4tool;
-			path = external/img4tool/img4tool;
-			sourceTree = SOURCE_ROOT;
-		};
 		878587961D89D2BA008689F0 /* tsschecker */ = {
 			isa = PBXGroup;
 			children = (
 				878587971D89D2BA008689F0 /* all_tsschecker.h */,
 				878587991D89D2BA008689F0 /* download.h */,
 				878587981D89D2BA008689F0 /* download.c */,
-				8785879B1D89D2BA008689F0 /* jsmn.h */,
-				8785879A1D89D2BA008689F0 /* jsmn.c */,
+				8785879B1D89D2BA008689F0 /* jssy.h */,
+				8785879A1D89D2BA008689F0 /* jssy.c */,
 				878587A01D89D2BA008689F0 /* tsschecker.h */,
 				8785879F1D89D2BA008689F0 /* tsschecker.c */,
 			);
@@ -279,6 +268,7 @@
 		87F574C21E151CDE008D5C4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */,
 				878E1AC41F73EB3F00B1565B /* libzip.5.dylib */,
 				8788A6801EE8426A00138E07 /* libipatcher.0.dylib */,
 				87F574CE1E151F11008D5C4D /* libSystem.tbd */,
@@ -300,6 +290,7 @@
 				8785873F1D89CFDC008689F0 /* Sources */,
 				878587401D89CFDC008689F0 /* Frameworks */,
 				878587411D89CFDC008689F0 /* CopyFiles */,
+				8762F346236DF4D900F42FDB /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -329,6 +320,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 8785873A1D89CFDC008689F0;
@@ -346,7 +338,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8788A6831EE8544000138E07 /* jssy.c in Sources */,
 				8799B0C11D89DB38002F4D5F /* fls.c in Sources */,
 				8799B0B41D89DAF6002F4D5F /* tss.c in Sources */,
 				8799B0C01D89DB38002F4D5F /* fdr.c in Sources */,
@@ -357,7 +348,6 @@
 				8799B0C41D89DB55002F4D5F /* mbn.c in Sources */,
 				8799B0B81D89DAFF002F4D5F /* recovery.c in Sources */,
 				8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */,
-				8799B0C81D89E2BD002F4D5F /* img4tool.c in Sources */,
 				8799B0BB1D89DB12002F4D5F /* download.c in Sources */,
 				8799B0B71D89DAFF002F4D5F /* normal.c in Sources */,
 				8799B0C31D89DB4B002F4D5F /* socket.c in Sources */,
@@ -369,7 +359,6 @@
 				8799B0BF1D89DB38002F4D5F /* asr.c in Sources */,
 				8799B0BE1D89DB27002F4D5F /* restore.c in Sources */,
 				8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */,
-				8799B0C91D89E2C3002F4D5F /* img4.c in Sources */,
 				8799B0CA1D89E371002F4D5F /* img4.c in Sources */,
 				8799B0B21D89D99D002F4D5F /* futurerestore.cpp in Sources */,
 			);
@@ -463,6 +452,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+					"IDEVICERESTORE_NOMAIN=1",
+					"CUSTOM_LOGGING=1",
+				);
 				HEADER_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
@@ -473,7 +468,7 @@
 				);
 				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/tsschecker/external/jssy/jssy";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/libgeneral/include $(SRCROOT)/external/tsschecker/external/jssy/jssy $(SRCROOT)/external/idevicerestore/src";
 			};
 			name = Debug;
 		};
@@ -491,7 +486,7 @@
 				);
 				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/tsschecker/external/jssy/jssy";
+				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/libgeneral/include $(SRCROOT)/external/tsschecker/external/jssy/jssy $(SRCROOT)/external/idevicerestore/src";
 			};
 			name = Release;
 		};
