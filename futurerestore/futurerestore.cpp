@@ -670,7 +670,20 @@ void futurerestore::doRestore(const char *ipsw){
         }else
             printf("Verified ECID in APTicket matches device ECID\n");
 
-        plist_t ticketIdentity = img4tool::getBuildIdentityForIm4m({im4m.first,im4m.second}, buildmanifest);
+        plist_t ticketIdentity = NULL;
+        
+        try {
+            ticketIdentity = img4tool::getBuildIdentityForIm4m({im4m.first,im4m.second}, buildmanifest);
+        } catch (tihmstar::exception &e) {
+            //
+        }
+        
+        if (!ticketIdentity) {
+            printf("Failed to get exact match for build identity, using fallback to ignore certain values");
+            ticketIdentity = img4tool::getBuildIdentityForIm4m({im4m.first,im4m.second}, buildmanifest, {"RestoreRamDisk","RestoreTrustCache"});
+        }
+        
+        
         //TODO: make this nicer!
         //for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest
         if (ticketIdentity != build_identity ){
