@@ -13,9 +13,6 @@
 #include <unistd.h>
 #include <vector>
 #include "futurerestore.hpp"
-#ifdef HAVE_LIBIPATCHER
-#include <libipatcher/libipatcher.hpp>
-#endif
 
 extern "C"{
 #include "tsschecker.h"
@@ -24,6 +21,9 @@ extern "C"{
 };
 
 #include <libgeneral/macros.h>
+#ifdef HAVE_LIBIPATCHER
+#include <libipatcher/libipatcher.hpp>
+#endif
 
 
 static struct option longopts[] = {
