@@ -79,7 +79,6 @@ using namespace std;
 using namespace tihmstar;
 int main_r(int argc, const char * argv[]) {
     int err=0;
-    int res = -1;
     printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
 #ifdef HAVE_LIBIPATCHER
     printf("%s\n",libipatcher::version().c_str());
@@ -271,14 +270,16 @@ int main_r(int argc, const char * argv[]) {
             client.doJustBoot(ipsw,bootargs);
         else
             client.doRestore(ipsw);
+        printf("Done: restoring succeeded!\n");
     } catch (tihmstar::exception &e) {
         e.dump();
+        printf("Done: restoring failed!\n");
     }
-    cout << "Done: restoring "<< (!res ? "succeeded" : "failed")<<"." <<endl;
-
     
 error:
-    if (err) cout << "Failed with errorcode="<<err << endl;
+    if (err){
+        printf("Failed with errorcode=%d\n",err);
+    }
     return err;
 #undef reterror
 }
