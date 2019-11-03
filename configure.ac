@@ -43,12 +43,23 @@ AC_CONFIG_SUBDIRS(external/idevicerestore external/tsschecker)
 AC_CONFIG_SRCDIR([futurerestore])
 
 
-PKG_CHECK_MODULES(libplist, libplist >= 1.12)
-PKG_CHECK_MODULES(libzip, libzip >= 0.10)
-PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.2.1)
-PKG_CHECK_MODULES(libfragmentzip, libfragmentzip >= 1.0)
-PKG_CHECK_MODULES(libirecovery, libirecovery >= 0.2.0)
-PKG_CHECK_MODULES(libimg4tool, libimg4tool >= 158)
+
+LIBIPATCHER_REQUIRES_STR="libipatcher >= 57"
+LIBPLIST_REQUIRES_STR="libplist >= 2.0.0"
+LIBZIP_REQUIRES_STR="libzip >= 0.10"
+LIBIMOBILEDEVICE_REQUIRES_STR="libimobiledevice-1.0 >= 1.2.1"
+LIBFRAGMENTZIP_REQUIRES_STR="libfragmentzip >= 47"
+LIBIRECOVERY_REQUIRES_STR="libirecovery >= 0.2.0"
+IMG4TOOL_REQUIRES_STR="libimg4tool >= 159"
+LIBGENERAL_REQUIRES_STR="libgeneral >= 26"
+
+PKG_CHECK_MODULES(libplist, libplist >= 2.0.0)
+PKG_CHECK_MODULES(libzip, $LIBZIP_REQUIRES_STR)
+PKG_CHECK_MODULES(libimobiledevice, $LIBIMOBILEDEVICE_REQUIRES_STR)
+PKG_CHECK_MODULES(libfragmentzip, $LIBFRAGMENTZIP_REQUIRES_STR)
+PKG_CHECK_MODULES(libirecovery, $LIBIRECOVERY_REQUIRES_STR)
+PKG_CHECK_MODULES(libimg4tool, $IMG4TOOL_REQUIRES_STR)
+PKG_CHECK_MODULES(libgeneral, $LIBGENERAL_REQUIRES_STR)
 
 
 # Optional module libipatcher
@@ -65,7 +76,7 @@ if [test -z "$LIBIPATCHER_FLAGS"]; then
 else
     AC_MSG_CHECKING([for futurerestore libipatcher])
     if test "$build_libipatcher" = "true"; then
-            PKG_CHECK_MODULES(libipatcher, libipatcher >= 47)
+            PKG_CHECK_MODULES(libipatcher, $LIBIPATCHER_REQUIRES_STR)
             AC_DEFINE(HAVE_LIBIPATCHER, 1, [Define if you have libipatcher])
             do_libipatcher=yes
     else

@@ -463,7 +463,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     try {
         iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
         iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
-    } catch (tihmstar::exception e) {
+    } catch (tihmstar::exception &e) {
         reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
     }
     

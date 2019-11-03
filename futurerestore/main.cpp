@@ -280,15 +280,14 @@ error:
 }
 
 int main(int argc, const char * argv[]) {
-#ifdef DEBUG
-    return main_r(argc, argv);
-#else
+//#ifdef DEBUG
+//    return main_r(argc, argv);
+//#else
     try {
         return main_r(argc, argv);
-    } catch (tihmstar::exception &e) {
-        printf("%s: failed with exception:\n",PACKAGE_NAME);
-        e.dump();
-        return e.code();
+    } catch (std::exception &e) {
+        printf("%s: failed with exception (%s)\n",PACKAGE_NAME,e.what());
+        return -1;
     }
-#endif
+//#endif
 }

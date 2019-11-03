@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8754A6AE236F104300C0D285 /* libgeneral.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8754A6AD236F104200C0D285 /* libgeneral.0.dylib */; };
+		8754A6AF236F104300C0D285 /* libgeneral.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8754A6AD236F104200C0D285 /* libgeneral.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		8762F344236DF4D900F42FDB /* libimg4tool.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */; };
 		8762F345236DF4D900F42FDB /* libimg4tool.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		878587471D89CFDC008689F0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 878587461D89CFDC008689F0 /* main.cpp */; };
@@ -54,6 +56,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				8762F345236DF4D900F42FDB /* libimg4tool.0.dylib in Embed Libraries */,
+				8754A6AF236F104300C0D285 /* libgeneral.0.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -70,6 +73,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8754A6AD236F104200C0D285 /* libgeneral.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgeneral.0.dylib; path = ../../../../usr/local/lib/libgeneral.0.dylib; sourceTree = "<group>"; };
 		8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libimg4tool.0.dylib; path = ../../../../usr/local/lib/libimg4tool.0.dylib; sourceTree = "<group>"; };
 		878587431D89CFDC008689F0 /* futurerestore */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = futurerestore; sourceTree = BUILT_PRODUCTS_DIR; };
 		878587461D89CFDC008689F0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -156,6 +160,7 @@
 				8762F344236DF4D900F42FDB /* libimg4tool.0.dylib in Frameworks */,
 				87F574D01E151F44008D5C4D /* libcrypto.dylib in Frameworks */,
 				87F574CB1E151E97008D5C4D /* libfragmentzip.0.dylib in Frameworks */,
+				8754A6AE236F104300C0D285 /* libgeneral.0.dylib in Frameworks */,
 				878587B71D89D637008689F0 /* libirecovery.2.dylib in Frameworks */,
 				878587AF1D89D5A5008689F0 /* libcurl.tbd in Frameworks */,
 				878587AB1D89D590008689F0 /* libimobiledevice.6.dylib in Frameworks */,
@@ -283,6 +288,7 @@
 		87F574C21E151CDE008D5C4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8754A6AD236F104200C0D285 /* libgeneral.0.dylib */,
 				8762F343236DF4D900F42FDB /* libimg4tool.0.dylib */,
 				878E1AC41F73EB3F00B1565B /* libzip.5.dylib */,
 				8788A6801EE8426A00138E07 /* libipatcher.0.dylib */,
