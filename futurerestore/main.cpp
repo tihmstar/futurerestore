@@ -6,7 +6,6 @@
 //  Copyright © 2016 tihmstar. All rights reserved.
 //
 
-#include <libgeneral/macros.h>
 
 #include <iostream>
 #include <getopt.h>
@@ -20,7 +19,12 @@
 
 extern "C"{
 #include "tsschecker.h"
+#undef VERSION_COMMIT_SHA
+#undef VERSION_COMMIT_COUNT
 };
+
+#include <libgeneral/macros.h>
+
 
 static struct option longopts[] = {
     { "apticket",           required_argument,      NULL, 't' },
