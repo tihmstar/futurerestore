@@ -25,7 +25,7 @@
 		8799B0B71D89DAFF002F4D5F /* normal.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876C1D89D1C1008689F0 /* normal.c */; };
 		8799B0B81D89DAFF002F4D5F /* recovery.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876E1D89D1C1008689F0 /* recovery.c */; };
 		8799B0B91D89DB0D002F4D5F /* img3.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875E1D89D1C1008689F0 /* img3.c */; };
-		8799B0BB1D89DB12002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587551D89D1C1008689F0 /* download.c */; };
+		8799B0BB1D89DB12002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587551D89D1C1008689F0 /* download.c */; settings = {COMPILER_FLAGS = "-DPACKAGE_VERSION=\"\""; }; };
 		8799B0BC1D89DB27002F4D5F /* ipsw.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587621D89D1C1008689F0 /* ipsw.c */; };
 		8799B0BD1D89DB27002F4D5F /* limera1n.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587641D89D1C1008689F0 /* limera1n.c */; };
 		8799B0BE1D89DB27002F4D5F /* restore.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587701D89D1C1008689F0 /* restore.c */; };
@@ -39,6 +39,9 @@
 		8799B0CA1D89E371002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587601D89D1C1008689F0 /* img4.c */; };
 		8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785879F1D89D2BA008689F0 /* tsschecker.c */; };
 		8799B0CC1D89F7B9002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587981D89D2BA008689F0 /* download.c */; };
+		87B517C3236EF36B009EAB8F /* ftab.c in Sources */ = {isa = PBXBuildFile; fileRef = 87B517C1236EF36B009EAB8F /* ftab.c */; };
+		87B517C6236EF3B0009EAB8F /* json_plist.c in Sources */ = {isa = PBXBuildFile; fileRef = 87B517C5236EF3B0009EAB8F /* json_plist.c */; };
+		87B517C9236EF3CD009EAB8F /* jsmn.c in Sources */ = {isa = PBXBuildFile; fileRef = 87B517C7236EF3CD009EAB8F /* jsmn.c */; };
 		87F574CB1E151E97008D5C4D /* libfragmentzip.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 87F574CA1E151E97008D5C4D /* libfragmentzip.0.dylib */; };
 		87F574D01E151F44008D5C4D /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 87F574C51E151D42008D5C4D /* libcrypto.dylib */; };
 /* End PBXBuildFile section */
@@ -129,6 +132,12 @@
 		878E1AC41F73EB3F00B1565B /* libzip.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libzip.5.dylib; path = ../../../../usr/local/Cellar/libzip/1.3.0/lib/libzip.5.dylib; sourceTree = "<group>"; };
 		8799B0B01D89D99D002F4D5F /* futurerestore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = futurerestore.cpp; sourceTree = "<group>"; };
 		8799B0B11D89D99D002F4D5F /* futurerestore.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = futurerestore.hpp; sourceTree = "<group>"; };
+		87B517C1236EF36B009EAB8F /* ftab.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ftab.c; sourceTree = "<group>"; };
+		87B517C2236EF36B009EAB8F /* ftab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ftab.h; sourceTree = "<group>"; };
+		87B517C4236EF3B0009EAB8F /* json_plist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_plist.h; sourceTree = "<group>"; };
+		87B517C5236EF3B0009EAB8F /* json_plist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = json_plist.c; sourceTree = "<group>"; };
+		87B517C7236EF3CD009EAB8F /* jsmn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jsmn.c; sourceTree = "<group>"; };
+		87B517C8236EF3CD009EAB8F /* jsmn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jsmn.h; sourceTree = "<group>"; };
 		87F574C51E151D42008D5C4D /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = ../../../../usr/lib/libcrypto.dylib; sourceTree = "<group>"; };
 		87F574C71E151DA6008D5C4D /* libcommonCrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcommonCrypto.tbd; path = usr/lib/system/libcommonCrypto.tbd; sourceTree = SDKROOT; };
 		87F574CA1E151E97008D5C4D /* libfragmentzip.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfragmentzip.0.dylib; path = ../../../../usr/local/lib/libfragmentzip.0.dylib; sourceTree = "<group>"; };
@@ -224,6 +233,12 @@
 				8785875F1D89D1C1008689F0 /* img3.h */,
 				878587601D89D1C1008689F0 /* img4.c */,
 				878587611D89D1C1008689F0 /* img4.h */,
+				87B517C5236EF3B0009EAB8F /* json_plist.c */,
+				87B517C4236EF3B0009EAB8F /* json_plist.h */,
+				87B517C1236EF36B009EAB8F /* ftab.c */,
+				87B517C2236EF36B009EAB8F /* ftab.h */,
+				87B517C7236EF3CD009EAB8F /* jsmn.c */,
+				87B517C8236EF3CD009EAB8F /* jsmn.h */,
 				878587621D89D1C1008689F0 /* ipsw.c */,
 				878587631D89D1C1008689F0 /* ipsw.h */,
 				878587641D89D1C1008689F0 /* limera1n.c */,
@@ -342,6 +357,7 @@
 				8799B0B41D89DAF6002F4D5F /* tss.c in Sources */,
 				8799B0C01D89DB38002F4D5F /* fdr.c in Sources */,
 				8799B0BC1D89DB27002F4D5F /* ipsw.c in Sources */,
+				87B517C3236EF36B009EAB8F /* ftab.c in Sources */,
 				8799B0CC1D89F7B9002F4D5F /* download.c in Sources */,
 				8799B0B91D89DB0D002F4D5F /* img3.c in Sources */,
 				8799B0B51D89DAFF002F4D5F /* common.c in Sources */,
@@ -350,12 +366,14 @@
 				8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */,
 				8799B0BB1D89DB12002F4D5F /* download.c in Sources */,
 				8799B0B71D89DAFF002F4D5F /* normal.c in Sources */,
+				87B517C9236EF3CD009EAB8F /* jsmn.c in Sources */,
 				8799B0C31D89DB4B002F4D5F /* socket.c in Sources */,
 				8799B0C21D89DB46002F4D5F /* thread.c in Sources */,
 				8799B0B61D89DAFF002F4D5F /* dfu.c in Sources */,
 				8799B0BD1D89DB27002F4D5F /* limera1n.c in Sources */,
 				8799B0C51D89DB67002F4D5F /* locking.c in Sources */,
 				878587471D89CFDC008689F0 /* main.cpp in Sources */,
+				87B517C6236EF3B0009EAB8F /* json_plist.c in Sources */,
 				8799B0BF1D89DB38002F4D5F /* asr.c in Sources */,
 				8799B0BE1D89DB27002F4D5F /* restore.c in Sources */,
 				8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */,
@@ -457,6 +475,7 @@
 					"$(inherited)",
 					"IDEVICERESTORE_NOMAIN=1",
 					"CUSTOM_LOGGING=1",
+					"HAVE_REALPATH=1",
 				);
 				HEADER_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (

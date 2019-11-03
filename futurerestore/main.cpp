@@ -264,12 +264,11 @@ int main_r(int argc, const char * argv[]) {
     
     try {
         if (bootargs)
-            res = client.doJustBoot(ipsw,bootargs);
+            client.doJustBoot(ipsw,bootargs);
         else
-            res = client.doRestore(ipsw);
-    } catch (int error) {
-        if (error == -20) error("maybe you forgot -w ?\n");
-        err = error;
+            client.doRestore(ipsw);
+    } catch (tihmstar::exception &e) {
+        e.dump();
     }
     cout << "Done: restoring "<< (!res ? "succeeded" : "failed")<<"." <<endl;
 

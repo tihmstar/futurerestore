@@ -103,7 +103,7 @@ public:
     
     uint64_t getBasebandGoldCertIDFromDevice();
     
-    int doRestore(const char *ipsw);
+    void doRestore(const char *ipsw);
     int doJustBoot(const char *ipsw, std::string bootargs = "");
     
     ~futurerestore();
