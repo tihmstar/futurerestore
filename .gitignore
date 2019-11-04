@@ -3,9 +3,11 @@
 *.o
 *.la
 *.lo
+*.so
 */.libs
 */.deps
-Makefile*
+*Makefile
+*Makefile.in
 aclocal.m4
 autom4te.cache
 compile
@@ -20,4 +22,4 @@ missing
 */config.h*
 */futurerestore*
 stamp-h1
-xcuserdata/*
+xcuserdata
