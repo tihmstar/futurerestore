@@ -38,7 +38,6 @@ extern "C"{
 #include "locking.h"
 #include "restore.h"
 #include "tsschecker.h"
-#include "all_tsschecker.h"
 #include <libirecovery.h>
 }
 
