@@ -449,6 +449,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 #else
     if (_client->image4supported) {
         retassure(libipatcher::has64bitSupport(), "libipatcher was compiled without 64bit support");
+        std::string generator = getGeneratorFromSHSH2(_client->tss);
+        retassure(img4tool::isGeneratorValidForIM4M({_im4ms[0].first,_im4ms[0].second}, generator), "generator returned from device is not valid from apticket");
     }
     
     int mode = 0;
@@ -458,15 +460,13 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     retassure(!dfu_client_new(_client),"Unable to connect to DFU device\n");
 
     irecv_get_mode(_client->dfu->client, &mode);
-    
-    
+        
     try {
         iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
         iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
     } catch (tihmstar::exception &e) {
         reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
     }
-    
     
     auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
     iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
@@ -492,31 +492,53 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         retassure(modeIsRecovery, "device not in recovery mode\n");
     }else{
         info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
-        // FIXME: Did I do this right????
+        mutex_lock(&_client->device_event_mutex);
         irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
         retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+        
+        /* reconnect */
+        dfu_client_free(_client);
+        
+        debug("Waiting for device to disconnect...\n");
+        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+        retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+        mutex_unlock(&_client->device_event_mutex);
+
+        debug("Waiting for device to reconnect...\n");
+        mutex_lock(&_client->device_event_mutex);
+        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+        retassure((_client->mode == &idevicerestore_modes[MODE_DFU] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+        mutex_unlock(&_client->device_event_mutex);
+        
+        dfu_client_new(_client);
     }
     
     if (_client->build_major > 8) {
-        /* reconnect */
-        dfu_client_free(_client);
-        sleep(3);
-        dfu_client_new(_client);
-        
-       retassure(!irecv_usb_set_configuration(_client->dfu->client, 1),"ERROR: set configuration failed\n");
-        
+        retassure(!irecv_usb_set_configuration(_client->dfu->client, 1),"ERROR: set configuration failed\n");
         /* send iBEC */
         info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
-        // FIXME: Did I do this right????
+        mutex_lock(&_client->device_event_mutex);
         irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
-        retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
-        if (modeIsRecovery)
+        retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
+        printf("waiting for device to reconnect...\n");
+        if (modeIsRecovery){
             irecv_send_command(_client->dfu->client, "go");
+            recovery_client_free(_client);
+        }else{
+            dfu_client_free(_client);
+        }
+
+        debug("Waiting for device to disconnect...\n");
+        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+        retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+        mutex_unlock(&_client->device_event_mutex);
     }
-    
-    dfu_client_free(_client);
-    
-    sleep(7);
+
+    debug("Waiting for device to reconnect...\n");
+    mutex_lock(&_client->device_event_mutex);
+    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+    retassure((_client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+    mutex_unlock(&_client->device_event_mutex);
     
     // Reconnect to device, but this time make sure we're not still in DFU mode
     if (recovery_client_new(_client) < 0) {
@@ -527,16 +549,68 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         reterror("ERROR: Unable to connect to recovery device\n");
     }
     
-#warning THIS FAILS on iPhone5s 10.3.3 for some reason :/
-//    irecv_get_mode(_client->recovery->client, &mode);
-//    if (mode == IRECV_K_DFU_MODE) {
-//        if (_client->recovery->client) {
-//            irecv_close(_client->recovery->client);
-//            _client->recovery->client = NULL;
-//        }
-//        reterror("ERROR: Unable to connect to recovery device\n");
-//    }
-#endif
+    if (_client->image4supported) {
+        char *deviceGen = NULL;
+        cleanup([&]{
+            safeFree(deviceGen);
+        });
+        //IMG4 requires to have a generator set for the device to successfully boot after restore.
+        //set generator now and make sure the nonce is the one we are trying to restore
+        
+        assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 0 0"));
+        sleep(2); //yes i like displaying colored screens to the user and making him wait for no reason :P
+        
+        auto nonceelem = img4tool::getValFromIM4M({_im4ms[0].first,_im4ms[0].second}, 'BNCH');
+
+        printf("APNonce pre-hax:\n");
+        get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
+        std::string generator = getGeneratorFromSHSH2(_client->tss);
+
+        if (memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
+            printf("APNonce from device doesn't match IM4M nonce, applying hax...\n");
+            
+            assure(_client->tss);
+            printf("Writing generator=%s to nvram!\n",generator.c_str());
+            
+            retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),"failed to write generator to nvram");
+            retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
+            
+            /* send iBEC */
+            info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
+            mutex_lock(&_client->device_event_mutex);
+            irecv_error_t err = irecv_send_buffer(_client->recovery->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
+            retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
+            printf("waiting for device to reconnect...\n");
+            retassure(!irecv_send_command(_client->recovery->client, "go"),"failed to re-launch iBEC after nonce hax");
+            recovery_client_free(_client);
+
+            debug("Waiting for device to disconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
+            mutex_unlock(&_client->device_event_mutex);
+            
+            debug("Waiting for device to reconnect...\n");
+            mutex_lock(&_client->device_event_mutex);
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure((_client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
+            mutex_unlock(&_client->device_event_mutex);
+
+            retassure(!recovery_client_new(_client), "failed to reconnect to recovery after nonce hax");
+            
+            printf("APnonce post-hax:\n");
+            get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
+            assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
+            retassure(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "APNonce from device doesn't match IM4M nonce after applying noncehax. Aborting!");
+        }else{
+            printf("APNonce from device already matches IM4M nonce, no need for extra hax...\n");
+        }
+        retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),"failed to write generator to nvram");
+        retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
+        
+        sleep(2); //yes i like displaying colored screens to the user and making him wait for no reason :P
+    }
+    
+#endif //HAVE_LIBIPATCHER
 }
 
 void get_custom_component(struct idevicerestore_client_t* client, plist_t build_identity, const char* component, unsigned char** data, unsigned int *size){
@@ -587,7 +661,7 @@ void futurerestore::doRestore(const char *ipsw){
     }else{
         retassure(!_enterPwnRecoveryRequested, "--pwn-dfu was specified, but device found in recovery mode!");
     }
-
+        
     info("Found device in %s mode\n", client->mode->string);
     mutex_unlock(&client->device_event_mutex);
 
@@ -595,7 +669,6 @@ void futurerestore::doRestore(const char *ipsw){
 
     // verify if ipsw file exists
     retassure(!access(client->ipsw, F_OK),"ERROR: Firmware file %s does not exist.\n", client->ipsw);
-
 
     info("Extracting BuildManifest from IPSW\n");
     {
@@ -613,7 +686,8 @@ void futurerestore::doRestore(const char *ipsw){
 
     client->image4supported = is_image4_supported(client);
     info("Device supports Image4: %s\n", (client->image4supported) ? "true" : "false");
-
+    
+    
     if (_enterPwnRecoveryRequested) //we are in pwnDFU, so we don't need to check nonces
         client->tss = _aptickets.at(0);
     else if (!(client->tss = nonceMatchesApTickets()))
@@ -622,6 +696,11 @@ void futurerestore::doRestore(const char *ipsw){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
 
+    if (_enterPwnRecoveryRequested && _client->image4supported) {
+        retassure(plist_dict_get_item(_client->tss, "generator"), "shsh file does not contain generator. But a generator is required for 64bit pwndfu restore");
+    }
+
+    
     retassure(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, _isUpdateInstall),"ERROR: Unable to find any build identities for IPSW\n");
 
     if (_client->image4supported) {
@@ -679,7 +758,7 @@ void futurerestore::doRestore(const char *ipsw){
         }
         
         if (!ticketIdentity) {
-            printf("Failed to get exact match for build identity, using fallback to ignore certain values");
+            printf("Failed to get exact match for build identity, using fallback to ignore certain values\n");
             ticketIdentity = img4tool::getBuildIdentityForIm4m({im4m.first,im4m.second}, buildmanifest, {"RestoreRamDisk","RestoreTrustCache"});
         }
         
@@ -782,7 +861,7 @@ void futurerestore::doRestore(const char *ipsw){
         retassure(getDeviceMode(true) == MODE_DFU, "unexpected device mode\n");
         enterPwnRecovery(build_identity);
     }
-
+    
     // Get filesystem name from build identity
     char* fsname = NULL;
     retassure(!build_identity_get_component_path(build_identity, "OS", &fsname), "ERROR: Unable get path for filesystem component\n");
@@ -868,7 +947,7 @@ void futurerestore::doRestore(const char *ipsw){
     }
 
     if (_rerestoreiOS9) {
-        
+        mutex_lock(&_client->device_event_mutex);
         if (dfu_send_component(client, build_identity, "iBSS") < 0) {
             irecv_close(client->dfu->client);
             client->dfu->client = NULL;
@@ -881,8 +960,10 @@ void futurerestore::doRestore(const char *ipsw){
         debug("Waiting for device to disconnect...\n");
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
         retassure((client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+        mutex_unlock(&client->device_event_mutex);
 
         debug("Waiting for device to reconnect...\n");
+        mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
         retassure((client->mode == &idevicerestore_modes[MODE_DFU] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
@@ -899,12 +980,15 @@ void futurerestore::doRestore(const char *ipsw){
         dfu_client_free(client);
         
         debug("Waiting for device to disconnect...\n");
+        mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
         retassure((client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+        mutex_unlock(&client->device_event_mutex);
 
         debug("Waiting for device to reconnect...\n");
+        mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        retassure((client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+        retassure((client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
 
         
@@ -921,9 +1005,9 @@ void futurerestore::doRestore(const char *ipsw){
 
 
 
-    if (_enterPwnRecoveryRequested){ //if pwnrecovery send all components decrypted, unless we're dealing with iOS 10
+    if (_enterPwnRecoveryRequested){
         if (!_client->image4supported) {
-            if (strncmp(client->version, "10.", 3))
+            if (strncmp(client->version, "10.", 3))//if pwnrecovery send all components decrypted, unless we're dealing with iOS 10
                 client->recovery_custom_component_function = get_custom_component;
         }
     }else if (!_rerestoreiOS9){
@@ -934,10 +1018,13 @@ void futurerestore::doRestore(const char *ipsw){
         recovery_client_free(client);
         
         debug("Waiting for device to disconnect...\n");
+        mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
         retassure((client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+        mutex_unlock(&client->device_event_mutex);
 
         debug("Waiting for device to reconnect...\n");
+        mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
         retassure((client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
@@ -965,14 +1052,14 @@ void futurerestore::doRestore(const char *ipsw){
     }
 
     if (_client->image4supported) {
+        info("getting sep ticket\n");
         retassure(!get_tss_response(client, sep_build_identity, &client->septss), "ERROR: Unable to get SHSH blobs for SEP\n");
         retassure(_client->sepfwdatasize && _client->sepfwdata, "SEP not loaded, refusing to continue");
     }
 
     
-    
     mutex_lock(&client->device_event_mutex);
-    debug("Waiting for device to disconnect...\n");
+    debug("Waiting for device to enter restore mode...\n");
     cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 180000);
     retassure((client->mode == &idevicerestore_modes[MODE_RESTORE] || (mutex_unlock(&client->device_event_mutex),0)), "Device failed to enter restore mode");
     mutex_unlock(&client->device_event_mutex);
@@ -1378,3 +1465,22 @@ noerror:
     return pathStr;
 }
 
+std::string futurerestore::getGeneratorFromSHSH2(const plist_t shsh2){
+    plist_t pGenerator = NULL;
+    uint64_t gen = 0;
+    char *genstr = NULL;
+    cleanup([&]{
+        safeFree(genstr);
+    });
+    retassure(pGenerator = plist_dict_get_item(shsh2, "generator"), "shsh file does not contain generator");
+    
+    retassure(plist_get_node_type(pGenerator) == PLIST_STRING, "generator has unexpected type! We expect string of the format 0x%16llx");
+    
+    plist_get_string_val(pGenerator, &genstr);
+    assure(genstr);
+    
+    sscanf(genstr, "0x%16llx",&gen);
+    retassure(gen, "failed to parse generator. Make sure it is in format 0x%16llx");
+    
+    return {genstr};
+}

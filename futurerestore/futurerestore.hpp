@@ -114,7 +114,7 @@ public:
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(const char *str, const char *path);
     static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *model, int isUpdateInstall);
-
+    static std::string getGeneratorFromSHSH2(const plist_t shsh2);
 };
 
 
