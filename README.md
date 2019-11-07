@@ -20,10 +20,18 @@ http://api.tihmstar.net/builds/futurerestore/futurerestore-latest.zip
   * jsmn
 * ## External Libs
   Make sure these are installed
-  * libzip
-  * libcurl
-  * openssl (or CommonCrypto on OSX)
+  * openssl
+  * libpng
+  * [xpwn](https://github.com/tihmstar/xpwn)
   * [libplist](https://github.com/libimobiledevice/libplist)
+  * [libusbmuxd](https://github.com/libimobiledevice/libusbmuxd)
+  * [libirecovery](https://github.com/libimobiledevice/libirecovery)
+  * [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice)
+  * [libfragmentzip](https://github.com/tihmstar/libfragmentzip)
+  * [tsschecker](https://github.com/tihmstar/tsschecker)
+  * [img4tool](https://github.com/tihmstar/img4tool)
+  * [liboffsetfinder64](https://github.com/tihmstar/liboffsetfinder64)
+  * [libipatcher](https://github.com/tihmstar/libipatcher)
 * ## Submodules
   Make sure these projects compile on your system (install it's dependencies)
   * [tsschecker](https://github.com/tihmstar/tsschecker)
