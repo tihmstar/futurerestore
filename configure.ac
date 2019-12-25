@@ -8,6 +8,7 @@ AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([m4])
 
+# Versioning.
 AC_DEFINE([VERSION_COMMIT_COUNT], "m4_esyscmd([git rev-list --count HEAD | tr -d '\n'])", [Git commit count])
 AC_DEFINE([VERSION_COMMIT_SHA], "m4_esyscmd([git rev-parse HEAD | tr -d '\n'])", [Git commit sha])
 AC_SUBST([VERSION_COMMIT_COUNT], ["m4_esyscmd([git rev-list --count HEAD | tr -d '\n'])"])
@@ -17,8 +18,7 @@ AC_SUBST([VERSION_COMMIT_SHA], ["m4_esyscmd([git rev-parse HEAD | tr -d '\n'])"]
 AC_PROG_CXX
 AC_PROG_CC
 
-
-# Check for operating system
+# Check for operating system.
 AC_MSG_CHECKING([whether we need platform-specific build settings])
 case $host_os in
   darwin* )
@@ -26,12 +26,10 @@ case $host_os in
         ;;
 esac
 
-
+# Checks the flags.
 CFLAGS="-DIDEVICERESTORE_NOMAIN=1 -DTSSCHECKER_NOMAIN=1"
-
 CXXFLAGS+=" -std=c++11"
 CFLAGS+=" -std=c11"
-
 
 AC_DEFUN([AX_UNPRECIOUS], [
     m4_define([_AC_PRECIOUS_VARS], m4_bpatsubst(_AC_PRECIOUS_VARS, [$1], []))
@@ -42,8 +40,7 @@ export CFLAGS
 AC_CONFIG_SUBDIRS(external/idevicerestore external/tsschecker)
 AC_CONFIG_SRCDIR([futurerestore])
 
-
-
+# Checks the libraries.
 LIBIPATCHER_REQUIRES_STR="libipatcher >= 61"
 LIBPLIST_REQUIRES_STR="libplist >= 2.0.0"
 LIBZIP_REQUIRES_STR="libzip >= 0.10"
@@ -60,7 +57,6 @@ PKG_CHECK_MODULES(libfragmentzip, $LIBFRAGMENTZIP_REQUIRES_STR)
 PKG_CHECK_MODULES(libirecovery, $LIBIRECOVERY_REQUIRES_STR)
 PKG_CHECK_MODULES(libimg4tool, $IMG4TOOL_REQUIRES_STR)
 PKG_CHECK_MODULES(libgeneral, $LIBGENERAL_REQUIRES_STR)
-
 
 # Optional module libipatcher
 AC_ARG_WITH([libipatcher],
@@ -87,14 +83,12 @@ AM_CONDITIONAL([HAVE_LIBIPATCHER],[test "x$do_libipatcher" = "xyes"])
 
 AC_DEFINE(CUSTOM_LOGGING, 1, [required for futurerestore])
 
-
 LT_INIT
 
 AC_OUTPUT([
 Makefile
 futurerestore/Makefile
 ])
-
 
 echo "
 Configuration for $PACKAGE $VERSION:

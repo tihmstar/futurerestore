@@ -1,11 +1,10 @@
-
+//
 //  main.cpp
 //  futurerestore
 //
 //  Created by tihmstar on 14.09.16.
 //  Copyright © 2016 tihmstar. All rights reserved.
 //
-
 
 #include <iostream>
 #include <getopt.h>
@@ -42,6 +41,7 @@ static struct option longopts[] = {
     { "use-pwndfu",         no_argument,            NULL, '3' },
     { "just-boot",          optional_argument,      NULL, '4' },
 #endif
+    { "exit-recovery",      no_argument,            NULL, '5' },
     { NULL, 0, NULL, 0 }
 };
 
@@ -70,9 +70,9 @@ void cmd_help(){
     printf("      --use-pwndfu\t\tuse this for restoring devices with odysseus method. Device needs to be in kDFU mode already\n");
     printf("      --just-boot=\"-v\"\t\tuse this to tethered boot the device from kDFU mode. You can optionally set bootargs\n");
 #endif
+    printf("      --exit-recovery\t\tExit recovery mode and quit\n");
     printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
-    printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n");
-    printf("\n");
+    printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n\n");
 }
 
 using namespace std;
@@ -91,6 +91,7 @@ int main_r(int argc, const char * argv[]) {
     int optindex = 0;
     int opt = 0;
     long flags = 0;
+    bool exitRecovery = false;
     
     int isSepManifestSigned = 0;
     int isBasebandSigned = 0;
@@ -112,8 +113,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud01", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud0123", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPaths.push_back(optarg);
@@ -146,7 +146,7 @@ int main_r(int argc, const char * argv[]) {
                 flags |= FLAG_NO_BASEBAND;
                 break;
 #ifdef HAVE_LIBIPATCHER
-            case '3': // long option: "no-baseband";
+            case '3': // long option: "use-pwndfu";
                 flags |= FLAG_IS_PWN_DFU;
                 break;
             case '4': // long option: "just-boot";
@@ -154,6 +154,9 @@ int main_r(int argc, const char * argv[]) {
                 break;
             break;
 #endif
+            case '5': // long option: "exit-recovery";
+                exitRecovery = true;
+                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -169,6 +172,8 @@ int main_r(int argc, const char * argv[]) {
         ipsw = argv[0];
     }else if (argc == optind && flags & FLAG_WAIT) {
         info("User requested to only wait for APNonce to match, but not actually restoring\n");
+    }else if (exitRecovery){
+        info("Exiting recovery mode\n");
     }else{
         error("argument parsing failed! agrc=%d optind=%d\n",argc,optind);
         if (idevicerestore_debug){
@@ -184,6 +189,12 @@ int main_r(int argc, const char * argv[]) {
     
     printf("futurerestore init done\n");
     retassure(!bootargs || (flags & FLAG_IS_PWN_DFU),"--just-boot requires --use-pwndfu\n");
+    
+    if (exitRecovery) {
+        client.exitRecovery();
+        info("Done\n");
+        return 0;
+    }
     
     try {
         if (apticketPaths.size()) client.loadAPTickets(apticketPaths);

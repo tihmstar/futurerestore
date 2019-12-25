@@ -178,6 +178,12 @@ void futurerestore::setAutoboot(bool val){
     retassure(!recovery_set_autoboot(_client, val),"Setting auto-boot failed?!\n");
 }
 
+void futurerestore::exitRecovery() {
+    setAutoboot(true);
+    recovery_send_reset(_client);
+    recovery_client_free(_client);
+}
+
 plist_t futurerestore::nonceMatchesApTickets(){
     retassure(_didInit, "did not init\n");
 
@@ -187,7 +193,6 @@ plist_t futurerestore::nonceMatchesApTickets(){
         else
             _rerestoreiOS9 = (info("Detected iOS 9 re-restore, proceeding in DFU mode\n"),true);
     }
-    
     
     unsigned char* realnonce;
     int realNonceSize = 0;
