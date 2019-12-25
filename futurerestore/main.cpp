@@ -252,7 +252,7 @@ int main_r(int argc, const char * argv[]) {
             if (flags & FLAG_NO_BASEBAND){
                 printf("\nWARNING: user specified not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
                 printf("if you added this flag by mistake you can press CTRL-C now to cancel\n");
-                int c = 5;
+                int c = 10;
                 printf("continuing restore in ");
                 while (c) {
                     printf("%d ",c--);
