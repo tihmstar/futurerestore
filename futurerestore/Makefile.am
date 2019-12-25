@@ -6,7 +6,7 @@ AM_LDFLAGS += $(libipatcher_LIBS)
 AM_CFLAGS += $(libipatcher_CFLAGS)
 endif
 
-bin_PROGRAMS	= futurerestore
+bin_PROGRAMS = futurerestore
 futurerestore_CXXFLAGS = $(AM_CFLAGS)
 futurerestore_LDADD = $(top_srcdir)/external/idevicerestore/src/libidevicerestore.la  $(top_srcdir)/external/tsschecker/tsschecker/libtsschecker.la $(top_srcdir)/external/tsschecker/tsschecker/libjssy.a $(AM_LDFLAGS)
 futurerestore_SOURCES = futurerestore.cpp main.cpp

@@ -59,27 +59,34 @@ static struct option longopts[] = {
 #define FLAG_IS_PWN_DFU         1 << 5
 
 void cmd_help(){
-    printf("Usage: futurerestore [OPTIONS] IPSW\n");
-    printf("Allows restoring nonmatching iOS/Sep/Baseband\n\n");
-
-    
-    printf("  -t, --apticket PATH\t\tApticket used for restoring\n");
-    printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
-    printf("  -p, --baseband-manifest PATH\tBuildmanifest for requesting baseband ticket\n");
-    printf("  -s, --sep PATH\t\tSep to be flashed\n");
-    printf("  -m, --sep-manifest PATH\tBuildmanifest for requesting sep ticket\n");
-    printf("  -w, --wait\t\t\tkeep rebooting until nonce matches APTicket\n");
-    printf("  -u, --update\t\t\tupdate instead of erase install\n");
-    printf("      --latest-sep\t\tuse latest signed sep instead of manually specifying one(may cause bad restore)\n");
-    printf("      --latest-baseband\t\tuse latest signed baseband instead of manually specifying one(may cause bad restore)\n");
-#ifdef HAVE_LIBIPATCHER
-    printf("      --use-pwndfu\t\tuse this for restoring devices with odysseus method. Device needs to be in kDFU mode already\n");
-    printf("      --just-boot=\"-v\"\t\tuse this to tethered boot the device from kDFU mode. You can optionally set bootargs\n");
-#endif
+    printf("Usage: futurerestore [OPTIONS] iPSW\n");
+    printf("Allows restoring to non-matching firmware with custom SEP+baseband\n");
+    printf("\nGeneral options:\n");
+    printf("  -t, --apticket PATH\t\tSigning tickets used for restoring\n");
+    printf("  -u, --update\t\t\tUpdate instead of erase install (requires appropriate APTicket)\n");
+    printf("              \t\t\tDO NOT use this parameter, if you update from jailbroken firmware!\n");
+    printf("  -w, --wait\t\t\tKeep rebooting until ApNonce matches APTicket (ApNonce collision, unreliable)\n");
+    printf("  -d, --debug\t\t\tShow all code, use to save a log for debug testing\n");
     printf("      --exit-recovery\t\tExit recovery mode and quit\n");
-    printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
-    printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n\n");
-}
+    
+#ifdef HAVE_LIBIPATCHER
+    printf("\nOptions for downgrading with Odysseus (32-bit/64-bit):\n");
+    printf("      --use-pwndfu\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
+    printf("      --just-boot=\"-v\"\t\tTethered booting the device from pwned DFU mode. You can optionally set boot-args\n");
+#endif
+        
+    printf("\nOptions for SEP:\n");
+    printf("      --latest-sep\t\tUse latest signed SEP instead of manually specifying one (may cause bad restore)\n");
+    printf("  -s, --sep PATH\t\tSEP to be flashed\n");
+    printf("  -m, --sep-manifest PATH\tBuildManifest for requesting SEP ticket\n");
+        
+    printf("\nOptions for baseband:\n");
+    printf("      --latest-baseband\t\tUse latest signed baseband instead of manually specifying one (may cause bad restore)\n");
+    printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
+    printf("  -p, --baseband-manifest PATH\tBuildManifest for requesting baseband ticket\n");
+    printf("      --no-baseband\t\tSkip checks and don't flash baseband\n");
+    printf("                   \t\tOnly use this for device without a baseband (eg. iPod touch or some Wi-Fi only iPads)\n\n");
+    }
 
 #ifdef WIN32
     DWORD termFlags;
@@ -95,10 +102,10 @@ int main_r(int argc, const char * argv[]) {
     printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
 #ifdef HAVE_LIBIPATCHER
     printf("%s\n",libipatcher::version().c_str());
-    printf("Odysseus Support: yes\n");
-    printf("Odysseus 64bit support: %s\n",(libipatcher::has64bitSupport() ? "yes" : "no"));
+    printf("Odysseus for 32-bit support: yes\n");
+    printf("Odysseus for 64-bit support: %s\n",(libipatcher::has64bitSupport() ? "yes" : "no"));
 #else
-    printf("Odysseus Support: no\n");
+    printf("Odysseus support: no\n");
 #endif
 
     int optindex = 0;
@@ -184,9 +191,9 @@ int main_r(int argc, const char * argv[]) {
         
         ipsw = argv[0];
     }else if (argc == optind && flags & FLAG_WAIT) {
-        info("User requested to only wait for APNonce to match, but not actually restoring\n");
+        info("User requested to only wait for ApNonce to match, but not for actually restoring\n");
     }else if (exitRecovery){
-        info("Exiting recovery mode\n");
+        info("Exiting to recovery mode\n");
     }else{
         error("argument parsing failed! agrc=%d optind=%d\n",argc,optind);
         if (idevicerestore_debug){
@@ -246,12 +253,12 @@ int main_r(int argc, const char * argv[]) {
             
             versVals.basebandMode = kBasebandModeWithoutBaseband;
             if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
-                reterror("sep firmware isn't signed\n");
+                reterror("SEP firmware doesn't signed\n");
             }
             
             if (flags & FLAG_NO_BASEBAND){
-                printf("\nWARNING: user specified not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
-                printf("if you added this flag by mistake you can press CTRL-C now to cancel\n");
+                printf("\nWARNING: user specified is not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
+                printf("if you added this flag by mistake, you can press CTRL-C now to cancel\n");
                 int c = 10;
                 printf("continuing restore in ");
                 while (c) {
@@ -267,7 +274,7 @@ int main_r(int argc, const char * argv[]) {
                 }else{
                     client.setBasebandPath(basebandPath);
                     client.setBasebandManifestPath(basebandManifestPath);
-                    printf("Did set sep+baseband path and firmware\n");
+                    printf("Did set SEP+baseband path and firmware\n");
                 }
                 
                 versVals.basebandMode = kBasebandModeOnlyBaseband;
@@ -275,7 +282,7 @@ int main_r(int argc, const char * argv[]) {
                     printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
                 }
                 if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
-                    reterror("baseband firmware isn't signed\n");
+                    reterror("baseband firmware doesn't signed\n");
                 }
             }
         }
@@ -302,7 +309,7 @@ int main_r(int argc, const char * argv[]) {
     
 error:
     if (err){
-        printf("Failed with errorcode=%d\n",err);
+        printf("Failed with error code=%d\n",err);
     }
     return err;
 #undef reterror
