@@ -24,6 +24,12 @@ extern "C"{
 #include <libipatcher/libipatcher.hpp>
 #endif
 
+#ifdef WIN32
+#include <windows.h>
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+#endif
 
 static struct option longopts[] = {
     { "apticket",           required_argument,      NULL, 't' },
@@ -74,6 +80,13 @@ void cmd_help(){
     printf("      --no-baseband\t\tskip checks and don't flash baseband.\n");
     printf("                   \t\tWARNING: only use this for device without baseband (eg iPod or some wifi only iPads)\n\n");
 }
+
+#ifdef WIN32
+    DWORD termFlags;
+    HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (GetConsoleMode(handle, &termFlags))
+        SetConsoleMode(handle, termFlags | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+#endif
 
 using namespace std;
 using namespace tihmstar;

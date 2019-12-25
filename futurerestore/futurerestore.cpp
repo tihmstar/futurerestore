@@ -6,13 +6,6 @@
 //  Copyright © 2016 tihmstar. All rights reserved.
 //
 
-#if defined _WIN32 || defined __CYGWIN__
-#ifndef WIN32
-//make sure WIN32 is defined if compiling for windows
-#define WIN32
-#endif
-#endif
-
 #include <libgeneral/macros.h>
 
 #include <iostream>
@@ -41,7 +34,6 @@ extern "C"{
 #include <libirecovery.h>
 }
 
-
 //(re)define __mkdir
 #ifdef __mkdir
 #undef __mkdir
@@ -56,8 +48,12 @@ extern "C"{
 
 #define USEC_PER_SEC 1000000
 
+#ifdef WIN32
+#define FUTURERESTORE_TMP_PATH "download"
+#else
 #define TMP_PATH "/tmp"
 #define FUTURERESTORE_TMP_PATH TMP_PATH"/futurerestore"
+#endif
 
 #define BASEBAND_TMP_PATH FUTURERESTORE_TMP_PATH"/baseband.bbfw"
 #define BASEBAND_MANIFEST_TMP_PATH FUTURERESTORE_TMP_PATH"/basebandManifest.plist"

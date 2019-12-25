@@ -9,6 +9,13 @@
 #ifndef futurerestore_hpp
 #define futurerestore_hpp
 
+#if defined _WIN32 || defined __CYGWIN__
+#ifndef WIN32
+//make sure WIN32 is defined if compiling for windows
+#define WIN32
+#endif
+#endif
+
 #include <stdio.h>
 #include <functional>
 #include <vector>
