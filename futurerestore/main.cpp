@@ -70,7 +70,7 @@ void cmd_help(){
     printf("      --exit-recovery\t\tExit recovery mode and quit\n");
     
 #ifdef HAVE_LIBIPATCHER
-    printf("\nOptions for downgrading with Odysseus (32-bit/64-bit):\n");
+    printf("\nOptions for downgrading with Odysseus:\n");
     printf("      --use-pwndfu\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
     printf("      --just-boot=\"-v\"\t\tTethered booting the device from pwned DFU mode. You can optionally set boot-args\n");
 #endif
