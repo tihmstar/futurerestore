@@ -10,12 +10,12 @@ __Only use if you are sure what you're doing.__
 # Features  
 * Supports the following downgrade methods:
   * Prometheus 64-bit devices (generator and ApNonce collision mode)
-  * Odysseus for 32-bit / 64-bit devices
+  * Odysseus for 32-bit & 64-bit (A7-A11) devices
   * Re-restoring 32-bit devices to iOS 9.x with [alitek123](https://github.com/alitek12)'s no-ApNonce method (alternative — [idevicererestore](https://downgrade.party)).
 * Allows restoring to non-matching firmware with custom SEP+baseband
 
 # Dependencies
-* ## External Libs
+* ## External libs
   Make sure these are installed
   * [libzip](https://github.com/nih-at/libzip);
   * [libcurl](https://github.com/curl/curl);
@@ -25,7 +25,7 @@ __Only use if you are sure what you're doing.__
   * [libirecovery](https://github.com/libimobiledevice/libirecovery);
   * [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice);
   * [img4tool](https://github.com/tihmstar/img4tool);
-  * [liboffsetfinder64](https://github.com/tihmstar/liboffsetfinder64)
+  * [liboffsetfinder64](https://github.com/tihmstar/liboffsetfinder64);
   * [libipatcher](https://github.com/tihmstar/libipatcher)
 
 * ## Submodules
@@ -67,15 +67,15 @@ Usage: `futurerestore [OPTIONS] iPSW`
 |                       |                                                           | DO NOT use this parameter, if you update from jailbroken firmware! |
 |  ` -w `           | ` --wait `                                        | Keep rebooting until ApNonce matches APTicket (ApNonce collision, unreliable) |
 |  ` -d `           | ` --debug `                                      | Show all code, use to save a log for debug testing |
-|                       | ` --exit-recovery `                       | Exit recovery mode and quit |
+|  ` -e `           | ` --exit-recovery `                       | Exit recovery mode and quit |
 |                       | ` --use-pwndfu `                           | Restoring devices with Odysseus method. Device needs to be in pwned DFU mode already |
 |                       | ` --just-boot "-v" `                     | Tethered booting the device from pwned DFU mode. You can optionally set ` boot-args ` |
-|                       | ` --latest-sep `                             | Use latest signed sep instead of manually specifying one (may cause bad restore) |
+|                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one (may cause bad restore) |
 |  ` -s `           | ` --sep PATH `                                 | SEP to be flashed |
 |  ` -m `           | ` --sep-manifest PATH `              | BuildManifest for requesting SEP ticket |
 |                       | ` --latest-baseband `                | Use latest signed baseband instead of manually specifying one (may cause bad restore) |
 |  ` -b `           | ` --baseband PATH	`                     | Baseband to be flashed |
-|  ` -p `           | ` --baseband-manifest PATH `  | Buildmanifest for requesting baseband ticket |
+|  ` -p `           | ` --baseband-manifest PATH `  | BuildManifest for requesting baseband ticket |
 |                       | ` --no-baseband `                         | Skip checks and don't flash baseband |
 |                       |                                                           | Only use this for device without a baseband (eg. iPod touch or some Wi-Fi only iPads) |
 
@@ -88,7 +88,6 @@ Whenever you read "downgrade" nowadays it means you can also upgrade and re-rest
 ---
 
 ## 1) Prometheus (64-bit device) - generator method
-
 ### Requirements
 - Jailbreak
 - signing ticket files (`.shsh`, `.shsh2`, `.plist`) with a generator
@@ -109,13 +108,13 @@ You can downgrade, if the destination firmware version is compatible with the **
 
 ### Youtube
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=BIMx2Y13Ukc" target="_blank"><img src="http://img.youtube.com/vi/BIMx2Y13Ukc/0.jpg" alt="Prometheus" width="240" height="180"/></a>
-*Prometheus*
+      *Prometheus*
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=UXxpUH71-s4" target="_blank"><img src="http://img.youtube.com/vi/UXxpUH71-s4/0.jpg" alt="Prometheus" width="240" height="180"/></a>
-*nonceEnabler*
+      *nonceEnabler*
 
 ### Recommended methods to activate nonceEnabler patch
-#### Method 1: ios-kern-utils (iOS 7.x-10.x):
+#### Method 1: ios-kern-utils (iOS 7.x-10.x)
 1. Install DEB-file of [ios-kern-utils](https://github.com/Siguza/ios-kern-utils/releases/) on device;
 2. Run on the device `nvpatch com.apple.System.boot-nonce`.
 
@@ -125,7 +124,8 @@ Use utilities for setting boot-nonce generator:
 2. [v0rtexnonce](https://github.com/arx8x/v0rtexnonce) for iOS 10.x;
 3. [Nonceset1112](https://github.com/julioverne/NonceSet112) for iOS 11.0-11.1.2;
 4. [noncereboot1131UI](https://github.com/s0uthwest/noncereboot1131UI) for iOS 11.0-11.4b3;
-5. [NonceReboot12xx](https://github.com/ur0/NonceReboot12XX) for iOS 12.0-12.1.2.
+5. [NonceReboot12xx](https://github.com/ur0/NonceReboot12XX) for iOS 12.0-12.1.2;
+6. [GeneratorAutoSetter](https://github.com/Halo-Michael/GeneratorAutoSetter) for checkra1n jailbreak on iOS / iPadOS 13.x. Install it from Cydia's developer repo (https://halo-michael.github.io/repo/) on device.
 
 #### Method 3: Using jailbreak tools
 Use jailbreak tools for setting boot-nonce generator:
@@ -135,7 +135,7 @@ Use jailbreak tools for setting boot-nonce generator:
 4. [unc0ver](https://unc0ver.dev) for iOS 11.0-12.2, 12.4.x;
 5. [Chimera and ChimeraTV](https://chimera.sh) for iOS 12.0-12.2, 12.4 and tvOS 12.0-12.2, 12.4.
 
-### Activate tfp0 if jailbreak doesn't allow it
+### Activate tfp0, if jailbreak doesn't allow it
 #### Method 1 (if jailbroken on iOS 9.2-9.3.x)
   * reboot;
   * reactivate jailbreak with [Luca Todesco](https://github.com/kpwn)'s [JailbreakMe](https://jbme.qwertyoruiop.com/);
@@ -152,12 +152,11 @@ Use jailbreak tools for setting boot-nonce generator:
 
 ---
 
-## 2) Prometheus (64-bit device) - ApNonce collision method (Recovery mode);
-
+## 2) Prometheus (64-bit device) - ApNonce collision method (Recovery mode)
 ### Requirements
-- Device with A7 chip on iOS 9.1 - 10.2 or iOS 10.3 beta 1;
+- **Device with A7 chip on iOS 9.1 - 10.2 or iOS 10.3 beta 1**;
 - Jailbreak doesn't required;
-- Signing ticket files (`.shsh`, `.shsh2`, `.plist`) with a customly chosen APNonce;
+- Signing ticket files (`.shsh`, `.shsh2`, `.plist`) with a customly chosen ApNonce;
 - Signing ticket files needs to have one of the ApNonces, which the device generates a lot;
 
 ### Info
@@ -165,14 +164,13 @@ You can downgrade if the destination firmware version, if it is compatible with 
 
 ### How to use
 1. Connect your device in normal or recovery mode;
-2. On the computer run `futurerestore -w -t ticket.shsh --latest-baseband --latest-sep ios.ipsw`
+2. On the computer run `futurerestore -w -t ticket.shsh --latest-baseband --latest-sep firmware.ipsw`
 * If you have saved multiple signing tickets with different nonces you can specify more than
-one to speed up the process: `futurerestore -w -t t1.shsh -t t2.shsh -t t3.shsh -t t4.shsh --latest-baseband --latest-sep ios.ipsw`
+one to speed up the process: `futurerestore -w -t t1.shsh -t t2.shsh -t t3.shsh -t t4.shsh --latest-baseband --latest-sep firmware.ipsw`
 
 ---
 
-## 3) Prometheus (64-bit device) - ApNonce collision method (DFU mode);
-
+## 3) Prometheus (64-bit device) - ApNonce collision method (DFU mode)
 ### Requirements
 - __Devices with A7 (iPhone 5s, iPad Air, iPad mini 2), A8 (iPhone 6 [+], iPad mini [2,3,4], iPod touch [6th generation]) and A8X (iPad Air 2) chips on all firmwares;__
 - __Devices have been released after ~September, 2015 {PROBABLY};__
@@ -198,17 +196,16 @@ You can downgrade if the destination firmware version, if it is compatible with 
    `img4tool -s ticket.shsh -c iBSS.signed -p <original_iBSS>`;
 6. Use img4tool for sign iBEC:
    `img4tool -s ticket.shsh -c iBEC.signed -p <original_iBEC>`;
-   7. So, after signing we can boot into Recovery with irecovery.
+7. So, after signing we can boot into Recovery with irecovery.
 
    `irecovery -f iBSS.signed` - loading iBSS;
    
    `irecovery -f iBEC.signed` - loading iBEC;
-8. So good! On the computer run `futurerestore -t ticket.shsh --latest-baseband --latest-sep -w ios.ipsw`.
+8. So good! On the computer run `futurerestore -t ticket.shsh --latest-baseband --latest-sep -w firmware.ipsw`.
 
 ---
 
 ## 4) Odysseus (32-bit / 64-bit devices)
-
 ### Requirements
 - futurerestore compiled with libipatcher;
 - Jailbreak or bootrom exploit (limera1n, checkm8);
@@ -223,26 +220,23 @@ If you have a jailbroken device, you can downgrade to **any** firmware version y
 1. Get device into kDFU/pwnDFU
   * Pre-iPhone4s (limera1n devices):
     * Enter to pwnDFU mode with redsn0w or any other tool
-  * iPhone 4s and later:
-    * Enter to kDFU mode with kDFU app (cydia: repo.tihmstar.net) or by loading a pwniBSS from any existing odysseus bundle
-         or
-    * Enter to pwnDFU mode with [ipwndfu](https://github.com/axi0mx/ipwndfu) or use futurerestore for it;
+  * iPhone 4s and later 32-bit devices:
+    * Enter to kDFU mode with kDFU app (cydia: repo.tihmstar.net) or by loading a pwnediBSS from any existing odysseus bundle
+  * Any 64-bit device:
+    * Enter to pwnDFU mode and patch signature check with special fork of [ipwndfu](https://github.com/LinusHenze/ipwndfu_public)
 2. Connect your device to computer in kDFU mode (or pwnDFU mode)
-3. On the computer run `futurerestore --use-pwndfu -t ticket.shsh --latest-baseband ios.ipsw`
+3. On the computer run `futurerestore --use-pwndfu -t ticket.shsh --latest-baseband firmware.ipsw`
 
 ### Youtube
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=FQfcybsEWmM" target="_blank"><img src="http://img.youtube.com/vi/FQfcybsEWmM/0.jpg" alt="Odysseus" width="240" height="180"/></a>
-*Futurerestore + libipatcher*
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=FQfcybsEWmM" target="_blank"><img src="http://img.youtube.com/vi/FQfcybsEWmM/0.jpg" alt="Odysseus" width="240" height="180"/></a>   *futurerestore + libipatcher*
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=8Ro4g6StPeI" target="_blank"><img src="http://img.youtube.com/vi/8Ro4g6StPeI/0.jpg" alt="Odysseus" width="240" height="180"/></a>
-*kDFU app*
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=8Ro4g6StPeI" target="_blank"><img src="http://img.youtube.com/vi/8Ro4g6StPeI/0.jpg" alt="Odysseus" width="240" height="180"/></a>  *kDFU app*
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=Wo7mGdMcjxw" target="_blank"><img src="http://img.youtube.com/vi/Wo7mGdMcjxw/0.jpg" alt="Odysseus" width="240" height="180"/></a>
-*Enter kDFU mode (watch up to the point where the screen goes black)*  
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=Wo7mGdMcjxw" target="_blank"><img src="http://img.youtube.com/vi/Wo7mGdMcjxw/0.jpg" alt="Odysseus" width="240" height="180"/></a>  *Enter kDFU mode (watch up to the point where the screen goes black)*  
 
-*You can use **any** odysseus bundle for this*
+You can use **any** odysseus bundle for this.
 
-## 5) iOS 9.x Re-restore bug (found by @alitek123) (only for 32-bit devices):
+## 5) iOS 9.x re-restore bug by @alitek123 (only for 32-bit devices)
 ### Requirements
 - Jailbreak doesn't required;
 - Signing ticket files (`.shsh`, `.shsh2`, `.plist`) from by iOS 9.x without ApNonce (noNonce APTickets)
