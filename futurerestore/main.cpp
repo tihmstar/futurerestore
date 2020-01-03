@@ -40,6 +40,7 @@ static struct option longopts[] = {
     { "wait",               no_argument,            NULL, 'w' },
     { "update",             no_argument,            NULL, 'u' },
     { "debug",              no_argument,            NULL, 'd' },
+    { "exit-recovery",      no_argument,            NULL, 'e' },
     { "latest-sep",         no_argument,            NULL, '0' },
     { "latest-baseband",    no_argument,            NULL, '1' },
     { "no-baseband",        no_argument,            NULL, '2' },
@@ -47,7 +48,6 @@ static struct option longopts[] = {
     { "use-pwndfu",         no_argument,            NULL, '3' },
     { "just-boot",          optional_argument,      NULL, '4' },
 #endif
-    { "exit-recovery",      no_argument,            NULL, '5' },
     { NULL, 0, NULL, 0 }
 };
 
@@ -67,7 +67,7 @@ void cmd_help(){
     printf("              \t\t\tDO NOT use this parameter, if you update from jailbroken firmware!\n");
     printf("  -w, --wait\t\t\tKeep rebooting until ApNonce matches APTicket (ApNonce collision, unreliable)\n");
     printf("  -d, --debug\t\t\tShow all code, use to save a log for debug testing\n");
-    printf("      --exit-recovery\t\tExit recovery mode and quit\n");
+    printf("  -e, --exit-recovery\t\tExit recovery mode and quit\n");
     
 #ifdef HAVE_LIBIPATCHER
     printf("\nOptions for downgrading with Odysseus:\n");
@@ -86,7 +86,7 @@ void cmd_help(){
     printf("  -p, --baseband-manifest PATH\tBuildManifest for requesting baseband ticket\n");
     printf("      --no-baseband\t\tSkip checks and don't flash baseband\n");
     printf("                   \t\tOnly use this for device without a baseband (eg. iPod touch or some Wi-Fi only iPads)\n\n");
-    }
+}
 
 #ifdef WIN32
     DWORD termFlags;
@@ -133,7 +133,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wud0123", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wude0123", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPaths.push_back(optarg);
@@ -141,7 +141,7 @@ int main_r(int argc, const char * argv[]) {
             case 'b': // long option: "baseband"; can be called as short option
                 basebandPath = optarg;
                 break;
-            case 'p': // long option: "baseband-plist"; can be called as short option
+            case 'p': // long option: "baseband-manifest"; can be called as short option
                 basebandManifestPath = optarg;
                 break;
             case 's': // long option: "sep"; can be called as short option
@@ -174,7 +174,7 @@ int main_r(int argc, const char * argv[]) {
                 break;
             break;
 #endif
-            case '5': // long option: "exit-recovery";
+            case 'e': // long option: "exit-recovery"; can be called as short option
                 exitRecovery = true;
                 break;
             case 'd': // long option: "debug"; can be called as short option
@@ -185,6 +185,7 @@ int main_r(int argc, const char * argv[]) {
                 return -1;
         }
     }
+    
     if (argc-optind == 1) {
         argc -= optind;
         argv += optind;

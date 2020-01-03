@@ -7,7 +7,6 @@
 //
 
 #include <libgeneral/macros.h>
-
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
@@ -137,7 +136,7 @@ void futurerestore::putDeviceIntoRecovery(){
         info("Entering recovery mode...\n");
         retassure(!normal_enter_recovery(_client),"Unable to place device into recovery mode from %s mode\n", _client->mode->string);
     }else if (_client->mode->index == MODE_RECOVERY){
-        info("Device already in Recovery mode\n");
+        info("Device already in recovery mode\n");
     }else if (_client->mode->index == MODE_DFU && _isPwnDfu &&
 #ifdef HAVE_LIBIPATCHER
               true
@@ -178,7 +177,7 @@ plist_t futurerestore::nonceMatchesApTickets(){
 
     if (getDeviceMode(true) != MODE_RECOVERY){
         if (getDeviceMode(false) != MODE_DFU || *_client->version != '9')
-            reterror("Device is not in recovery mode, can't check apnonce\n");
+            reterror("Device is not in recovery mode, can't check ApNonce\n");
         else
             _rerestoreiOS9 = (info("Detected iOS 9.x 32-bit re-restore, proceeding in DFU mode\n"),true);
     }
@@ -291,7 +290,7 @@ void futurerestore::waitForNonce(vector<const char *>nonces, size_t nonceSize){
             usleep(1*USEC_PER_SEC);
         }
         while (getDeviceMode(true) != MODE_RECOVERY) usleep(USEC_PER_SEC*0.5);
-        retassure(!recovery_client_new(_client), "Could not connect to device in recovery mode.\n");
+        retassure(!recovery_client_new(_client), "Could not connect to device in recovery mode\n");
         
         recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
         info("Got ApNonce from device: ");
@@ -1078,10 +1077,8 @@ int futurerestore::doJustBoot(const char *ipsw, string bootargs){
 //
 //    retassure(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, 0),"ERROR: Unable to find any build identities for IPSW\n");
 //
-//
 //    /* print information about current build identity */
 //    build_identity_print_information(build_identity);
-//
 //
 //    //check for enterpwnrecovery, because we could be in DFU mode
 //    retassure(_enterPwnRecoveryRequested, "enterPwnRecoveryRequested is not set, but required");
