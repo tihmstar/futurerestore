@@ -101,7 +101,7 @@ int main_r(int argc, const char * argv[]) {
     int err=0;
     printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
 #ifdef HAVE_LIBIPATCHER
-    printf("%s\n",libipatcher::version().c_str());
+    printf("%s\n",libipatcher::version());
     printf("Odysseus for 32-bit support: yes\n");
     printf("Odysseus for 64-bit support: %s\n",(libipatcher::has64bitSupport() ? "yes" : "no"));
 #else
