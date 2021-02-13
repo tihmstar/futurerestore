@@ -1,7 +1,7 @@
 # futurerestore
 _It is a hacked up idevicerestore wrapper, which allows manually specifying SEP and Baseband for restoring._
 
-Latest compiled version can be found [here](https://github.com/tihmstar/futurerestore/releases).
+Latest compiled version can be found [here](https://github.com/marijuanARM/futurerestore/releases).
 
 __Only use if you are sure what you're doing.__
 
@@ -32,10 +32,10 @@ __Only use if you are sure what you're doing.__
   Make sure these projects compile on your system (install it's dependencies):
   * [jssy](https://github.com/tihmstar/jssy);
   * [tsschecker](https://github.com/tihmstar/tsschecker);
-  * [idevicerestore](https://github.com/tihmstar/idevicerestore)
+  * [idevicerestore](https://github.com/marijuanARM/idevicerestore)
 
 ## Report an issue
-You can do it [here](https://github.com/tihmstar/futurerestore/issues).
+You can do it [here](https://github.com/marijuanARM/futurerestore/issues).
 
 ### Restoring on Windows 10
 1.  Try to restore the device, error `-8` occurs;

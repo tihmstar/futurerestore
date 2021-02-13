@@ -3,4 +3,4 @@
 	url = https://github.com/tihmstar/tsschecker.git
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
-	url = https://github.com/tihmstar/idevicerestore.git
+	url = https://github.com/marijuanARM/idevicerestore.git
