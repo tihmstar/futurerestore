@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-10.15
+    steps:
+    - name: Cache
+      id: cache
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-deps
+      with:
+        path: |
+          /usr/local/lib/.DEP-CACHED
+          /usr/local/opt/openssl/**
+          /usr/local/opt/openssl@1.1/**
+          /usr/local/opt/zstd/**
+          /usr/local/opt/xz/**
+          /usr/local/opt/libzip/**
+          /usr/local/opt/libusb/**
+          /usr/local/Cellar/openssl@1.1/**
+          /usr/local/Cellar/zstd/**
+          /usr/local/Cellar/xz/**
+          /usr/local/Cellar/libzip/**
+          /usr/local/Cellar/libusb/**
+          /usr/local/lib/engines-1.1/**
+          /usr/local/lib/pkgconfig/libcrypto.pc
+          /usr/local/lib/pkgconfig/libssl.pc
+          /usr/local/lib/pkgconfig/openssl.pc
+          /usr/local/lib/pkgconfig/libzstd.pc
+          /usr/local/lib/pkgconfig/liblzma.pc
+          /usr/local/lib/pkgconfig/libzip.pc
+          /usr/local/lib/pkgconfig/libusb-1.0.pc
+          /usr/local/lib/pkgconfig/libplist-2.0.pc
+          /usr/local/lib/pkgconfig/libusbmuxd-2.0.pc
+          /usr/local/lib/pkgconfig/libimobiledevice-1.0.pc
+          /usr/local/lib/pkgconfig/libirecovery-1.0.pc
+          /usr/local/lib/pkgconfig/libgeneral.pc
+          /usr/local/lib/pkgconfig/libinsn.pc
+          /usr/local/lib/pkgconfig/liboffsetfinder64.pc
+          /usr/local/lib/pkgconfig/libfragmentzip.pc
+          /usr/local/lib/pkgconfig/libimg4tool.pc
+          /usr/local/lib/pkgconfig/libipatcher.pc
+          /usr/local/lib/pkgconfig/libpng.pc
+          /usr/local/lib/pkgconfig/libpng16.pc
+          /usr/local/lib/libcrypto.*a
+          /usr/local/lib/libssl.*a
+          /usr/local/lib/libzstd.*a
+          /usr/local/lib/liblzma.*a
+          /usr/local/lib/libzip.*a
+          /usr/local/lib/libusb-1.0.*a
+          /usr/local/lib/libplist-2.0.*a
+          /usr/local/lib/libplist++-2.0.*a
+          /usr/local/lib/libusbmuxd-2.0.*a
+          /usr/local/lib/libimobiledevice-1.0.*a
+          /usr/local/lib/libirecovery-1.0.*a
+          /usr/local/lib/libgeneral.*a
+          /usr/local/lib/libinsn.*a
+          /usr/local/lib/liboffsetfinder64.*a
+          /usr/local/lib/libfragmentzip.*a
+          /usr/local/lib/libimg4tool.*a
+          /usr/local/lib/libjssy.*a
+          /usr/local/lib/libiBoot32Patcher.*a
+          /usr/local/lib/libipatcher.*a
+          /usr/local/lib/libcommon.*a
+          /usr/local/lib/libxpwn.*a
+          /usr/local/lib/libpng16.*a
+          /usr/local/lib/cmake/libzip/**
+          /usr/local/include/openssl/**
+          /usr/local/include/zdict.h
+          /usr/local/include/zstd_errors.h
+          /usr/local/include/zstd.h
+          /usr/local/include/lzma/**
+          /usr/local/include/lzma.h
+          /usr/local/include/zip.h
+          /usr/local/include/zipconf.h
+          /usr/local/include/libusb-1.0/**
+          /usr/local/include/plist/**
+          /usr/local/include/usbmuxd.h
+          /usr/local/include/usbmuxd-proto.h
+          /usr/local/include/libimobiledevice/**
+          /usr/local/include/asprintf.h
+          /usr/local/include/endianness.h
+          /usr/local/include/libirecovery.h
+          /usr/local/include/libgeneral/**
+          /usr/local/include/libinsn/**
+          /usr/local/include/liboffsetfinder64/**
+          /usr/local/include/libfragmentzip/**
+          /usr/local/include/img4tool/**
+          /usr/local/include/libipatcher/**
+          /usr/local/include/common.h
+          /usr/local/include/abstractfile.h
+          /usr/local/include/dmg/**
+          /usr/local/include/hfs/**
+          /usr/local/include/partial/**
+          /usr/local/include/xpwn/**
+          /usr/local/include/libpng16/**
+        key: deps-${{ runner.os }}-build-${{ env.cache-name }}
+        restore-keys: |
+          deps-${{ runner.os }}-build-${{ env.cache-name }}
+          deps-${{ runner.os }}-build-
+          deps-${{ runner.os }}-
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'true'
+        fetch-depth: 0
+    - name: Deps
+      id: deps
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
+        ./deps.sh
+    - name: Build
+      id: build
+      run: |
+        cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
+        ./build.sh
+    - name: Archive
+      id: archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: futurerestore
+        path: |
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore

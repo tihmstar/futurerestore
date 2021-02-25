@@ -1,7 +1,10 @@
 # futurerestore
+[![CI Building](https://img.shields.io/github/workflow/status/marijuanARM/futurerestore/ci)](https://img.shields.io/github/workflow/status/marijuanARM/futurerestore/ci)
+
+
 _It is a hacked up idevicerestore wrapper, which allows manually specifying SEP and Baseband for restoring._
 
-**ONLY USE THIS BRANCH IF YOU ARE NOT NEEDING TO RESTORE AN A13 OR A14 DEVICE. IF YOU ARE NEEDING TO RESTORE AN A13 OR A14 DEVICE, USE [THIS BRANCH](https://github.com/marijuanARM/futurerestore/tree/a13/a14), OR ELSE YOU WILL BOOTLOOP.**
+**THIS HAS NOT YET BEEN TESTED FOR a13 going to 14.3 USE AT YOUR OWN RISK**
 
 Latest compiled version can be found [here](https://github.com/marijuanARM/futurerestore/releases).
 
