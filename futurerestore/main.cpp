@@ -89,16 +89,15 @@ void cmd_help(){
     printf("                   \t\tOnly use this for device without a baseband (eg. iPod touch or some Wi-Fi only iPads)\n\n");
 }
 
+using namespace std;
+using namespace tihmstar;
+int main_r(int argc, const char * argv[]) {
 #ifdef WIN32
     DWORD termFlags;
     HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
     if (GetConsoleMode(handle, &termFlags))
         SetConsoleMode(handle, termFlags | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 #endif
-
-using namespace std;
-using namespace tihmstar;
-int main_r(int argc, const char * argv[]) {
     int err=0;
     printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
     printf("%s\n",tihmstar::img4tool::version());
