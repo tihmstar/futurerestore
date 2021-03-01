@@ -1012,9 +1012,11 @@ void futurerestore::doRestore(const char *ipsw){
     if (client->mode->index == MODE_RECOVERY) {
         retassure(client->srnm,"ERROR: could not retrieve device serial number. Can't continue.\n");
 
-        retassure(!irecv_send_command(client->recovery->client, "bgcolor 0 255 0"), "ERROR: Unable to set bgcolor\n");
-        info("[WARNING] Setting bgcolor to green! If you don't see a green screen, then your device didn't boot iBEC correctly\n");
-        sleep(2); //show the user a green screen!
+        if(client->device->chip_id < 0x8015) {
+            retassure(!irecv_send_command(client->recovery->client, "bgcolor 0 255 0"), "ERROR: Unable to set bgcolor\n");
+            info("[WARNING] Setting bgcolor to green! If you don't see a green screen, then your device didn't boot iBEC correctly\n");
+            sleep(2); //show the user a green screen!
+        }
 
         retassure(!recovery_enter_restore(client, build_identity),"ERROR: Unable to place device into restore mode\n");
 
