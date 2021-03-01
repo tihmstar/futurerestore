@@ -1533,9 +1533,8 @@ void futurerestore::downloadLatestVeridian(){
 
 void futurerestore::downloadLatestFirmwareComponents(){
     info("Downloading the latest firmware components...\n");
-    mkdir(FIRMWARES_TMP_PATH, 0755);
+    __mkdir(FIRMWARES_TMP_PATH, 0755);
     char zip_name[PATH_MAX];
-    char *tmp = FIRMWARES_TMP_PATH;
     sprintf(zip_name, "%s/%s", FUTURERESTORE_TMP_PATH, "Firmwares.ipsw");
     unlink(zip_name);
     downloadLatestRose();
@@ -1543,10 +1542,14 @@ void futurerestore::downloadLatestFirmwareComponents(){
     downloadLatestSavage();
     downloadLatestVeridian();
     zip_directory(FIRMWARES_TMP_PATH, zip_name);
+    rmdir(FIRMWARES_TMP_PATH); //remove the dir if its empty so zip won't fail
     struct stat st{0};
-    retassure(!stat(zip_name, &st), "could not zip Firmwares to ipsw\n");
-    char *firmware_zip = zip_name;
-    _client->ipsw2 = strdup(firmware_zip);
+    if(!stat(FIRMWARES_TMP_PATH, &st))
+    {
+        retassure(!stat(zip_name, &st), "could not zip Firmwares to ipsw\n");
+        char *firmware_zip = zip_name;
+        _client->ipsw2 = strdup(firmware_zip);
+    }
     info("Finished downloading the latest firmware components!\n");
 }
 
