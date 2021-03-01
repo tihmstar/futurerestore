@@ -195,7 +195,7 @@ int main_r(int argc, const char * argv[]) {
     }else if (argc == optind && flags & FLAG_WAIT) {
         info("User requested to only wait for ApNonce to match, but not for actually restoring\n");
     }else if (exitRecovery){
-        info("Exiting to recovery mode\n");
+        info("Exiting from recovery mode to normal mode\n");
     }else{
         error("argument parsing failed! agrc=%d optind=%d\n",argc,optind);
         if (idevicerestore_debug){
