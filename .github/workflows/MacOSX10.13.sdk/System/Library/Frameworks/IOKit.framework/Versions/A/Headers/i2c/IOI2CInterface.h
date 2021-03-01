@@ -1,1 +1,0 @@
-../../../../../Kernel.framework/Versions/A/Headers/IOKit/i2c/IOI2CInterface.h

@@ -17,6 +17,7 @@ jobs:
       with:
         path: |
           /usr/local/lib/.DEP-CACHED
+          /usr/local/SYSROOT/**
           /usr/local/opt/openssl/**
           /usr/local/opt/openssl@1.1/**
           /usr/local/opt/zstd/**
@@ -100,11 +101,11 @@ jobs:
           /usr/local/include/partial/**
           /usr/local/include/xpwn/**
           /usr/local/include/libpng16/**
-        key: deps-${{ runner.os }}-build-${{ env.cache-name }}
+        key: futurerestore-${{ runner.os }}-build-${{ env.cache-name }}
         restore-keys: |
-          deps-${{ runner.os }}-build-${{ env.cache-name }}
-          deps-${{ runner.os }}-build-
-          deps-${{ runner.os }}-
+          futurerestore-${{ runner.os }}-build-${{ env.cache-name }}
+          futurerestore-${{ runner.os }}-build-
+          futurerestore-${{ runner.os }}-
     - name: Checkout
       uses: actions/checkout@v2
       with:

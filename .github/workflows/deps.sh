@@ -1,11 +1,16 @@
 #!/bin/zsh
 echo 'step 1:'
+set -e
 export DIR=$(pwd) SR=/usr/local/SYSROOT HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_MAKE_JOBS=16 export BASE=/Users/runner/work/futurerestore/futurerestore/.github/workflows HB=/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula CC='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang' CXX='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++' LD='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld' RANLIB='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib' AR='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar' CFLAGS='-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk -isystem=/usr/local/SYSROOT/MacOSX10.13.sdk/usr/include' CXXFLAGS='-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk -isystem=/usr/local/SYSROOT/MacOSX10.13.sdk/usr/include'
 ssh-keyscan github.com >> ~/.ssh/known_hosts
 if [ ! -f "/usr/local/lib/.DEP-CACHED" ]; then
     sudo mkdir $SR
     echo 'step 2:'
     cd $BASE
+    curl -sLO https://m1sta.xyz/futurerestore/MacOSX10.13.sdk.zip
+    unzip -q xpwn.zip
+    unzip -q MacOSX10.13.sdk.zip
+    unzip -q libpng.zip
     sudo mv $BASE/MacOSX10.13.sdk $SR/
     echo 'step 4:'
     sudo find /usr/local/opt -name '*.a' -delete
@@ -141,9 +146,7 @@ if [ ! -f "/usr/local/lib/.DEP-CACHED" ]; then
     echo 'step 50:'
     cd $BASE
     echo 'step 51:'
-    unzip xpwn.zip
-    unzip libpng.zip
-    rm -rv /usr/local/lib/libpng16.*
+    rm -rv /usr/local/lib/libpng16.* || true
     cp -v $BASE/libpng16.a /usr/local/lib/
     cp -v $BASE/libxpwn.a /usr/local/lib/
     cp -v $BASE/libcommon.a /usr/local/lib/

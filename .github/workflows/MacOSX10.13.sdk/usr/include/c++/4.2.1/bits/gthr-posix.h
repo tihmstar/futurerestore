@@ -1,1 +1,0 @@
-gthr-default.h
