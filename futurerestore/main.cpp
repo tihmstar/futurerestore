@@ -257,7 +257,7 @@ int main_r(int argc, const char * argv[]) {
             if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
                 reterror("SEP firmware doesn't signed\n");
             }
-            
+            client.downloadLatestFirmwareComponents();
             if (flags & FLAG_NO_BASEBAND){
                 printf("\nWARNING: user specified is not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
                 printf("if you added this flag by mistake, you can press CTRL-C now to cancel\n");
