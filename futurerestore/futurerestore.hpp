@@ -66,7 +66,13 @@ class futurerestore {
     plist_t _sepbuildmanifest = NULL;
     plist_t _basebandbuildmanifest = NULL;
     
-    const char *_basebandPath = NULL;;
+    const char *_rosePath = NULL;
+    const char *_sePath = NULL;
+    const char *_savagePath[6];
+    const char *_veridianDGMPath = NULL;
+    const char *_veridianFWMPath = NULL;
+
+    const char *_basebandPath = NULL;
     const char *_sepbuildmanifestPath = NULL;
     const char *_basebandbuildmanifestPath = NULL;
     
@@ -106,6 +112,10 @@ public:
     
     void setSepManifestPath(const char *sepManifestPath);
     void setBasebandManifestPath(const char *basebandManifestPath);
+    void loadRose(const char *rosePath);
+    void loadSE(const char *sePath);
+    void loadSavage(const char *savagePath[6]);
+    void loadVeridian(const char *veridianDGMPath, const char *veridianFWMPath);
     void loadSep(const char *sepPath);
     void setBasebandPath(const char *basebandPath);
     bool isUpdateInstall(){return _isUpdateInstall;};

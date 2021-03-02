@@ -54,11 +54,24 @@ extern "C"{
 #define FUTURERESTORE_TMP_PATH TMP_PATH"/futurerestore"
 #endif
 
+#define ROSE_TMP_PATH FUTURERESTORE_TMP_PATH"/rose.bin"
+#define SE_TMP_PATH FUTURERESTORE_TMP_PATH"/se.sefw"
+
+#define SAVAGE_B0_PP_TMP_PATH FUTURERESTORE_TMP_PATH"/savageB0PP.fw"
+#define SAVAGE_B0_DP_TMP_PATH FUTURERESTORE_TMP_PATH"/savageB0DP.fw"
+
+#define SAVAGE_B2_PP_TMP_PATH FUTURERESTORE_TMP_PATH"/savageB2PP.fw"
+#define SAVAGE_B2_DP_TMP_PATH FUTURERESTORE_TMP_PATH"/savageB2DP.fw"
+
+#define SAVAGE_BA_PP_TMP_PATH FUTURERESTORE_TMP_PATH"/savageBAPP.fw"
+#define SAVAGE_BA_DP_TMP_PATH FUTURERESTORE_TMP_PATH"/savageBADP.fw"
+
+#define VERIDIAN_DGM_TMP_PATH FUTURERESTORE_TMP_PATH"/veridianDGM.der"
+#define VERIDIAN_FWM_TMP_PATH FUTURERESTORE_TMP_PATH"/veridianFWM.plist"
 #define BASEBAND_TMP_PATH FUTURERESTORE_TMP_PATH"/baseband.bbfw"
 #define BASEBAND_MANIFEST_TMP_PATH FUTURERESTORE_TMP_PATH"/basebandManifest.plist"
 #define SEP_TMP_PATH FUTURERESTORE_TMP_PATH"/sep.im4p"
 #define SEP_MANIFEST_TMP_PATH FUTURERESTORE_TMP_PATH"/sepManifest.plist"
-#define FIRMWARES_TMP_PATH FUTURERESTORE_TMP_PATH"/Firmwares/"
 
 #ifdef __APPLE__
 #   include <CommonCrypto/CommonDigest.h>
@@ -1241,104 +1254,13 @@ char *futurerestore::getLatestFirmwareUrl(){
     return getLatestManifest(),__latestFirmwareUrl;
 }
 
-//https://stackoverflow.com/a/27975357
-static void mkdirRecursive(const char *path, mode_t mode) {
-    char opath[PATH_MAX];
-    char *p;
-    size_t len;
-
-    strncpy(opath, path, sizeof(opath));
-    opath[sizeof(opath) - 1] = '\0';
-    len = strlen(opath);
-    if (len == 0)
-        return;
-    else if (opath[len - 1] == '/')
-        opath[len - 1] = '\0';
-    for(p = opath; *p; p++)
-        if (*p == '/') {
-            *p = '\0';
-            if (access(opath, F_OK))
-                __mkdir(opath, mode);
-            *p = '/';
-        }
-    if (access(opath, F_OK))         /* if path is not terminated with / */
-        __mkdir(opath, mode);
-}
-
-//https://gist.github.com/clalancette/bb5069a09c609e2d33c9858fcc6e170e
-static bool is_dir(const std::string& dir)
-{
-  struct stat st;
-  ::stat(dir.c_str(), &st);
-  return S_ISDIR(st.st_mode);
-}
-
-static void walk_directory(const std::string& startdir, const std::string& inputdir, zip_t *zipper)
-{
-  DIR *dp = ::opendir(inputdir.c_str());
-  if (dp == nullptr) {
-    throw std::runtime_error("Failed to open input directory: " + std::string(::strerror(errno)));
-  }
-
-  struct dirent *dirp;
-  while ((dirp = readdir(dp)) != NULL) {
-    if (dirp->d_name != std::string(".") && dirp->d_name != std::string("..")) {
-      std::string fullname = inputdir + "/" + dirp->d_name;
-      if (is_dir(fullname)) {
-        if (zip_dir_add(zipper, fullname.substr(startdir.length() + 1).c_str(), ZIP_FL_ENC_UTF_8) < 0) {
-          throw std::runtime_error("Failed to add directory to zip: " + std::string(zip_strerror(zipper)));
-        }
-        walk_directory(startdir, fullname, zipper);
-      } else {
-        zip_source_t *source = zip_source_file(zipper, fullname.c_str(), 0, 0);
-        if (source == nullptr) {
-          throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
-        }
-        if (zip_file_add(zipper, fullname.substr(startdir.length() + 1).c_str(), source, ZIP_FL_ENC_UTF_8) < 0) {
-          zip_source_free(source);
-          throw std::runtime_error("Failed to add file to zip: " + std::string(zip_strerror(zipper)));
-        }
-      }
-    }
-  }
-  ::closedir(dp);
-}
-
-static void zip_directory(const std::string& inputdir, const std::string& output_filename)
-{
-  int errorp;
-  zip_t *zipper = zip_open(output_filename.c_str(), ZIP_CREATE | ZIP_EXCL, &errorp);
-  if (zipper == nullptr) {
-    zip_error_t ziperror;
-    zip_error_init_with_code(&ziperror, errorp);
-    throw std::runtime_error("Failed to open output file " + output_filename + ": " + zip_error_strerror(&ziperror));
-  }
-
-  try {
-    walk_directory(inputdir, inputdir, zipper);
-  } catch(...) {
-    zip_close(zipper);
-    throw;
-  }
-
-  zip_close(zipper);
-}
-
 void futurerestore::downloadLatestRose(){
     char * manifeststr = getLatestManifest();
     char *roseStr = (elemExists("Rap,RTKitOS", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Rap,RTKitOS", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
     if(roseStr) {
         info("downloading Rose firmware\n\n");
-        char roseStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(roseStr1, "%s%s", tmp, roseStr);
-        std::string rose(roseStr1);
-        size_t pos = rose.find_last_of('/');
-        if (pos != std::string::npos) {
-            rose.erase(pos + 1, rose.length());
-            mkdirRecursive(rose.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), roseStr, roseStr1), "could not download Rose\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), roseStr, _rosePath = ROSE_TMP_PATH), "could not download Rose\n");
+        loadRose(ROSE_TMP_PATH);
     }
 }
 
@@ -1347,214 +1269,88 @@ void futurerestore::downloadLatestSE(){
     char *seStr = (elemExists("SE,UpdatePayload", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("SE,UpdatePayload", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
     if(seStr) {
         info("downloading SE firmware\n\n");
-        char seStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(seStr1, "%s%s", tmp, seStr);
-        std::string se(seStr1);
-        size_t pos = se.find_last_of('/');
-        if (pos != std::string::npos) {
-            se.erase(pos, se.length());
-            mkdirRecursive(se.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), seStr, seStr1), "could not download SE\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), seStr, _sePath = SE_TMP_PATH), "could not download SE\n");
+        loadSE(SE_TMP_PATH);
     }
 }
 
 void futurerestore::downloadLatestSavage(){
     char * manifeststr = getLatestManifest();
-    char *savageB0DevStr = (elemExists("Savage,B0-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B0-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    char *savageB0DevVTStr = (elemExists("Savage,B0-Dev-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B0-Dev-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
     char *savageB0ProdStr = (elemExists("Savage,B0-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B0-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    char *savageB0ProdVTStr = (elemExists("Savage,B0-Prod-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B0-Prod-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    char *savageB2DevStr = (elemExists("Savage,B2-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B2-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    char *savageB2DevVTStr = (elemExists("Savage,B2-Dev-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B2-Dev-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
+    char *savageB0DevStr = (elemExists("Savage,B0-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B0-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
     char *savageB2ProdStr = (elemExists("Savage,B2-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B2-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    char *savageB2ProdVTStr = (elemExists("Savage,B2-Prod-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B2-Prod-PatchVT", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    char *savageBADevStr = (elemExists("Savage,BA-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,BA-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
+    char *savageB2DevStr = (elemExists("Savage,B2-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,B2-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
     char *savageBAProdStr = (elemExists("Savage,BA-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,BA-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    if(savageB0DevStr) {
-        info("downloading Savage,B0-Dev-Patch\n\n");
-        char savageB0DevStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB0DevStr1, "%s%s", FIRMWARES_TMP_PATH, savageB0DevStr);
-        std::string savage(savageB0DevStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0DevStr, savageB0DevStr1), "could not download Savage,B0-Dev-Patch\n");
-        }
-    }
-    if(savageB0DevVTStr) {
-        info("downloading Savage,B0-Dev-PatchVT\n\n");
-        char savageB0DevVTStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB0DevVTStr1, "%s%s", FIRMWARES_TMP_PATH, savageB0DevVTStr);
-        std::string savage(savageB0DevVTStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0DevVTStr, savageB0DevVTStr1), "could not download Savage,B0-Dev-PatchVT\n");
-        }
-    }
+    char *savageBADevStr = (elemExists("Savage,BA-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("Savage,BA-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
+
     if(savageB0ProdStr) {
         info("downloading Savage,B0-Prod-Patch\n\n");
-        char savageB0ProdStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB0ProdStr1, "%s%s", FIRMWARES_TMP_PATH, savageB0ProdStr);
-        std::string savage(savageB0ProdStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0ProdStr, savageB0ProdStr1), "could not download Savage,B0-Prod-Patch\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0ProdStr, _savagePath[0] = SAVAGE_B0_PP_TMP_PATH), "could not download Savage,B0-Prod-Patch\n");
     }
-    if(savageB0ProdVTStr) {
-        info("downloading Savage,B0-Prod-PatchVT\n\n");
-        char savageB0ProdVTStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB0ProdVTStr1, "%s%s", FIRMWARES_TMP_PATH, savageB0ProdVTStr);
-        std::string savage(savageB0ProdVTStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0ProdVTStr, savageB0ProdVTStr1), "could not download Savage,B0-Prod-PatchVT\n");
-        }
-    }
-    if(savageB2DevStr) {
-        info("downloading Savage,B2-Dev-Patch\n\n");
-        char savageB2DevStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB2DevStr1, "%s%s", FIRMWARES_TMP_PATH, savageB2DevStr);
-        std::string savage(savageB2DevStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2DevStr, savageB2DevStr1), "could not download Savage,B2-Dev-Patch\n");
-        }
-    }
-    if(savageB2DevVTStr) {
-        info("downloading Savage,B2-Dev-PatchV\n\n");
-        char savageB2DevVTStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB2DevVTStr1, "%s%s", FIRMWARES_TMP_PATH, savageB2DevVTStr);
-        std::string savage(savageB2DevVTStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2DevVTStr, savageB2DevVTStr1), "could not download Savage,B2-Dev-PatchV\n");
-        }
+    if(savageB0DevStr) {
+        info("downloading Savage,B0-Dev-Patch\n\n");
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0DevStr, _savagePath[1] = SAVAGE_B0_DP_TMP_PATH), "could not download Savage,B0-Dev-Patch\n");
     }
     if(savageB2ProdStr) {
         info("downloading Savage,B2-Prod-Patch\n\n");
-        char savageB2ProdStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB2ProdStr1, "%s%s", FIRMWARES_TMP_PATH, savageB2ProdStr);
-        std::string savage(savageB2ProdStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2ProdStr, savageB2ProdStr1), "could not download Savage,B2-Prod-Patch\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2ProdStr, _savagePath[2] = SAVAGE_B2_PP_TMP_PATH), "could not download Savage,B2-Prod-Patch\n");
     }
-    if(savageB2ProdVTStr) {
-        info("downloading Savage,B2-Prod-PatchVT\n\n");
-        char savageB2ProdVTStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageB2ProdVTStr1, "%s%s", FIRMWARES_TMP_PATH, savageB2ProdVTStr);
-        std::string savage(savageB2ProdVTStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2ProdVTStr, savageB2ProdVTStr1), "could not download Savage,B2-Prod-PatchVT\n");
-        }
-    }
-    if(savageBADevStr) {
-        info("downloading Savage,BA-Dev-Patch\n\n");
-        char savageBADevStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageBADevStr1, "%s%s", FIRMWARES_TMP_PATH, savageBADevStr);
-        std::string savage(savageBADevStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageBADevStr, savageBADevStr1), "could not download Savage,BA-Dev-Patch\n");
-        }
+    if(savageB2DevStr) {
+        info("downloading Savage,B2-Dev-Patch\n\n");
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2DevStr, _savagePath[3] = SAVAGE_B2_DP_TMP_PATH), "could not download Savage,B2-Dev-Patch\n");
     }
     if(savageBAProdStr) {
         info("downloading Savage,BA-Prod-Patch\n\n");
-        char savageBAProdStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(savageBAProdStr1, "%s%s", FIRMWARES_TMP_PATH, savageBAProdStr);
-        std::string savage(savageBAProdStr1);
-        size_t pos = savage.find_last_of('/');
-        if (pos != std::string::npos) {
-            savage.erase(pos + 1, savage.length());
-            mkdirRecursive(savage.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageBAProdStr, savageBAProdStr1), "could not download Savage,BA-Prod-Patch\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageBAProdStr, _savagePath[4] = SAVAGE_BA_PP_TMP_PATH), "could not download Savage,BA-Prod-Patch\n");
+    }
+    if(savageBADevStr) {
+        info("downloading Savage,BA-Dev-Patch\n\n");
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageBADevStr, _savagePath[5] = SAVAGE_BA_DP_TMP_PATH), "could not download Savage,BA-Dev-Patch\n");
+    }
+    if( savageB0ProdStr     && 
+        savageB0DevStr      && 
+        savageB2ProdStr     && 
+        savageB2DevStr      && 
+        savageBAProdStr     && 
+        savageBADevStr)        {
+            const char*savageArray[6] = {SAVAGE_B0_PP_TMP_PATH, SAVAGE_B0_DP_TMP_PATH, SAVAGE_B2_PP_TMP_PATH, SAVAGE_B2_DP_TMP_PATH, SAVAGE_BA_PP_TMP_PATH, SAVAGE_BA_DP_TMP_PATH};
+        loadSavage(savageArray);
     }
 }
 
 void futurerestore::downloadLatestVeridian(){
     char * manifeststr = getLatestManifest();
-    char *veridianStr = (elemExists("BMU,DigestMap", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("BMU,DigestMap", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
+    char *veridianDGMStr = (elemExists("BMU,DigestMap", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("BMU,DigestMap", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
     char *veridianFWMStr = (elemExists("BMU,FirmwareMap", manifeststr, getDeviceBoardNoCopy(), 0) ? getPathOfElementInManifest("BMU,FirmwareMap", manifeststr, getDeviceBoardNoCopy(), 0) : NULL);
-    if(veridianStr) {
+    if(veridianDGMStr) {
         info("downloading Veridian DigestMap\n\n");
-        char veridianStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(veridianStr1, "%s%s", FIRMWARES_TMP_PATH, veridianStr);
-        std::string veridian(veridianStr1);
-        size_t pos = veridian.find_last_of('/');
-        if (pos != std::string::npos) {
-            veridian.erase(pos + 1, veridian.length());
-            mkdirRecursive(veridian.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianStr, veridianStr1), "could not download Veridian DigestMap\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianDGMStr, _veridianDGMPath = VERIDIAN_DGM_TMP_PATH), "could not download Veridian DigestMap\n");
     }
     if(veridianFWMStr) {
         info("downloading Veridian FirmwareMap\n\n");
-        char veridianFWMStr1[PATH_MAX];
-        char *tmp = FIRMWARES_TMP_PATH;
-        sprintf(veridianFWMStr1, "%s%s", FIRMWARES_TMP_PATH, veridianFWMStr);
-        std::string veridian(veridianFWMStr1);
-        size_t pos = veridian.find_last_of('/');
-        if (pos != std::string::npos) {
-            veridian.erase(pos + 1, veridian.length());
-            mkdirRecursive(veridian.c_str(), 0755);
-            retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianFWMStr, veridianFWMStr1), "could not download Veridian FirmwareMap\n");
-        }
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianDGMStr, _veridianFWMPath = VERIDIAN_FWM_TMP_PATH), "could not download Veridian DigestMap\n");
     }
+    if(veridianDGMStr && veridianFWMStr)
+        loadVeridian(VERIDIAN_DGM_TMP_PATH, VERIDIAN_FWM_TMP_PATH);
 }
 
 void futurerestore::downloadLatestFirmwareComponents(){
     info("Downloading the latest firmware components...\n");
-    __mkdir(FIRMWARES_TMP_PATH, 0755);
-    char zip_name[PATH_MAX];
-    sprintf(zip_name, "%s/%s", FUTURERESTORE_TMP_PATH, "Firmwares.ipsw");
-    unlink(zip_name);
-    downloadLatestRose();
-    downloadLatestSE();
-    downloadLatestSavage();
-    downloadLatestVeridian();
-    zip_directory(FIRMWARES_TMP_PATH, zip_name);
-    rmdir(FIRMWARES_TMP_PATH); //remove the dir if its empty so zip won't fail
-    struct stat st{0};
-    if(!stat(FIRMWARES_TMP_PATH, &st))
-    {
-        retassure(!stat(zip_name, &st), "could not zip Firmwares to ipsw\n");
-        char *firmware_zip = zip_name;
-        _client->ipsw2 = strdup(firmware_zip);
+    char * manifeststr = getLatestManifest();
+    if(elemExists("Rap,RTKitOS", manifeststr, getDeviceBoardNoCopy(), 0))
+        downloadLatestRose();
+    if(elemExists("SE,UpdatePayload", manifeststr, getDeviceBoardNoCopy(), 0))
+        downloadLatestSE();
+    if( elemExists("Savage,B0-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0)      && 
+        elemExists("Savage,B0-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0)       && 
+        elemExists("Savage,B2-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0)      && 
+        elemExists("Savage,B2-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0)       &&  
+        elemExists("Savage,BA-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0)      && 
+        elemExists("Savage,BA-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0))         {
+        downloadLatestSavage();
     }
+    if(elemExists("BMU,DigestMap", manifeststr, getDeviceBoardNoCopy(), 0) || elemExists("BMU,FirmwareMap", manifeststr, getDeviceBoardNoCopy(), 0))
+        downloadLatestVeridian();
     info("Finished downloading the latest firmware components!\n");
 }
 
@@ -1585,6 +1381,85 @@ void futurerestore::setSepManifestPath(const char *sepManifestPath){
 void futurerestore::setBasebandManifestPath(const char *basebandManifestPath){
     retassure(_basebandbuildmanifest = loadPlistFromFile(_basebandbuildmanifestPath = basebandManifestPath), "failed to load BasebandManifest");
 };
+
+void futurerestore::loadRose(const char *rosePath){
+    FILE *frose = NULL;
+    retassure(frose = fopen(rosePath, "rb"), "failed to read Rose\n");
+    
+    fseek(frose, 0, SEEK_END);
+    _client->rosefwdatasize = ftell(frose);
+    fseek(frose, 0, SEEK_SET);
+    
+    retassure(_client->rosefwdata = (char*)malloc(_client->rosefwdatasize), "failed to malloc memory for Rose\n");
+    
+    size_t freadRet=0;
+    retassure((freadRet = fread(_client->rosefwdata, 1, _client->rosefwdatasize, frose)) == _client->rosefwdatasize,
+              "failed to load Rose. size=%zu but fread returned %zu\n",_client->rosefwdatasize,freadRet);
+    
+    fclose(frose);
+}
+
+void futurerestore::loadSE(const char *sePath){
+    FILE *fse = NULL;
+    retassure(fse = fopen(sePath, "rb"), "failed to read SE\n");
+    
+    fseek(fse, 0, SEEK_END);
+    _client->sefwdatasize = ftell(fse);
+    fseek(fse, 0, SEEK_SET);
+    
+    retassure(_client->sefwdata = (char*)malloc(_client->sefwdatasize), "failed to malloc memory for SE\n");
+    
+    size_t freadRet=0;
+    retassure((freadRet = fread(_client->sefwdata, 1, _client->sefwdatasize, fse)) == _client->sefwdatasize,
+              "failed to load SE. size=%zu but fread returned %zu\n",_client->sefwdatasize,freadRet);
+    
+    fclose(fse);
+}
+
+void futurerestore::loadSavage(const char *savagePath[6]){
+    for(int i = 0; i < 6; i++) {
+        FILE *fsavage = NULL;
+        retassure(fsavage = fopen(savagePath[i], "rb"), "failed to read Savage: %d\n", i);
+        
+        fseek(fsavage, 0, SEEK_END);
+        _client->savagefwdatasize[i] = ftell(fsavage);
+        fseek(fsavage, 0, SEEK_SET);
+        
+        retassure(_client->savagefwdata[i] = (char*)malloc(_client->savagefwdatasize[i]), "failed to malloc memory for Savage: %i\n", i);
+        
+        size_t freadRet=0;
+        retassure((freadRet = fread(_client->savagefwdata[i], 1, _client->savagefwdatasize[i], fsavage)) == _client->savagefwdatasize[i],
+                "failed to load Savage: %d. size=%zu but fread returned %zu\n",i,_client->savagefwdatasize[i],freadRet);
+        
+        fclose(fsavage);
+    }
+}
+
+void futurerestore::loadVeridian(const char *veridianDGMPath, const char *veridianFWMPath){
+    FILE *fveridiandgm = NULL;
+    FILE *fveridianfwm = NULL;
+    retassure(fveridiandgm = fopen(veridianDGMPath, "rb"), "failed to read Veridian DigestMap\n");
+    retassure(fveridianfwm = fopen(veridianFWMPath, "rb"), "failed to read Veridian FirmwareMap\n");
+    
+    fseek(fveridiandgm, 0, SEEK_END);
+    fseek(fveridianfwm, 0, SEEK_END);
+    _client->veridiandgmfwdatasize = ftell(fveridiandgm);
+    _client->veridianfwmfwdatasize = ftell(fveridianfwm);
+    fseek(fveridiandgm, 0, SEEK_SET);
+    fseek(fveridianfwm, 0, SEEK_SET);
+    
+    retassure(_client->veridiandgmfwdata = (char*)malloc(_client->veridiandgmfwdatasize), "failed to malloc memory for Veridian DigestMap\n");
+    retassure(_client->veridianfwmfwdata = (char*)malloc(_client->veridianfwmfwdatasize), "failed to malloc memory for Veridian FirmwareMap\n");
+    
+    size_t freadRet=0;
+    retassure((freadRet = fread(_client->veridiandgmfwdata, 1, _client->veridiandgmfwdatasize, fveridiandgm)) == _client->veridiandgmfwdatasize,
+              "failed to load Veridian DigestMap. size=%zu but fread returned %zu\n",_client->veridiandgmfwdatasize,freadRet);
+    retassure((freadRet = fread(_client->sefwdata, 1, _client->veridianfwmfwdatasize, fveridianfwm)) == _client->veridianfwmfwdatasize,
+              "failed to load Veridian FirmwareMap. size=%zu but fread returned %zu\n",_client->veridianfwmfwdatasize,freadRet);
+    
+    fclose(fveridiandgm);
+    fclose(fveridianfwm);
+}
 
 void futurerestore::loadSep(const char *sepPath){
     FILE *fsep = NULL;
