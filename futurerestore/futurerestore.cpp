@@ -131,6 +131,8 @@ void futurerestore::putDeviceIntoRecovery(){
     getDeviceMode(false);
     info("Found device in %s mode\n", _client->mode->string);
     if (_client->mode->index == MODE_NORMAL){
+    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
+    idevice_event_subscribe(idevice_event_cb, _client);
 #ifdef HAVE_LIBIPATCHER
         retassure(!_isPwnDfu, "isPwnDfu enabled, but device was found in normal mode\n");
 #endif
@@ -151,7 +153,6 @@ void futurerestore::putDeviceIntoRecovery(){
     }else{
         reterror("unsupported device mode, please put device in recovery or normal mode\n");
     }
-    
     safeFree(_client->udid); //only needs to be freed manually when function did't throw exception
     
     //these get also freed by destructor
