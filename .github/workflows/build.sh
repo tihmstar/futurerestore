@@ -21,7 +21,6 @@ sudo find /usr/local/lib -iname 'libzip*.dylib' -delete
 sudo find /usr/local/lib -iname 'liblzma*.dylib' -delete
 sudo find /usr/local/lib -iname 'libusb-1.0*.dylib' -delete
 sudo find /usr/local/lib -iname 'libpng*.dylib' -delete
-sed -i '' 's|#   include CUSTOM_LOGGING|//#   include CUSTOM_LOGGING|' /usr/local/include/libgeneral/macros.h
 ./autogen.sh --disable-dependency-tracking --disable-silent-rules --prefix=/usr/local --disable-debug CC='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang' CXX='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++' LD='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld' RANLIB='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib' AR='/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar' CFLAGS='-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk -isystem=/usr/local/SYSROOT/MacOSX10.13.sdk/usr/include -DTSSCHECKER_NOMAIN=1 -DIDEVICERESTORE_NOMAIN=1' CXXFLAGS='-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk -isystem=/usr/local/SYSROOT/MacOSX10.13.sdk/usr/include -DTSSCHECKER_NOMAIN=1 -DIDEVICERESTORE_NOMAIN=1' LDFLAGS='-L/usr/local/SYSROOT/MacOSX10.13.sdk/usr/lib -lbz2 -llzma -lcompression -L/usr/local/lib -lzstd -lusbmuxd-2.0 -framework CoreFoundation -framework IOKit'
 echo 'step 4:'
 gmake -j16

@@ -81,7 +81,7 @@ else
 fi
 AM_CONDITIONAL([HAVE_LIBIPATCHER],[test "x$do_libipatcher" = "xyes"])
 
-AC_DEFINE(CUSTOM_LOGGING, 1, [required for futurerestore])
+AC_DEFINE(CUSTOM_LOGGING, <stdlib.h>, [required for futurerestore])
 
 LT_INIT
 
