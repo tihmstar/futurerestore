@@ -1,0 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index afcc6fc3..4ea3466d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,6 @@
+ cmake_minimum_required(VERSION 3.0.2)
++set(CMAKE_SYSROOT /usr/local/SYSROOT/MacOSX10.13.sdk)
++set(CMAKE_OSX_SYSROOT /usr/local/SYSROOT/MacOSX10.13.sdk)
+ 
+ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+ if (${CMAKE_VERSION} VERSION_LESS "3.17.0")
+@@ -54,7 +56,7 @@ if(WIN32)
+   endif()
+ endif()
+ 
+-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
++option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+ option(LIBZIP_DO_INSTALL "Install libzip and the related files" ON)
+ 
+ option(SHARED_LIB_VERSIONNING "Add SO version in .so build" ON)

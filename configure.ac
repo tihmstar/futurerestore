@@ -28,8 +28,8 @@ esac
 
 # Checks the flags.
 CFLAGS+=" -DIDEVICERESTORE_NOMAIN=1 -DTSSCHECKER_NOMAIN=1"
-CXXFLAGS+=" -std=c++11"
-CFLAGS+=" -std=c11"
+CXXFLAGS+=" -std=gnu++11"
+CFLAGS+=" -std=gnu11"
 
 AC_DEFUN([AX_UNPRECIOUS], [
     m4_define([_AC_PRECIOUS_VARS], m4_bpatsubst(_AC_PRECIOUS_VARS, [$1], []))
@@ -81,7 +81,7 @@ else
 fi
 AM_CONDITIONAL([HAVE_LIBIPATCHER],[test "x$do_libipatcher" = "xyes"])
 
-AC_DEFINE(CUSTOM_LOGGING, 1, [required for futurerestore])
+AC_DEFINE(CUSTOM_LOGGING, <stdlib.h>, [required for futurerestore])
 
 LT_INIT
 

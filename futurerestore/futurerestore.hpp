@@ -19,6 +19,11 @@
 #include <stdio.h>
 #include <functional>
 #include <vector>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
+#include <zip.h>
 #include "idevicerestore.h"
 #include <jssy.h>
 #include <plist/plist.h>
@@ -91,6 +96,11 @@ public:
     const char *getDeviceBoardNoCopy();
     char *getLatestManifest();
     char *getLatestFirmwareUrl();
+    void downloadLatestRose();
+    void downloadLatestSE();
+    void downloadLatestSavage();
+    void downloadLatestVeridian();
+    void downloadLatestFirmwareComponents();
     void loadLatestBaseband();
     void loadLatestSep();
     
@@ -118,7 +128,8 @@ public:
     static uint64_t getEcidFromSCAB(const char* scab, size_t scabSize);
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(const char *str, const char *path);
-    static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *model, int isUpdateInstall);
+    static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
+    bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static std::string getGeneratorFromSHSH2(const plist_t shsh2);
 };
 

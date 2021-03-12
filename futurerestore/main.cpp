@@ -20,6 +20,7 @@ extern "C"{
 };
 
 #include <libgeneral/macros.h>
+#include <img4tool/img4tool.hpp>
 #ifdef HAVE_LIBIPATCHER
 #include <libipatcher/libipatcher.hpp>
 #endif
@@ -88,18 +89,18 @@ void cmd_help(){
     printf("                   \t\tOnly use this for device without a baseband (eg. iPod touch or some Wi-Fi only iPads)\n\n");
 }
 
+using namespace std;
+using namespace tihmstar;
+int main_r(int argc, const char * argv[]) {
 #ifdef WIN32
     DWORD termFlags;
     HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
     if (GetConsoleMode(handle, &termFlags))
         SetConsoleMode(handle, termFlags | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 #endif
-
-using namespace std;
-using namespace tihmstar;
-int main_r(int argc, const char * argv[]) {
     int err=0;
     printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
+    printf("%s\n",tihmstar::img4tool::version());
 #ifdef HAVE_LIBIPATCHER
     printf("%s\n",libipatcher::version());
     printf("Odysseus for 32-bit support: yes\n");
@@ -194,7 +195,7 @@ int main_r(int argc, const char * argv[]) {
     }else if (argc == optind && flags & FLAG_WAIT) {
         info("User requested to only wait for ApNonce to match, but not for actually restoring\n");
     }else if (exitRecovery){
-        info("Exiting to recovery mode\n");
+        info("Exiting from recovery mode to normal mode\n");
     }else{
         error("argument parsing failed! agrc=%d optind=%d\n",argc,optind);
         if (idevicerestore_debug){
@@ -254,9 +255,8 @@ int main_r(int argc, const char * argv[]) {
             
             versVals.basebandMode = kBasebandModeWithoutBaseband;
             if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
-                reterror("SEP firmware doesn't signed\n");
+                reterror("SEP firmware is NOT being signed!\n");
             }
-            
             if (flags & FLAG_NO_BASEBAND){
                 printf("\nWARNING: user specified is not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
                 printf("if you added this flag by mistake, you can press CTRL-C now to cancel\n");
@@ -283,10 +283,11 @@ int main_r(int argc, const char * argv[]) {
                     printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
                 }
                 if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
-                    reterror("baseband firmware doesn't signed\n");
+                    reterror("baseband firmware is NOT being signed!\n");
                 }
             }
         }
+        client.downloadLatestFirmwareComponents();
         client.putDeviceIntoRecovery();
         if (flags & FLAG_WAIT){
             client.waitForNonce();
