@@ -1,6 +1,6 @@
 [submodule "external/tsschecker"]
 	path = external/tsschecker
-	url = https://github.com/tihmstar/tsschecker.git
+	url = https://github.com/DanTheMann15/tsschecker.git
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
 	url = https://github.com/marijuanARM/idevicerestore.git
