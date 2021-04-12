@@ -451,11 +451,14 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 #ifndef HAVE_LIBIPATCHER
     reterror("compiled without libipatcher");
 #else
-    if (_client->image4supported) {
+if (_client->image4supported) {
         retassure(libipatcher::has64bitSupport(), "libipatcher was compiled without 64-bit support");
         std::string generator = getGeneratorFromSHSH2(_client->tss);
         retassure(img4tool::isGeneratorValidForIM4M({_im4ms[0].first,_im4ms[0].second}, generator), "generator returned from device is not valid from APTicket");
     }
+
+    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
+    idevice_event_subscribe(idevice_event_cb, _client);
     
     int mode = 0;
     libipatcher::fw_key iBSSKeys;
@@ -498,21 +501,18 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         mutex_lock(&_client->device_event_mutex);
         irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
         retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+        mutex_unlock(&_client->device_event_mutex);
         
         /* reconnect */
-        dfu_client_free(_client);
-        
-        debug("Waiting for device to disconnect...\n");
-        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
-        mutex_unlock(&_client->device_event_mutex);
+        // dfu_client_free(_client);
 
         debug("Waiting for device to reconnect...\n");
-        mutex_lock(&_client->device_event_mutex);
-        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure((_client->mode == &idevicerestore_modes[MODE_DFU] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
-        mutex_unlock(&_client->device_event_mutex);
-        
+        // mutex_lock(&_client->device_event_mutex);
+        // cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 60000);
+        // retassure((_client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+        // mutex_unlock(&_client->device_event_mutex);
+        dfu_client_free(_client);
+        sleep(10);
         dfu_client_new(_client);
     }
     
@@ -523,21 +523,25 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         mutex_lock(&_client->device_event_mutex);
         irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
         retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
-        printf("waiting for device to reconnect...\n");
-        if (modeIsRecovery){
-            irecv_send_command(_client->dfu->client, "go");
-            recovery_client_free(_client);
-        }else{
-            dfu_client_free(_client);
-        }
-
-        debug("Waiting for device to disconnect...\n");
-        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        /* retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        // printf("waiting for device to reconnect...\n");
+        // if (modeIsRecovery){
+        irecv_send_command(_client->dfu->client, "go");
         mutex_unlock(&_client->device_event_mutex);
+        // recovery_client_free(_client);
+        sleep(10);
+        // recovery_client_new(_client);
+        // }else{
+            // dfu_client_free(_client);
+        // }
+
+        // debug("Waiting for device to disconnect...\n");
+        // cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+        /* retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        // mutex_unlock(&_client->device_event_mutex);
     }
 
     debug("Waiting for device to reconnect...\n");
+    // recovery_client_new(_client);
     mutex_lock(&_client->device_event_mutex);
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
     retassure((_client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
