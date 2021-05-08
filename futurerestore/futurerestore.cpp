@@ -448,6 +448,8 @@ pair<ptr_smart<char*>, size_t> getIPSWComponent(struct idevicerestore_client_t* 
 }
 
 void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
+    bootargs = "rd=md0 -restore -v debug=0x14e serial=3";
+
 #ifndef HAVE_LIBIPATCHER
     reterror("compiled without libipatcher");
 #else
@@ -458,7 +460,7 @@ if (_client->image4supported) {
     }
 
     irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
-    idevice_event_subscribe(idevice_event_cb, _client);
+    //idevice_event_subscribe(idevice_event_cb, _client);
     
     int mode = 0;
     libipatcher::fw_key iBSSKeys;
@@ -648,7 +650,6 @@ void futurerestore::doRestore(const char *ipsw){
     });
     struct idevicerestore_client_t* client = _client;
     plist_t build_identity = NULL;
-    plist_t sep_build_identity = NULL;
 
     client->ipsw = strdup(ipsw);
     if (!_isUpdateInstall) client->flags |= FLAG_ERASE;
@@ -706,10 +707,10 @@ void futurerestore::doRestore(const char *ipsw){
     retassure(build_identity = getBuildidentityWithBoardconfig(buildmanifest, client->device->hardware_model, _isUpdateInstall),"ERROR: Unable to find any build identities for iPSW\n");
 
     if (_client->image4supported) {
-        if (!(sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, _isUpdateInstall))){
+        if (!(client->sepBuildIdentity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, _isUpdateInstall))){
             retassure(_isPwnDfu, "ERROR: Unable to find any build identities for SEP\n");
             warning("can't find buildidentity for SEP with InstallType=%s. However pwnDFU was requested, so trying fallback to %s",(_isUpdateInstall ? "UPDATE" : "ERASE"),(!_isUpdateInstall ? "UPDATE" : "ERASE"));
-            retassure((sep_build_identity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, !_isUpdateInstall)),
+            retassure((client->sepBuildIdentity = getBuildidentityWithBoardconfig(_sepbuildmanifest, client->device->hardware_model, !_isUpdateInstall)),
                       "ERROR: Unable to find any build identities for SEP\n");
         }
     }
@@ -829,7 +830,7 @@ void futurerestore::doRestore(const char *ipsw){
 
     if (_client->image4supported) {
         //check SEP
-        plist_t sep_manifest = plist_dict_get_item(sep_build_identity, "Manifest");
+        plist_t sep_manifest = plist_dict_get_item(client->sepBuildIdentity, "Manifest");
         plist_t sep_sep = plist_copy(plist_dict_get_item(sep_manifest, "SEP"));
         plist_dict_set_item(manifest, "SEP", sep_sep);
         unsigned char genHash[48]; //SHA384 digest length
@@ -1043,7 +1044,7 @@ void futurerestore::doRestore(const char *ipsw){
 
     if (_client->image4supported) {
         info("getting SEP ticket\n");
-        retassure(!get_tss_response(client, sep_build_identity, &client->septss), "ERROR: Unable to get signing tickets for SEP\n");
+        retassure(!get_tss_response(client, client->sepBuildIdentity, &client->septss), "ERROR: Unable to get signing tickets for SEP\n");
         retassure(_client->sepfwdatasize && _client->sepfwdata, "SEP is not loaded, refusing to continue");
     }
     
