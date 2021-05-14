@@ -4,8 +4,8 @@ index afcc6fc3..4ea3466d 100644
 +++ b/CMakeLists.txt
 @@ -1,4 +1,6 @@
  cmake_minimum_required(VERSION 3.0.2)
-+set(CMAKE_SYSROOT /usr/local/SYSROOT/MacOSX10.13.sdk)
-+set(CMAKE_OSX_SYSROOT /usr/local/SYSROOT/MacOSX10.13.sdk)
++set(CMAKE_C_FLAGS "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15")
++set(CMAKE_CXX_FLAGS "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15")
  
  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
  if (${CMAKE_VERSION} VERSION_LESS "3.17.0")

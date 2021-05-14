@@ -17,19 +17,18 @@ class Xz < Formula
   end
 
   def install
-    ENV['CFLAGS'] = '-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk'
-    ENV['CXXFLAGS'] = '-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk'
+    ENV['CFLAGS'] = '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15'
+    ENV['CXXFLAGS'] = '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15'
     ENV['CC'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang'
     ENV['CXX'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++'
     ENV['LD'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld'
     ENV['AR'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar'
-    ret = system "./configure", "--disable-debug",
+    system "./configure", "--disable-debug",
                           "--disable-dependency-tracking",
                           "--disable-silent-rules",
-                          "--disable-shared",
                           "--prefix=#{prefix}",
-                          "CFLAGS=-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk",
-                          "CXXFLAGS=-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk",
+                          "CFLAGS=-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15",
+                          "CXXFLAGS=-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15",
                           "CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
                           "CXX=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
                           "LD=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld",

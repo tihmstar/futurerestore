@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - test
   pull_request:
   workflow_dispatch:
 
@@ -101,11 +103,11 @@ jobs:
           /usr/local/include/partial/**
           /usr/local/include/xpwn/**
           /usr/local/include/libpng16/**
-        key: futurerestore-${{ runner.os }}-build-${{ env.cache-name }}
+        key: fr-${{ runner.os }}-build-${{ env.cache-name }}
         restore-keys: |
-          futurerestore-${{ runner.os }}-build-${{ env.cache-name }}
-          futurerestore-${{ runner.os }}-build-
-          futurerestore-${{ runner.os }}-
+          fr-${{ runner.os }}-build-${{ env.cache-name }}
+          fr-${{ runner.os }}-build-
+          fr-${{ runner.os }}-
     - name: Checkout
       uses: actions/checkout@v2
       with:

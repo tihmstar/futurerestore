@@ -17,8 +17,8 @@ class Zstd < Formula
   uses_from_macos "zlib"
 
   def install
-    ENV['CFLAGS'] = '-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk'
-    ENV['CXXFLAGS'] = '-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk'
+    ENV['CFLAGS'] = '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15'
+    ENV['CXXFLAGS'] = '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15'
     ENV['CC'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang'
     ENV['CXX'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++'
     ENV['LD'] = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld'

@@ -30,8 +30,8 @@ class Libusb < Formula
 
     system "./autogen.sh" if build.head?
     system "./configure", *args, 
-                      "CFLAGS=-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk",
-                      "CXXFLAGS=-isysroot /usr/local/SYSROOT/MacOSX10.13.sdk",
+                      "CFLAGS=-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15",
+                      "CXXFLAGS=-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -mmacosx-version-min=10.15",
                       "CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
                       "CXX=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
                       "LD=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld",
