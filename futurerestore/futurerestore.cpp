@@ -31,6 +31,12 @@ extern "C"{
 #include "restore.h"
 #include "tsschecker.h"
 #include <libirecovery.h>
+#if defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#define __bswap_64(x) OSSwapInt64(x)
+#else
+#include <byteswap.h>
+#endif
 }
 
 //(re)define __mkdir
@@ -1543,7 +1549,7 @@ uint64_t futurerestore::getEcidFromSCAB(const char* scab, size_t scabSize){
                 ret <<=8;
                 ret |= ((uint8_t*)elem.payload())[i];
             }
-            return ret;
+            return __bswap_64(ret);
         }
     }
 
