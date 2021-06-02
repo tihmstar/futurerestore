@@ -1,7 +1,8 @@
-[submodule "external/tsschecker"]
-	path = external/tsschecker
-	url = https://github.com/DanTheMann15/tsschecker.git
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
 	url = https://github.com/m1stadev/idevicerestore.git
+	branch = test
+[submodule "external/tsschecker"]
+	path = external/tsschecker
+	url = https://github.com/Cryptiiiic/tsschecker.git
 	branch = test
