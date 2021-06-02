@@ -254,7 +254,7 @@ int main_r(int argc, const char * argv[]) {
             }
             
             versVals.basebandMode = kBasebandModeWithoutBaseband;
-            if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals))){
+            if (!client.is32bit() && !(isSepManifestSigned = isManifestSignedForDevice(client.sepManifestPath(), &devVals, &versVals, NULL))){
                 reterror("SEP firmware is NOT being signed!\n");
             }
             if (flags & FLAG_NO_BASEBAND){
@@ -282,7 +282,7 @@ int main_r(int argc, const char * argv[]) {
                 if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
                     printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
                 }
-                if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals))) {
+                if (!(isBasebandSigned = isManifestSignedForDevice(client.basebandManifestPath(), &devVals, &versVals, NULL))) {
                     reterror("baseband firmware is NOT being signed!\n");
                 }
             }
