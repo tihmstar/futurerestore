@@ -246,7 +246,7 @@ int main_r(int argc, const char * argv[]) {
             devVals.deviceBoard = (char*)client.getDeviceBoardNoCopy();
             
             if (flags & FLAG_LATEST_SEP){
-                info("user specified to use latest signed SEP (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
+                info("user specified to use latest signed SEP\n");
                 client.loadLatestSep();
             }else if (!client.is32bit()){
                 client.loadSep(sepPath);
@@ -270,7 +270,7 @@ int main_r(int argc, const char * argv[]) {
                 printf("\n");
             }else{
                 if (flags & FLAG_LATEST_BASEBAND){
-                    info("user specified to use latest signed baseband (WARNING, THIS CAN CAUSE A NON-WORKING RESTORE)\n");
+                    info("user specified to use latest signed baseband\n");
                     client.loadLatestBaseband();
                 }else{
                     client.setBasebandPath(basebandPath);
