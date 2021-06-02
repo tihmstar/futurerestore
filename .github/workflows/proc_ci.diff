@@ -1,0 +1,136 @@
+diff --git a/Makefile b/Makefile
+index 081b4dd..1a924f3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -245,7 +245,8 @@ BUILD_CXXFLAGS :=
+ BUILD_LDFLAGS  :=
+ 
+ else ifeq ($(UNAME),Darwin)
+-ifeq ($(shell sw_vers -productName),macOS)
++$(warning is Darin)
++ifeq (Mac,Mac)
+ ifneq ($(MEMO_QUIET),1)
+ $(warning Building on MacOS)
+ endif # ($(MEMO_QUIET),1)
+@@ -470,7 +471,7 @@ EXTRACT_TAR = -if [ ! -d $(BUILD_WORK)/$(3) ] || [ "$(4)" = "1" ]; then \
+ 		$(CP) -af $(2)/. $(3); \
+ 		rm -rf $(2); \
+ 	fi; \
+-	find $(BUILD_BASE) -name '*.la' -type f -delete
++	find $(BUILD_BASE) \( -type f -name '*.la' -o -type l -name '*.la' \) -delete
+ 
+ DO_PATCH    = cd $(BUILD_PATCH)/$(1); \
+ 	for PATCHFILE in *; do \
+@@ -618,17 +619,17 @@ endif
+ 
+ TAR  := tar # TODO: remove
+ 
+-ifneq ($(shell PATH=$(PATH) tar --version | grep -q GNU && echo 1),1)
++ifneq ($(shell tar --version | grep -q GNU && echo 1),1)
+ $(error Install GNU tar)
+ endif
+ 
+ SED  := sed # TODO: remove
+ 
+-ifneq ($(shell PATH=$(PATH) sed --version | grep -q GNU && echo 1),1)
++ifneq ($(shell sed --version | grep -q GNU && echo 1),1)
+ $(error Install GNU sed)
+ endif
+ 
+-ifneq ($(shell PATH=$(PATH) grep --version | grep -q GNU && echo 1),1)
++ifneq ($(shell grep --version | grep -q GNU && echo 1),1)
+ $(error Install GNU grep)
+ endif
+ 
+@@ -678,43 +679,43 @@ ifneq ($(call HAS_COMMAND,m4),1)
+ $(error Install m4)
+ endif
+ 
+-ifneq ($(shell PATH=$(PATH) groff --version | grep -q 'version 1.2' && echo 1),1)
++ifneq ($(shell groff --version | grep -q 'version 1.2' && echo 1),1)
+ $(error Install newer groff)
+ endif
+ 
+-ifneq ($(shell PATH=$(PATH) patch --version | grep -q 'GNU patch' && echo 1),1)
++ifneq ($(shell patch --version | grep -q 'GNU patch' && echo 1),1)
+ $(error Install GNU patch)
+ endif
+ 
+-ifneq ($(shell PATH=$(PATH) find --version | grep -q 'GNU find' && echo 1),1)
++ifneq ($(shell find --version | grep -q 'GNU find' && echo 1),1)
+ $(error Install GNU findutils)
+ endif
+ 
+-ifneq ($(shell PATH=$(PATH) rmdir --version | grep -q 'GNU coreutils' && echo 1),1)
++ifneq ($(shell rmdir --version | grep -q 'GNU coreutils' && echo 1),1)
+ $(error Install GNU coreutils)
+ endif
+ 
+-ifeq ($(shell PATH=$(PATH) install --version | grep -q 'GNU coreutils' && echo 1),1)
++ifeq ($(shell install --version | grep -q 'GNU coreutils' && echo 1),1)
+ export GINSTALL := install # TODO: remove
+-export INSTALL  := $(shell PATH=$(PATH) which install) --strip-program=$(STRIP)
++export INSTALL  := $(shell which install) --strip-program=$(STRIP)
+ else
+ $(error Install GNU coreutils)
+ endif
+ 
+-ifeq ($(shell PATH=$(PATH) wc --version | grep -q 'GNU coreutils' && echo 1),1)
++ifeq ($(shell wc --version | grep -q 'GNU coreutils' && echo 1),1)
+ WC := wc
+ else
+ $(error Install GNU coreutils)
+ endif
+ 
+-ifeq ($(shell PATH=$(PATH) cp --version | grep -q 'GNU coreutils' && echo 1),1)
++ifeq ($(shell cp --version | grep -q 'GNU coreutils' && echo 1),1)
+ CP := cp
+ else
+ $(error Install GNU coreutils)
+ endif
+ export CP
+ 
+-ifeq ($(shell PATH=$(PATH) ln --version | grep -q 'GNU coreutils' && echo 1),1)
++ifeq ($(shell ln --version | grep -q 'GNU coreutils' && echo 1),1)
+ LN := ln
+ else
+ $(error Install GNU coreutils)
+diff --git a/futurerestore.mk b/futurerestore.mk
+index e90d6e0..1195ba0 100644
+--- a/futurerestore.mk
++++ b/futurerestore.mk
+@@ -9,27 +9,22 @@ FUTURERESTORE_IDEVICERESTORE_COMMIT := d7d9996b3910902a56462fa8d9dc5909fcf8f4c9
+ DEB_FUTURERESTORE_V                 ?= $(FUTURERESTORE_VERSION)-1
+ 
+ futurerestore-setup: setup tsschecker-setup
+-	$(call GITHUB_ARCHIVE,m1stadev,futurerestore,$(FUTURERESTORE_COMMIT),$(FUTURERESTORE_COMMIT))
+-	$(call GITHUB_ARCHIVE,m1stadev,idevicerestore,$(FUTURERESTORE_IDEVICERESTORE_COMMIT),$(FUTURERESTORE_IDEVICERESTORE_COMMIT))
+-	$(call EXTRACT_TAR,futurerestore-$(FUTURERESTORE_COMMIT).tar.gz,futurerestore-$(FUTURERESTORE_COMMIT),futurerestore)
+-
+-	-rmdir $(BUILD_WORK)/futurerestore/external/{idevicerestore,tsschecker}
+-	$(call EXTRACT_TAR,idevicerestore-$(FUTURERESTORE_IDEVICERESTORE_COMMIT).tar.gz,idevicerestore-$(FUTURERESTORE_IDEVICERESTORE_COMMIT),futurerestore/external/idevicerestore)
+-	cp -R $(BUILD_WORK)/tsschecker $(BUILD_WORK)/futurerestore/external
+-
+-	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${FUTURERESTORE_VERSION}/g' $(BUILD_WORK)/futurerestore/configure.ac
+-	$(SED) -i 's/git rev\-parse HEAD/printf ${FUTURERESTORE_COMMIT}/g' $(BUILD_WORK)/futurerestore/configure.ac
++	ln -sf ${BASE}/../../../futurerestore $(BUILD_WORK)/
+ 
+ ifneq ($(wildcard $(BUILD_WORK)/futurerestore/.build_complete),)
+ futurerestore:
+ 	@echo "Using previously built futurerestore."
+ else
+-futurerestore: futurerestore-setup libirecovery openssl libusbmuxd libimobiledevice img4tool libgeneral libzip libfragmentzip libipatcher
++futurerestore: futurerestore-setup
++	find $(BUILD_BASE) \( -type f -name '*.la' -o -type l -name '*.la' \) -delete
++	find $(BUILD_BASE) \( -type f -name '*.dylib' -o -type l -name '*.dylib' \) -delete
++	find $(BUILD_BASE) -name '*libusb-1.0*.a' -prune -o -name '*libusbmuxd-2.0*.a' -prune -o -name '*libxpwn*.a' -prune -o -name '*libcommon*.a' -prune -o -name '*libipatcher*.a' -prune -o -name '*libimobiledevice*.a' -prune -o -name '*libfragmentzip*.a' -prune -o -name '*libzip*.a' -prune -o -name '*libirecovery*.a' -prune -o -name '*libipatcher*.a' -prune -o -name '*libpng16*.a' -prune -o -name '*liboffsetfinder64*.a' -prune -o -name '*libinsn*.a' -prune -o -name '*libimg4tool*.a' -prune -o -name '*libssl*.a' -prune -o -name '*libcrypto*.a' -prune -o -name '*libplist*.a' -prune -o -name '*libgeneral*.a' -prune -o -name '*.a' -print | tr '\n' ' ' | xargs rm || true
+ 	cd $(BUILD_WORK)/futurerestore && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
+ 		--disable-silent-rules \
+ 		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
+-		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
++		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
++		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -llzma -lcurl -lbz2 -lcompression -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lipatcher -lusb-1.0 -lusbmuxd-2.0 -lfragmentzip -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn -lcommon -lxpwn"
+ 	+$(MAKE) -C $(BUILD_WORK)/futurerestore
+ 	+$(MAKE) -C $(BUILD_WORK)/futurerestore install \
+ 		DESTDIR="$(BUILD_STAGE)/futurerestore"
