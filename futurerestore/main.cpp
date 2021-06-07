@@ -17,6 +17,7 @@ extern "C"{
 #include "tsschecker.h"
 #undef VERSION_COMMIT_SHA
 #undef VERSION_COMMIT_COUNT
+#undef VERSION_RELEASE
 };
 
 #include <libgeneral/macros.h>
@@ -99,7 +100,7 @@ int main_r(int argc, const char * argv[]) {
         SetConsoleMode(handle, termFlags | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 #endif
     int err=0;
-    printf("Version: " VERSION_COMMIT_SHA " - " VERSION_COMMIT_COUNT "\n");
+    printf("Version: " VERSION_RELEASE "(" VERSION_COMMIT_SHA "-" VERSION_COMMIT_COUNT ")\n");
     printf("%s\n",tihmstar::img4tool::version());
 #ifdef HAVE_LIBIPATCHER
     printf("%s\n",libipatcher::version());

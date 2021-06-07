@@ -11,8 +11,10 @@ AC_CONFIG_MACRO_DIRS([m4])
 # Versioning.
 AC_DEFINE([VERSION_COMMIT_COUNT], "m4_esyscmd([git rev-list --count HEAD | tr -d '\n'])", [Git commit count])
 AC_DEFINE([VERSION_COMMIT_SHA], "m4_esyscmd([git rev-parse HEAD | tr -d '\n'])", [Git commit sha])
+AC_DEFINE([VERSION_RELEASE], "m4_esyscmd([cat version.txt | tr -d '\n'])", [Futurerestore release version])
 AC_SUBST([VERSION_COMMIT_COUNT], ["m4_esyscmd([git rev-list --count HEAD | tr -d '\n'])"])
 AC_SUBST([VERSION_COMMIT_SHA], ["m4_esyscmd([git rev-parse HEAD | tr -d '\n'])"])
+AC_SUBST([VERSION_RELEASE], ["m4_esyscmd([cat version.txt | tr -d '\n'])"])
 
 # Checks for programs.
 AC_PROG_CXX

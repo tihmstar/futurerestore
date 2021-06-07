@@ -18,6 +18,7 @@ sudo ${PROCURSUS}/bin/apt install make cmake coreutils pkg-config findutils sed 
 echo 'step 3:'
 cd ${BASE}/../..
 export FUTURERESTORE_VERSION=$(git rev-parse HEAD | tr -d '\n')
+export FUTURERESTORE_VERSION_RELEASE=$(cat version.txt | tr -d '\n')
 echo 'step 4:'
 git submodule init; git submodule update --recursive
 cd external/tsschecker
@@ -34,8 +35,8 @@ gtar xf ${BASE}/build_base.tar
 echo 'step 5:'
 make futurerestore NO_PGP=1 MEMO_TARGET=darwin-amd64 MEMO_CFVER=1300
 echo 'step 6:'
-cp build_stage/darwin-amd64/1300/futurerestore/opt/procursus/bin/futurerestore ${BASE}
+cp build_stage/darwin-amd64/1300/futurerestore/opt/procursus/bin/futurerestore ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE}
 cd ${BASE}
-otool -L futurerestore || true
-./futurerestore || true
+otool -L ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
+./futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
 echo 'End'

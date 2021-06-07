@@ -25,4 +25,4 @@ jobs:
       with:
         name: futurerestore
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*
