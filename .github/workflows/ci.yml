@@ -1,4 +1,4 @@
-name: CI
+name: Futurerestore
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  mac:
     runs-on: macos-10.15
     steps:
     - name: Checkout
@@ -14,15 +14,44 @@ jobs:
       with:
         submodules: 'true'
         fetch-depth: 0
-    - name: Build
-      id: build
+    - name: macOS Build
+      id: mac
       run: |
         cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
-        ./build.sh
+        ./mac.sh
     - name: Archive
       id: archive
       uses: actions/upload-artifact@v2
       with:
-        name: futurerestore
+        name: futurerestore-macOS
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
+  ubuntu:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'true'
+        fetch-depth: 0
+    - name: Install LLVM
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "11.0"
+        directory: /home/runner/work/futurerestore/futurerestore/.github/llvm
+    - name: Symlink LLVM
+      if: contains(matrix.os, 'ubuntu')
+      run: sudo ln -s libclang-11.so.1 /lib/x86_64-linux-gnu/libclang.so
+      working-directory: ${{ env.LLVM_PATH }}/lib
+    - name: Ubuntu Build
+      id: ubuntu
+      run: |
+        cd /home/runner/work/futurerestore/futurerestore/.github/workflows
+        ./ubuntu.sh
+    - name: Archive
+      id: archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: futurerestore-Ubuntu
+        path: |
+          /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz

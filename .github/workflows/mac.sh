@@ -37,6 +37,7 @@ make futurerestore NO_PGP=1 MEMO_TARGET=darwin-amd64 MEMO_CFVER=1300
 echo 'step 6:'
 cp build_stage/darwin-amd64/1300/futurerestore/opt/procursus/bin/futurerestore ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE}
 cd ${BASE}
+gtar cpJvf ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE}-macOS.tar.xz futurerestore-${FUTURERESTORE_VERSION_RELEASE}
 otool -L ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
-./futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
+futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
 echo 'End'
