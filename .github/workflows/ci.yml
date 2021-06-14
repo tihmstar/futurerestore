@@ -37,11 +37,13 @@ jobs:
     - name: Install LLVM
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "11.0"
+        version: "12.0.0"
+        force-version: true
+        ubuntu-version: "20.04"
         directory: /home/runner/work/futurerestore/futurerestore/.github/llvm
     - name: Symlink LLVM
       if: contains(matrix.os, 'ubuntu')
-      run: sudo ln -s libclang-11.so.1 /lib/x86_64-linux-gnu/libclang.so
+      run: sudo ln -s libclang-12.so.1 /lib/x86_64-linux-gnu/libclang.so
       working-directory: ${{ env.LLVM_PATH }}/lib
     - name: Ubuntu Build
       id: ubuntu
