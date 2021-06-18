@@ -4,5 +4,4 @@
 	branch = test
 [submodule "external/tsschecker"]
 	path = external/tsschecker
-	url = https://github.com/Cryptiiiic/tsschecker.git
-	branch = test
+	url = https://github.com/1Conan/tsschecker.git
