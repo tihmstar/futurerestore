@@ -288,7 +288,8 @@ int main_r(int argc, const char * argv[]) {
                 }
             }
         }
-        client.downloadLatestFirmwareComponents();
+        if(!client.is32bit())
+            client.downloadLatestFirmwareComponents();
         client.putDeviceIntoRecovery();
         if (flags & FLAG_WAIT){
             client.waitForNonce();
