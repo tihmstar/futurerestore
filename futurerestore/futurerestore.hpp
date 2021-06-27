@@ -57,6 +57,7 @@ class futurerestore {
     int _foundnonce = -1;
     bool _isUpdateInstall = false;
     bool _isPwnDfu = false;
+    bool _noIBSS = false;
     
     char *_firmwareJson = NULL;
     jssytok_t *_firmwareTokens = NULL;;
@@ -80,9 +81,10 @@ class futurerestore {
     bool _rerestoreiOS9 = false;
     //methods
     void enterPwnRecovery(plist_t build_identity, std::string bootargs = "");
+    void enterPwnRecovery2(plist_t build_identity, std::string bootargs = "");
     
 public:
-    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false);
+    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();

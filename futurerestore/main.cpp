@@ -49,6 +49,7 @@ static struct option longopts[] = {
 #ifdef HAVE_LIBIPATCHER
     { "use-pwndfu",         no_argument,            NULL, '3' },
     { "just-boot",          optional_argument,      NULL, '4' },
+    { "no-ibss",            no_argument,            NULL, '5' },
 #endif
     { NULL, 0, NULL, 0 }
 };
@@ -59,6 +60,7 @@ static struct option longopts[] = {
 #define FLAG_LATEST_BASEBAND    1 << 3
 #define FLAG_NO_BASEBAND        1 << 4
 #define FLAG_IS_PWN_DFU         1 << 5
+#define FLAG_NO_IBSS            1 << 6
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] iPSW\n");
@@ -75,6 +77,7 @@ void cmd_help(){
     printf("\nOptions for downgrading with Odysseus:\n");
     printf("      --use-pwndfu\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
     printf("      --just-boot=\"-v\"\t\tTethered booting the device from pwned DFU mode. You can optionally set boot-args\n");
+    printf("      --no-ibss\t\t\tRestoring devices with Odysseus method. For checkm8 devices general, bootrom needs to be patched already.\n");
 #endif
         
     printf("\nOptions for SEP:\n");
@@ -174,6 +177,9 @@ int main_r(int argc, const char * argv[]) {
             case '4': // long option: "just-boot";
                 bootargs = (optarg) ? optarg : "";
                 break;
+            case '5': // long option: "no-ibss";
+                flags |= FLAG_NO_IBSS;
+                break;
             break;
 #endif
             case 'e': // long option: "exit-recovery"; can be called as short option
@@ -207,11 +213,13 @@ int main_r(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU);
+    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS);
     retassure(client.init(),"can't init, no device found\n");
     
     printf("futurerestore init done\n");
     retassure(!bootargs || (flags & FLAG_IS_PWN_DFU),"--just-boot requires --use-pwndfu\n");
+    if(flags & FLAG_NO_IBSS)
+        retassure((flags & FLAG_IS_PWN_DFU),"--no-ibss requires --use-pwndfu\n");
     
     if (exitRecovery) {
         client.exitRecovery();
