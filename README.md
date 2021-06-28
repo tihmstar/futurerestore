@@ -137,7 +137,7 @@ Use jailbreak tools for setting boot-nonce generator:
 1. [Meridian](https://meridian.sparkes.zone) for iOS 10.x;
 2. [backr00m](https://nito.tv) or greeng0blin for tvOS 10.2-11.1;
 3. [Electra and ElectraTV](https://coolstar.org/electra) for iOS and tvOS 11.x;
-4. [Chimera and ChimeraTV](https://chimera.sh) for iOS 12.0-12.2, 12.4 and tvOS 12.0-12.2, 12.4.
+4. [Chimera and ChimeraTV](https://chimera.sh) for iOS 12.0-12.5.4 (Nonce setter only supports on 12.1.2 - 12.4.1 on A12, and 12.1.3 - 12.5.4 is only supported on A7 - A11 devices.)
 5. [Odyssey](https://theodyssey.dev/) for iOS 13.0-13.7
    - Note that there are some reported issues with Odyssey's generator setter. Using it is not recommended.
 6. [Taurine](https://taurine.app/) for iOS 14.0-14.3
@@ -147,11 +147,13 @@ Use jailbreak tools for setting boot-nonce generator:
 
 Currently you can restore to the following versions with the latest SEP and baseband for your device:
 
-A7 and A8: 11.3-12.5.3
+A7 and A8: 11.3-12.5.4
 
 A9 and A10: 14.0-14.6
 
-A11 devices and newer: 14.3-14.6
+A11 devices: 14.3-14.6
+
+A12 devices and newer: 14.0-14.6
 
 ---
 
@@ -199,7 +201,7 @@ This is an error that has been diagnosed but no fix for it is available as of th
 - **Device with A7 chip on iOS 9.1 - 10.2 or iOS 10.3 beta 1**;
 - Jailbreak isn't required;
 - Signing ticket files (`.shsh`, `.shsh2`, `.plist`) with a custom ApNonce;
-- Signing ticket files needs to have one of the ApNonces, which the device generates a lot;
+- Signing ticket files needs to have one of the APNonces which the device generates a lot;
 
 ### Info
 You can downgrade if the destination firmware version, if it is compatible with the [latest sep and baseband!](#firmware-signing-info). You also need to have **special signing ticket files**. If you don't know what this is, you probably can **NOT** use this method!
@@ -236,7 +238,7 @@ You can downgrade if the destination firmware version, if it is compatible with 
     
     __If ApNonce is not collisioned, "use hands" for DFU booting.__
     
-    __If ApNonce is successfully coliisioned, use this SHSH2 for sign iBSS/iBEC.__
+    __If ApNonce is successfully collisioned, use this SHSH2 to sign iBSS/iBEC.__
 5. Use img4tool for sign iBSS:
    `img4tool -s ticket.shsh -c iBSS.signed -p <original_iBSS>`;
 6. Use img4tool for sign iBEC:
