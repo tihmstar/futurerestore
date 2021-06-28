@@ -1,27 +1,42 @@
 diff --git a/Makefile b/Makefile
-index 081b4dd..1a924f3 100644
+index d2d437c..8c15b54 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -245,7 +245,8 @@ BUILD_CXXFLAGS :=
+@@ -345,7 +345,7 @@ BUILD_CXXFLAGS :=
  BUILD_LDFLAGS  :=
  
  else ifeq ($(UNAME),Darwin)
 -ifeq ($(shell sw_vers -productName),macOS)
-+$(warning is Darin)
-+ifeq (Mac,Mac)
++ifeq ($(shell echo 1),1)
  ifneq ($(MEMO_QUIET),1)
  $(warning Building on MacOS)
  endif # ($(MEMO_QUIET),1)
-@@ -470,7 +471,7 @@ EXTRACT_TAR = -if [ ! -d $(BUILD_WORK)/$(3) ] || [ "$(4)" = "1" ]; then \
- 		$(CP) -af $(2)/. $(3); \
- 		rm -rf $(2); \
- 	fi; \
--	find $(BUILD_BASE) -name '*.la' -type f -delete
-+	find $(BUILD_BASE) \( -type f -name '*.la' -o -type l -name '*.la' \) -delete
+@@ -434,18 +434,18 @@ OPTIMIZATION_FLAGS := -Oz
+ else
+ OPTIMIZATION_FLAGS := -Os
+ ifeq ($(UNAME),Darwin)
+-OPTIMIZATION_FLAGS += -flto=thin
++OPTIMIZATION_FLAGS += -fembed-bitcode=off -fno-lto
+ else ifeq ($(MEMO_FORCE_LTO),1)
+-OPTIMIZATION_FLAGS += -flto=thin
++OPTIMIZATION_FLAGS += -fembed-bitcode=off -fno-lto
+ # This flag will prevent ld64 from deleting the object file needed for dsymutil to work.
+ # I'm not setting this on macOS because I am unsure if it is needed.
+ # See: clang(1)
+-OPTIMIZATION_FLAGS += -Wl,-object_path_lto,/tmp/lto.o
++# OPTIMIZATION_FLAGS += -Wl,-object_path_lto,/tmp/lto.o
+ endif
+ endif
+-ifdef ($(MEMO_ALT_LTO_LIB))
+-OPTIMIZATION_FLAGS += -lto_library $(MEMO_ALT_LTO_LIB)
+-endif
++# ifdef ($(MEMO_ALT_LTO_LIB))
++# OPTIMIZATION_FLAGS += -lto_library $(MEMO_ALT_LTO_LIB)
++# endif
  
- DO_PATCH    = cd $(BUILD_PATCH)/$(1); \
- 	for PATCHFILE in *; do \
-@@ -618,17 +619,17 @@ endif
+ CFLAGS              := $(OPTIMIZATION_FLAGS) -arch $(MEMO_ARCH) -isysroot $(TARGET_SYSROOT) $(PLATFORM_VERSION_MIN) -isystem $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include -isystem $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)$(MEMO_ALT_PREFIX)/include -F$(BUILD_BASE)$(MEMO_PREFIX)/System/Library/Frameworks -F$(BUILD_BASE)$(MEMO_PREFIX)/Library/Frameworks
+ CXXFLAGS            := $(CFLAGS)
+@@ -702,17 +702,17 @@ endif
  
  TAR  := tar # TODO: remove
  
@@ -42,7 +57,7 @@ index 081b4dd..1a924f3 100644
  $(error Install GNU grep)
  endif
  
-@@ -678,43 +679,43 @@ ifneq ($(call HAS_COMMAND,m4),1)
+@@ -762,49 +762,49 @@ ifneq ($(call HAS_COMMAND,m4),1)
  $(error Install m4)
  endif
  
@@ -67,9 +82,8 @@ index 081b4dd..1a924f3 100644
  endif
  
 -ifeq ($(shell PATH=$(PATH) install --version | grep -q 'GNU coreutils' && echo 1),1)
-+ifeq ($(shell install --version | grep -q 'GNU coreutils' && echo 1),1)
- export GINSTALL := install # TODO: remove
 -export INSTALL  := $(shell PATH=$(PATH) which install) --strip-program=$(STRIP)
++ifeq ($(shell install --version | grep -q 'GNU coreutils' && echo 1),1)
 +export INSTALL  := $(shell which install) --strip-program=$(STRIP)
  else
  $(error Install GNU coreutils)
@@ -95,14 +109,103 @@ index 081b4dd..1a924f3 100644
  LN := ln
  else
  $(error Install GNU coreutils)
-diff --git a/futurerestore.mk b/futurerestore.mk
-index e90d6e0..1195ba0 100644
---- a/futurerestore.mk
-+++ b/futurerestore.mk
-@@ -9,27 +9,22 @@ FUTURERESTORE_IDEVICERESTORE_COMMIT := d7d9996b3910902a56462fa8d9dc5909fcf8f4c9
- DEB_FUTURERESTORE_V                 ?= $(FUTURERESTORE_VERSION)-1
+ endif
+ export LN
  
- futurerestore-setup: setup tsschecker-setup
+-ifneq  ($(shell PATH=$(PATH) file -bi $(BUILD_MISC)/launchctl.1700 | grep -q 'x-mach-binary; charset=binary' && echo 1),1)
++ifneq  ($(shell file -bi $(BUILD_MISC)/launchctl.1700 | grep -q 'x-mach-binary; charset=binary' && echo 1),1)
+ $(error Install better file from Procursus - sudo apt install file)
+ endif
+ 
+@@ -871,11 +871,11 @@ MAKEFLAGS += --no-print-directory
+ 
+ ifeq ($(findstring --jobserver-auth=,$(MAKEFLAGS)),)
+ ifeq ($(call HAS_COMMAND,nproc),1)
+-GET_LOGICAL_CORES := nproc
++GET_LOGICAL_CORES := expr $(shell nproc) / 2
+ else
+-GET_LOGICAL_CORES := sysctl -n hw.ncpu
++GET_LOGICAL_CORES := expr $(shell sysctl -n hw.ncpu) / 2
+ endif
+-MAKEFLAGS += --jobs=$(shell $(GET_LOGICAL_CORES))
++MAKEFLAGS += --jobs=$(shell $(GET_LOGICAL_CORES)) --load-average=$(shell $(GET_LOGICAL_CORES))
+ endif
+ 
+ PROCURSUS := 1
+@@ -1011,7 +1011,7 @@ endif
+ 	echo "$(BUILD_STRAP)/$${BOOTSTRAP}"
+ endif # ($(MEMO_PREFIX),)
+ 
+-%-package: FAKEROOT=fakeroot -i $(BUILD_STAGE)/.fakeroot_$$(echo $@ | sed 's/\(.*\)-package/\1/') -s $(BUILD_STAGE)/.fakeroot_$$(echo $@ | sed 's/\(.*\)-package/\1/') --
++%-package: FAKEROOT=fakeroot -i $(BUILD_STAGE)/.fakeroot_$* -s $(BUILD_STAGE)/.fakeroot_$* --
+ %-package: .SHELLFLAGS=-O extglob -c
+ %-stage: %
+ 	rm -f $(BUILD_STAGE)/.fakeroot_$*
+@@ -1056,24 +1056,24 @@ endif
+ 
+ ifeq (,$(findstring darwin,$(MEMO_TARGET)))
+ 	@# Copy headers from MacOSX.sdk
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/{arpa,bsm,net,xpc,netinet,servers} $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/objc/objc-runtime.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/objc
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/libkern/{OSDebug.h,OSKextLib.h,OSReturn.h,OSThermalNotification.h,OSTypes.h,machine} $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/libkern
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/kern $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/sys/{tty*,proc*,ptrace,kern*,random,reboot,user,vnode}.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/sys
+-	@cp -af $(MACOSX_SYSROOT)/System/Library/Frameworks/IOKit.framework/Headers/* $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/IOKit
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/{ar,bootstrap,launch,libc,libcharset,localcharset,libproc,NSSystemDirectories,tzfile,vproc}.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/mach/{*.defs,{mach_vm,shared_region}.h} $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach
+-	@cp -af $(MACOSX_SYSROOT)/usr/include/mach/machine/*.defs $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach/machine
+-	@cp -af $(TARGET_SYSROOT)/usr/include/mach/machine/thread_state.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach/machine
+-	@cp -af $(TARGET_SYSROOT)/usr/include/mach/arm $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach
+-	@cp -af $(BUILD_INFO)/availability.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/os
++	@cp -a $(MACOSX_SYSROOT)/usr/include/{arpa,bsm,net,xpc,netinet,servers} $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
++	@cp -a $(MACOSX_SYSROOT)/usr/include/objc/objc-runtime.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/objc
++	@cp -a $(MACOSX_SYSROOT)/usr/include/libkern/* $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/libkern
++	@cp -a $(MACOSX_SYSROOT)/usr/include/kern $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
++	@cp -a $(MACOSX_SYSROOT)/usr/include/sys/{tty*,proc*,ptrace,kern*,random,reboot,user,vnode}.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/sys
++	@cp -a $(MACOSX_SYSROOT)/System/Library/Frameworks/IOKit.framework/Headers/* $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/IOKit
++	@cp -a $(MACOSX_SYSROOT)/usr/include/{ar,bootstrap,launch,libc,libcharset,localcharset,libproc,NSSystemDirectories,tzfile,vproc}.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
++	@cp -a $(MACOSX_SYSROOT)/usr/include/mach/{*.defs,{mach_vm,shared_region}.h} $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach
++	@cp -a $(MACOSX_SYSROOT)/usr/include/mach/machine/*.defs $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach/machine
++	@cp $(TARGET_SYSROOT)/usr/include/mach/machine/thread_state.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach/machine
++	@cp -a $(TARGET_SYSROOT)/usr/include/mach/arm $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/mach
++	@cp -a $(BUILD_INFO)/availability.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/os
+ ifneq ($(wildcard $(BUILD_MISC)/IOKit.framework.$(PLATFORM)),)
+-	@cp -af $(BUILD_MISC)/IOKit.framework.$(PLATFORM) $(BUILD_BASE)/$(MEMO_PREFIX)/System/Library/Frameworks/IOKit.framework
++	@cp -a $(BUILD_MISC)/IOKit.framework.$(PLATFORM) $(BUILD_BASE)/$(MEMO_PREFIX)/System/Library/Frameworks/IOKit.framework
+ endif
+ 
+ 	@mkdir -p $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/CoreAudio
+-	@cp -af $(MACOSX_SYSROOT)/System/Library/Frameworks/CoreAudio.framework/Headers/* $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/CoreAudio
++	@cp -a $(MACOSX_SYSROOT)/System/Library/Frameworks/CoreAudio.framework/Headers/* $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/CoreAudio
+ 
+ 	@# Patch headers from iPhoneOS.sdk
+ 	@$(SED) -E s/'__IOS_PROHIBITED|__TVOS_PROHIBITED|__WATCHOS_PROHIBITED'//g < $(TARGET_SYSROOT)/usr/include/stdlib.h > $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/stdlib.h
+@@ -1086,8 +1086,8 @@ endif
+ 	@$(SED) -E /'__API_UNAVAILABLE'/d < $(TARGET_SYSROOT)/usr/include/pthread.h > $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/pthread.h
+ 
+ 	@# Setup libiosexec
+-	@cp -af $(BUILD_MISC)/libiosexec/libiosexec.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
+-	@cp -af $(BUILD_MISC)/libiosexec/libiosexec.1.tbd $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
++	@cp -a $(BUILD_MISC)/libiosexec/libiosexec.h $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include
++	@cp -a $(BUILD_MISC)/libiosexec/libiosexec.1.tbd $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
+ 	@ln -sf libiosexec.1.tbd $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/libiosexec.tbd
+ 	@rm -f $(BUILD_BASE)/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/libiosexec.*.dylib
+ 	@$(SED) -i '1s/^/#include <libiosexec.h>\n/' $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/unistd.h
+diff --git a/makefiles/futurerestore.mk b/makefiles/futurerestore.mk
+index e90d6e0..335eb19 100644
+--- a/makefiles/futurerestore.mk
++++ b/makefiles/futurerestore.mk
+@@ -3,34 +3,24 @@ $(error Use the main Makefile)
+ endif
+ 
+ SUBPROJECTS                         += futurerestore
+-FUTURERESTORE_VERSION               := 195
+-FUTURERESTORE_COMMIT                := 55db758b5d4d6c08daa48af9aad1abf2b6466f36
+-FUTURERESTORE_IDEVICERESTORE_COMMIT := d7d9996b3910902a56462fa8d9dc5909fcf8f4c9
+-DEB_FUTURERESTORE_V                 ?= $(FUTURERESTORE_VERSION)-1
++DEB_FUTURERESTORE_V                 ?= $(FUTURERESTORE_VERSION)
+ 
+-futurerestore-setup: setup tsschecker-setup
 -	$(call GITHUB_ARCHIVE,m1stadev,futurerestore,$(FUTURERESTORE_COMMIT),$(FUTURERESTORE_COMMIT))
 -	$(call GITHUB_ARCHIVE,m1stadev,idevicerestore,$(FUTURERESTORE_IDEVICERESTORE_COMMIT),$(FUTURERESTORE_IDEVICERESTORE_COMMIT))
 -	$(call EXTRACT_TAR,futurerestore-$(FUTURERESTORE_COMMIT).tar.gz,futurerestore-$(FUTURERESTORE_COMMIT),futurerestore)
@@ -113,6 +216,7 @@ index e90d6e0..1195ba0 100644
 -
 -	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${FUTURERESTORE_VERSION}/g' $(BUILD_WORK)/futurerestore/configure.ac
 -	$(SED) -i 's/git rev\-parse HEAD/printf ${FUTURERESTORE_COMMIT}/g' $(BUILD_WORK)/futurerestore/configure.ac
++futurerestore-setup: setup
 +	ln -sf ${BASE}/../../../futurerestore $(BUILD_WORK)/
  
  ifneq ($(wildcard $(BUILD_WORK)/futurerestore/.build_complete),)
@@ -120,17 +224,427 @@ index e90d6e0..1195ba0 100644
  	@echo "Using previously built futurerestore."
  else
 -futurerestore: futurerestore-setup libirecovery openssl libusbmuxd libimobiledevice img4tool libgeneral libzip libfragmentzip libipatcher
++# futurerestore: futurerestore-setup openssl libplist libusbmuxd libimobiledevice libirecovery img4tool libgeneral libzip libfragmentzip libipatcher
 +futurerestore: futurerestore-setup
-+	find $(BUILD_BASE) \( -type f -name '*.la' -o -type l -name '*.la' \) -delete
-+	find $(BUILD_BASE) \( -type f -name '*.dylib' -o -type l -name '*.dylib' \) -delete
-+	find $(BUILD_BASE) -name '*libusb-1.0*.a' -prune -o -name '*libusbmuxd-2.0*.a' -prune -o -name '*libxpwn*.a' -prune -o -name '*libcommon*.a' -prune -o -name '*libipatcher*.a' -prune -o -name '*libimobiledevice*.a' -prune -o -name '*libfragmentzip*.a' -prune -o -name '*libzip*.a' -prune -o -name '*libirecovery*.a' -prune -o -name '*libipatcher*.a' -prune -o -name '*libpng16*.a' -prune -o -name '*liboffsetfinder64*.a' -prune -o -name '*libinsn*.a' -prune -o -name '*libimg4tool*.a' -prune -o -name '*libssl*.a' -prune -o -name '*libcrypto*.a' -prune -o -name '*libplist*.a' -prune -o -name '*libgeneral*.a' -prune -o -name '*.a' -print | tr '\n' ' ' | xargs rm || true
  	cd $(BUILD_WORK)/futurerestore && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS) \
  		--disable-silent-rules \
- 		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
+-		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
 -		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
-+		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
-+		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -llzma -lcurl -lbz2 -lcompression -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lipatcher -lusb-1.0 -lusbmuxd-2.0 -lfragmentzip -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn -lcommon -lxpwn"
- 	+$(MAKE) -C $(BUILD_WORK)/futurerestore
+-	+$(MAKE) -C $(BUILD_WORK)/futurerestore
++		libcurl_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lcurl" \
++		libcurl_CFLAGS="$(CFLAGS)"
++	+$(MAKE) -C $(BUILD_WORK)/futurerestore \
++		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -llzma -lbz2 -lcompression -lcurl -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lusbmuxd-2.0 -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn -lcommon -lxpwn"
  	+$(MAKE) -C $(BUILD_WORK)/futurerestore install \
  		DESTDIR="$(BUILD_STAGE)/futurerestore"
+ 	touch $(BUILD_WORK)/futurerestore/.build_complete
+diff --git a/makefiles/gettext.mk b/makefiles/gettext.mk
+index 41cd708..8140d62 100644
+--- a/makefiles/gettext.mk
++++ b/makefiles/gettext.mk
+@@ -30,6 +30,9 @@ gettext: gettext-setup ncurses libunistring
+ 	+$(MAKE) -C $(BUILD_WORK)/gettext install \
+ 		DESTDIR=$(BUILD_BASE)
+ 	rm -rf $(BUILD_STAGE)/gettext/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/share/gettext-*
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.a' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/gettext/.build_complete
+ endif
+ 
+diff --git a/makefiles/img4tool.mk b/makefiles/img4tool.mk
+index 36ef26d..8b028de 100644
+--- a/makefiles/img4tool.mk
++++ b/makefiles/img4tool.mk
+@@ -20,12 +20,14 @@ img4tool:
+ else
+ img4tool: img4tool-setup openssl libplist libgeneral
+ 	cd $(BUILD_WORK)/img4tool && ./autogen.sh \
+-		$(DEFAULT_CONFIGURE_FLAGS)
+-	+$(MAKE) -C $(BUILD_WORK)/img4tool
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared
+ 	+$(MAKE) -C $(BUILD_WORK)/img4tool install \
+ 		DESTDIR="$(BUILD_STAGE)/img4tool"
+ 	+$(MAKE) -C $(BUILD_WORK)/img4tool install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/img4tool/.build_complete
+ endif
+ 
+diff --git a/makefiles/libfragmentzip.mk b/makefiles/libfragmentzip.mk
+index 7dcbcc8..82b6b87 100644
+--- a/makefiles/libfragmentzip.mk
++++ b/makefiles/libfragmentzip.mk
+@@ -19,16 +19,19 @@ ifneq ($(wildcard $(BUILD_WORK)/libfragmentzip/.build_complete),)
+ libfragmentzip:
+ 	@echo "Using previously built libfragmentzip."
+ else
+-libfragmentzip: libfragmentzip-setup libgeneral libzip curl
++libfragmentzip: libfragmentzip-setup libgeneral libzip
+ 	cd $(BUILD_WORK)/libfragmentzip && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
+-		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
+-		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
+-	+$(MAKE) -C $(BUILD_WORK)/libfragmentzip
++		--disable-shared \
++		curl_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lcurl" \
++		curl_CFLAGS="$(CFLAGS)"
+ 	+$(MAKE) -C $(BUILD_WORK)/libfragmentzip install \
+ 		DESTDIR="$(BUILD_STAGE)/libfragmentzip"
+ 	+$(MAKE) -C $(BUILD_WORK)/libfragmentzip install \
+ 		DESTDIR="$(BUILD_BASE)"
++	$(SED) -i '8d' $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/pkgconfig/libfragmentzip.pc
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libfragmentzip/.build_complete
+ endif
+ 
+diff --git a/makefiles/libgeneral.mk b/makefiles/libgeneral.mk
+index 0c1147c..5f44723 100644
+--- a/makefiles/libgeneral.mk
++++ b/makefiles/libgeneral.mk
+@@ -20,12 +20,14 @@ libgeneral:
+ else
+ libgeneral: libgeneral-setup
+ 	cd $(BUILD_WORK)/libgeneral && ./autogen.sh \
+-		$(DEFAULT_CONFIGURE_FLAGS)
+-	+$(MAKE) -C $(BUILD_WORK)/libgeneral
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared
+ 	+$(MAKE) -C $(BUILD_WORK)/libgeneral install \
+ 		DESTDIR="$(BUILD_STAGE)/libgeneral"
+ 	+$(MAKE) -C $(BUILD_WORK)/libgeneral install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libgeneral/.build_complete
+ endif
+ 
+diff --git a/makefiles/libimobiledevice.mk b/makefiles/libimobiledevice.mk
+index aede911..9d885b2 100644
+--- a/makefiles/libimobiledevice.mk
++++ b/makefiles/libimobiledevice.mk
+@@ -19,11 +19,18 @@ libimobiledevice: libimobiledevice-setup libusbmuxd libplist openssl
+ 	cd $(BUILD_WORK)/libimobiledevice && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
+ 		--without-cython
++	cd $(BUILD_WORK)/libimobiledevice/include
++	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice
++	cd $(BUILD_WORK)/libimobiledevice/common
++	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice
++	cd $(BUILD_WORK)/libimobiledevice/src
+ 	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice
+ 	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice install \
+-		DESTDIR="$(BUILD_STAGE)/libimobiledevice"
++		DESTDIR="$(BUILD_STAGE)"
+ 	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libimobiledevice/.build_complete
+ endif
+ 
+diff --git a/makefiles/libinsn.mk b/makefiles/libinsn.mk
+index daeed3e..aa5f330 100644
+--- a/makefiles/libinsn.mk
++++ b/makefiles/libinsn.mk
+@@ -20,12 +20,14 @@ libinsn:
+ else
+ libinsn: libinsn-setup libgeneral
+ 	cd $(BUILD_WORK)/libinsn && ./autogen.sh \
+-		$(DEFAULT_CONFIGURE_FLAGS)
+-	+$(MAKE) -C $(BUILD_WORK)/libinsn
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared
+ 	+$(MAKE) -C $(BUILD_WORK)/libinsn install \
+ 		DESTDIR="$(BUILD_STAGE)/libinsn"
+ 	+$(MAKE) -C $(BUILD_WORK)/libinsn install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libinsn/.build_complete
+ endif
+ 
+diff --git a/makefiles/libipatcher.mk b/makefiles/libipatcher.mk
+index 73364b3..ec56ae0 100644
+--- a/makefiles/libipatcher.mk
++++ b/makefiles/libipatcher.mk
+@@ -3,13 +3,13 @@ $(error Use the main Makefile)
+ endif
+ 
+ SUBPROJECTS         += libipatcher
+-LIBIPATCHER_VERSION := 81
+-LIBIPATCHER_COMMIT  := ad44d0da23f5120c3c77a72062bd627c50f37e71
+-DEB_LIBIPATCHER_V   ?= $(LIBIPATCHER_VERSION)-1
++LIBIPATCHER_VERSION := 83
++LIBIPATCHER_COMMIT  := 49d26904d0c1cf001effb3aa07c3be20225c3b52
++DEB_LIBIPATCHER_V   ?= $(LIBIPATCHER_VERSION)
+ 
+ libipatcher-setup: setup
+-	$(call GITHUB_ARCHIVE,tihmstar,libipatcher,$(LIBIPATCHER_VERSION),$(LIBIPATCHER_VERSION))
+-	$(call EXTRACT_TAR,libipatcher-$(LIBIPATCHER_VERSION).tar.gz,libipatcher-$(LIBIPATCHER_VERSION),libipatcher)
++	$(call GITHUB_ARCHIVE,Cryptiiiic,libipatcher,$(LIBIPATCHER_COMMIT),$(LIBIPATCHER_COMMIT))
++	$(call EXTRACT_TAR,libipatcher-$(LIBIPATCHER_COMMIT).tar.gz,libipatcher-$(LIBIPATCHER_COMMIT),libipatcher)
+ 
+ 	$(call GITHUB_ARCHIVE,tihmstar,iBoot32Patcher,master,master)
+ 	$(call GITHUB_ARCHIVE,tihmstar,jssy,master,master)
+@@ -27,9 +27,10 @@ ifneq ($(wildcard $(BUILD_WORK)/libipatcher/.build_complete),)
+ libipatcher:
+ 	@echo "Using previously built libipatcher."
+ else
+-libipatcher: libipatcher-setup libpng16 openssl img4tool liboffsetfinder64 libgeneral libplist curl xpwn
++libipatcher: libipatcher-setup libpng16 openssl img4tool liboffsetfinder64 libgeneral libplist xpwn
+ 	cd $(BUILD_WORK)/libipatcher && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared \
+ 		CFLAGS="$(CFLAGS) -I$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/xpwn" \
+ 		CPPFLAGS="$(CPPFLAGS) -I$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/xpwn" \
+ 		LDFLAGS="$(LDFLAGS) -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn"
+@@ -39,6 +40,8 @@ libipatcher: libipatcher-setup libpng16 openssl img4tool liboffsetfinder64 libge
+ 		DESTDIR="$(BUILD_STAGE)/libipatcher"
+ 	+$(MAKE) -C $(BUILD_WORK)/libipatcher install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libipatcher/.build_complete
+ endif
+ 
+diff --git a/makefiles/libirecovery.mk b/makefiles/libirecovery.mk
+index d261c12..81e63c8 100644
+--- a/makefiles/libirecovery.mk
++++ b/makefiles/libirecovery.mk
+@@ -15,16 +15,20 @@ ifneq ($(wildcard $(BUILD_WORK)/libirecovery/.build_complete),)
+ libirecovery:
+ 	@echo "Using previously built libirecovery."
+ else
+-libirecovery: libirecovery-setup readline libusb
++libirecovery: libirecovery-setup libimobiledevice
+ 	cd $(BUILD_WORK)/libirecovery && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
+-		--with-iokit=no
+-	+$(MAKE) -C $(BUILD_WORK)/libirecovery \
+-		CFLAGS="$(CFLAGS) -I$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/libusb-1.0"
++		--with-iokit=yes \
++		--disable-shared
++	cd $(BUILD_WORK)/libirecovery/include
++	+$(MAKE) -C $(BUILD_WORK)/libirecovery
++	cd $(BUILD_WORK)/libirecovery/src
+ 	+$(MAKE) -C $(BUILD_WORK)/libirecovery install \
+ 		DESTDIR=$(BUILD_STAGE)/libirecovery
+ 	+$(MAKE) -C $(BUILD_WORK)/libirecovery install \
+ 		DESTDIR=$(BUILD_BASE)
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libirecovery/.build_complete
+ endif
+ 
+diff --git a/makefiles/liboffsetfinder64.mk b/makefiles/liboffsetfinder64.mk
+index 1b8a892..174ffff 100644
+--- a/makefiles/liboffsetfinder64.mk
++++ b/makefiles/liboffsetfinder64.mk
+@@ -3,12 +3,12 @@ $(error Use the main Makefile)
+ endif
+ 
+ SUBPROJECTS               += liboffsetfinder64
+-LIBOFFSETFINDER64_VERSION := 132
+-LIBOFFSETFINDER64_COMMIT  := 35d3411bf675a83bdb768bc0ec26fe2344be16f3
+-DEB_LIBOFFSETFINDER64_V   ?= $(LIBOFFSETFINDER64_VERSION)-1
++LIBOFFSETFINDER64_VERSION := 138
++LIBOFFSETFINDER64_COMMIT  := 2954b9955526f324345531751f49814c98075767
++DEB_LIBOFFSETFINDER64_V   ?= $(LIBOFFSETFINDER64_VERSION)
+ 
+ liboffsetfinder64-setup: setup
+-	$(call GITHUB_ARCHIVE,tihmstar,liboffsetfinder64,$(LIBOFFSETFINDER64_COMMIT),$(LIBOFFSETFINDER64_COMMIT))
++	$(call GITHUB_ARCHIVE,Cryptiiiic,liboffsetfinder64,$(LIBOFFSETFINDER64_COMMIT),$(LIBOFFSETFINDER64_COMMIT))
+ 	$(call EXTRACT_TAR,liboffsetfinder64-$(LIBOFFSETFINDER64_COMMIT).tar.gz,liboffsetfinder64-$(LIBOFFSETFINDER64_COMMIT),liboffsetfinder64)
+ 
+ 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${LIBOFFSETFINDER64_VERSION}/g' $(BUILD_WORK)/liboffsetfinder64/configure.ac
+@@ -20,12 +20,14 @@ liboffsetfinder64:
+ else
+ liboffsetfinder64: liboffsetfinder64-setup libgeneral libinsn img4tool openssl libplist
+ 	cd $(BUILD_WORK)/liboffsetfinder64 && ./autogen.sh \
+-		$(DEFAULT_CONFIGURE_FLAGS)
+-	+$(MAKE) -C $(BUILD_WORK)/liboffsetfinder64
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared
+ 	+$(MAKE) -C $(BUILD_WORK)/liboffsetfinder64 install \
+ 		DESTDIR="$(BUILD_STAGE)/liboffsetfinder64"
+ 	+$(MAKE) -C $(BUILD_WORK)/liboffsetfinder64 install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/liboffsetfinder64/.build_complete
+ endif
+ 
+diff --git a/makefiles/libplist.mk b/makefiles/libplist.mk
+index 14a4b8d..4677b6b 100644
+--- a/makefiles/libplist.mk
++++ b/makefiles/libplist.mk
+@@ -17,12 +17,16 @@ else
+ libplist: libplist-setup
+ 	cd $(BUILD_WORK)/libplist && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
+-		--without-cython
++		--without-cython \
++		--disable-shared || true
++	cat $(BUILD_WORK)/libplist/config.log
+ 	+$(MAKE) -C $(BUILD_WORK)/libplist
+ 	+$(MAKE) -C $(BUILD_WORK)/libplist install \
+ 		DESTDIR="$(BUILD_STAGE)/libplist"
+ 	+$(MAKE) -C $(BUILD_WORK)/libplist install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libplist/.build_complete
+ endif
+ 
+diff --git a/makefiles/libpng16.mk b/makefiles/libpng16.mk
+index 4827b00..e3f9d60 100644
+--- a/makefiles/libpng16.mk
++++ b/makefiles/libpng16.mk
+@@ -18,12 +18,15 @@ libpng16:
+ else
+ libpng16: libpng16-setup
+ 	cd $(BUILD_WORK)/libpng16 && ./configure -C \
+-		$(DEFAULT_CONFIGURE_FLAGS)
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared
+ 	+$(MAKE) -C $(BUILD_WORK)/libpng16
+ 	+$(MAKE) -C $(BUILD_WORK)/libpng16 install \
+ 		DESTDIR=$(BUILD_STAGE)/libpng16
+ 	+$(MAKE) -C $(BUILD_WORK)/libpng16 install \
+ 		DESTDIR=$(BUILD_BASE)
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libpng16/.build_complete
+ endif
+ 
+diff --git a/makefiles/libusbmuxd.mk b/makefiles/libusbmuxd.mk
+index c4fb00f..1ab8a4a 100644
+--- a/makefiles/libusbmuxd.mk
++++ b/makefiles/libusbmuxd.mk
+@@ -16,12 +16,19 @@ libusbmuxd:
+ else
+ libusbmuxd: libusbmuxd-setup libplist
+ 	cd $(BUILD_WORK)/libusbmuxd && ./autogen.sh \
+-		$(DEFAULT_CONFIGURE_FLAGS)
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared
++	cd $(BUILD_WORK)/libusbmuxd/include
+ 	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd
++	cd $(BUILD_WORK)/libusbmuxd/common
++	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd
++	cd $(BUILD_WORK)/libusbmuxd/src
+ 	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd install \
+ 		DESTDIR="$(BUILD_STAGE)/libusbmuxd"
+ 	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd install \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libusbmuxd/.build_complete
+ endif
+ 
+diff --git a/makefiles/libzip.mk b/makefiles/libzip.mk
+index b7b5019..ee0021b 100644
+--- a/makefiles/libzip.mk
++++ b/makefiles/libzip.mk
+@@ -14,20 +14,27 @@ ifneq ($(wildcard $(BUILD_WORK)/libzip/.build_complete),)
+ libzip:
+ 	@echo "Using previously built libzip."
+ else
+-libzip: libzip-setup xz openssl
+-	cd $(BUILD_WORK)/libzip && cmake . \
++libzip: libzip-setup openssl
++	cd $(BUILD_WORK)/libzip && \
++	cmake \
++		. \
+ 		$(DEFAULT_CMAKE_FLAGS) \
++		-DBUILD_SHARED_LIBS=0 \
+ 		-DCOMMON_ARCH=$(DEB_ARCH) \
+ 		-DENABLE_COMMONCRYPTO=OFF \
+ 		-DENABLE_GNUTLS=OFF \
+ 		-DENABLE_MBEDTLS=OFF \
+ 		-DENABLE_WINDOWS_CRYPTO=OFF \
+-		-DENABLE_OPENSSL=ON
+-	+$(MAKE) -C $(BUILD_WORK)/libzip
+-	+$(MAKE) -C $(BUILD_WORK)/libzip install \
++		-DENABLE_OPENSSL=ON && \
++	$(SED) -i '77,81d' $(BUILD_WORK)/libzip/cmake_install.cmake
++	+$(MAKE) zip/fast -C $(BUILD_WORK)/libzip \
++		LDFLAGS="$(LDFLAGS) -L/usr/lib -llzma"
++	+$(MAKE) -C $(BUILD_WORK)/libzip install/strip/fast \
+ 		DESTDIR="$(BUILD_STAGE)/libzip"
+-	+$(MAKE) -C $(BUILD_WORK)/libzip install \
++	+$(MAKE) -C $(BUILD_WORK)/libzip install/strip/fast \
+ 		DESTDIR="$(BUILD_BASE)"
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/libzip/.build_complete
+ endif
+ 
+diff --git a/makefiles/lzfse.mk b/makefiles/lzfse.mk
+index ee21826..1c0b436 100644
+--- a/makefiles/lzfse.mk
++++ b/makefiles/lzfse.mk
+@@ -17,8 +17,10 @@ else
+ lzfse: lzfse-setup
+ 	cd $(BUILD_WORK)/lzfse && cmake . \
+ 		$(DEFAULT_CMAKE_FLAGS) \
++		-DBUILD_SHARED_LIBS=0 \
+ 		.
+-	+$(MAKE) -C $(BUILD_WORK)/lzfse
++	+$(MAKE) lzfse/fast -C $(BUILD_WORK)/lzfse
++	$(SED) -i '48,60d' $(BUILD_WORK)/lzfse/cmake_install.cmake
+ 	+$(MAKE) -C $(BUILD_WORK)/lzfse install \
+ 		DESTDIR="$(BUILD_STAGE)/lzfse"
+ 	+$(MAKE) -C $(BUILD_WORK)/lzfse install \
+diff --git a/makefiles/openssl.mk b/makefiles/openssl.mk
+index e4c90df..59df7c6 100644
+--- a/makefiles/openssl.mk
++++ b/makefiles/openssl.mk
+@@ -64,10 +64,12 @@ openssl: openssl-setup
+ 		shared \
+ 		$(SSL_SCHEME)
+ 	+$(MAKE) -C $(BUILD_WORK)/openssl
+-	+$(MAKE) -C $(BUILD_WORK)/openssl install_sw install_ssldirs \
++	+$(MAKE) -C $(BUILD_WORK)/openssl install_dev \
+ 		DESTDIR=$(BUILD_STAGE)/openssl
+-	+$(MAKE) -C $(BUILD_WORK)/openssl install_sw \
++	+$(MAKE) -C $(BUILD_WORK)/openssl install_dev \
+ 		DESTDIR=$(BUILD_BASE)
++	find . -name '*.dylib' -exec rm -rf {} \;
++	find . -name '*.la*' -exec rm -rf {} \;
+ 	touch $(BUILD_WORK)/openssl/.build_complete
+ endif
+ 
+diff --git a/makefiles/xpwn.mk b/makefiles/xpwn.mk
+index 1b8ca5f..6ed85c1 100644
+--- a/makefiles/xpwn.mk
++++ b/makefiles/xpwn.mk
+@@ -23,16 +23,16 @@ xpwn: xpwn-setup libpng16 openssl
+ 		$(DEFAULT_CMAKE_FLAGS) \
+ 		-DBZIP2_LIBRARIES="-L$(TARGET_SYSROOT)/usr/lib -lbz2" \
+ 		-DZLIB_LIBRARY="-L$(TARGET_SYSROOT)/usr/lib -lz"
+-	+$(MAKE) -C $(BUILD_WORK)/xpwn
+-	+$(MAKE) -C $(BUILD_WORK)/xpwn install \
+-		DESTDIR=$(BUILD_BASE)
+-	+$(MAKE) -C $(BUILD_WORK)/xpwn install \
+-		DESTDIR=$(BUILD_STAGE)/xpwn
++	+$(MAKE) common/fast xpwn/fast -C $(BUILD_WORK)/xpwn
++	# +$(MAKE) -C $(BUILD_WORK)/xpwn install \
++	# 	DESTDIR=$(BUILD_BASE)
++	# +$(MAKE) -C $(BUILD_WORK)/xpwn install \
++	# 	DESTDIR=$(BUILD_STAGE)/xpwn
+ 	mkdir -p {$(BUILD_BASE),$(BUILD_STAGE)/xpwn}/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/{include/xpwn,lib/xpwn}
+ 	cp -a $(BUILD_WORK)/xpwn/includes/* $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/xpwn
+ 	cp -a $(BUILD_WORK)/xpwn/includes/* $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/xpwn
+-	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,minizip/libminizip,common/libcommon,hfs/libhfs,dmg/libdmg}.a $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
+-	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,minizip/libminizip,common/libcommon,hfs/libhfs,dmg/libdmg}.a $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
++	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,common/libcommon}.a $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
++	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,common/libcommon}.a $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
+ 	touch $(BUILD_WORK)/xpwn/.build_complete
+ endif
+ 
