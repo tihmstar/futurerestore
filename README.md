@@ -21,27 +21,34 @@ FutureRestore is a modified idevicerestore wrapper, which allows manually specif
 # Dependencies
 * ## External libs
   Make sure these are installed
+  * [curl](https://github.com/curl/curl) (Linux/Windows only, macOS already has curl preinstalled);
+  * [openssl 1.1.1](https://github.com/openssl/openssl) (or CommonCrypto on macOS);
+  * [libusb 1.0.24](https://github.com/libusb/libusb) (Linux/Windows only, macOS can use IOKit for libirecovery);
   * [libzip](https://github.com/nih-at/libzip);
-  * [libcurl](https://github.com/curl/curl);
-  * [openssl](https://github.com/openssl/openssl) (or CommonCrypto on macOS/OS X);
   * [libplist](https://github.com/libimobiledevice/libplist);
   * [libusbmuxd](https://github.com/libimobiledevice/libusbmuxd);
   * [libirecovery](https://github.com/libimobiledevice/libirecovery);
   * [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice);
+  * [libpng16](https://github.com/glennrp/libpng);
+  * [xpwn(fork)](https://github.com/nyuszika7h/xpwn);
+  * [libgeneral](https://github.com/tihmstar/libgeneral);
+  * [libfragmentzip](https://github.com/tihmstar/libfragmentzip);
+  * [libinsn](https://github.com/tihmstar/libinsn);
+  * [lzfse](https://github.com/lzfse/lzfse);
   * [img4tool](https://github.com/tihmstar/img4tool);
-  * [liboffsetfinder64](https://github.com/tihmstar/liboffsetfinder64);
-  * [libipatcher](https://github.com/tihmstar/libipatcher)
+  * [liboffsetfinder64(fork))](https://github.com/Cryptiiiic/liboffsetfinder64);
+  * [libipatcher(fork)](https://github.com/Cryptiiiic/libipatcher)
 
 * ## Submodules
   Make sure these projects compile on your system (install it's dependencies):
 
   * [jssy](https://github.com/tihmstar/jssy);
-  * [tsschecker](https://github.com/tihmstar/tsschecker);
-  * [idevicerestore](https://github.com/marijuanARM/idevicerestore)
+  * [tsschecker(fork)](https://github.com/1Conan/tsschecker);
+  * [idevicerestore(fork)](https://github.com/m1stadev/idevicerestore)
 
   If you are cloning this repository you may run:
 
-  ```git clone https://github.com/m1stadev/futurerestore --recurse-submodules``` 
+  ```git clone https://github.com/m1stadev/futurerestore --recursive```
  
   which will clone these submodules for you.
 
