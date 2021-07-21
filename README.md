@@ -155,13 +155,13 @@ Use jailbreak tools for setting boot-nonce generator:
 
 Currently you can restore to the following versions with the latest SEP and baseband for your device:
 
-A7 and A8: 11.3-12.5.4
+Devices that only support up to iOS 12 (most A7 and A8 devices excluding iPad5,1 - iPad5,4): 11.3-12.5.4
 
-A9 and A10: 14.0-14.6
+A9 and A10: 14.0-14.7
 
-A11 devices: 14.3-14.6
+A11 devices: 14.3-14.7
 
-A12 devices and newer: 14.0-14.6
+A12 devices and newer: 14.0-14.7
 
 ---
 
