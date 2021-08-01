@@ -1,10 +1,15 @@
 # futurerestore
 [![CI Building](https://img.shields.io/github/workflow/status/marijuanARM/futurerestore/CI)](https://github.com/marijuanARM/futurerestore/actions?workflow=CI)
 
-
-Latest compiled version can be found [here](https://github.com/marijuanARM/futurerestore/releases).
-
 __Make sure to read this page before continuing.__
+
+Latest **stable** compiled version can be found [here](https://github.com/marijuanARM/futurerestore/releases).
+
+For A12-A14, and WiFi-only iPad restores - use the latest beta build for your platform [here](https://nightly.link/m1stadev/futurerestore/workflows/ci/test).
+
+**There are currently no pre-compiled beta builds for Windows.**
+
+__Only use if you are sure what you're doing.__
 
 ---
 ## What is FutureRestore?
