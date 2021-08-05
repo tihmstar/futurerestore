@@ -1,9 +1,9 @@
 # futurerestore
-[![CI Building](https://img.shields.io/github/workflow/status/marijuanARM/futurerestore/CI)](https://github.com/marijuanARM/futurerestore/actions?workflow=CI)
+[![CI Building](https://img.shields.io/github/workflow/status/m1stadev/futurerestore/CI)](https://github.com/m1stadev/futurerestore/actions?workflow=CI)
 
 __Make sure to read this page before continuing.__
 
-Latest **stable** compiled version can be found [here](https://github.com/marijuanARM/futurerestore/releases).
+Latest **stable** compiled version can be found [here](https://github.com/m1stadev/futurerestore/releases).
 
 For A12-A14, and WiFi-only iPad restores - use the latest beta build for your platform [here](https://nightly.link/m1stadev/futurerestore/workflows/ci/test).
 
@@ -12,6 +12,9 @@ For A12-A14, and WiFi-only iPad restores - use the latest beta build for your pl
 __Only use if you are sure what you're doing.__
 
 ---
+
+# Support
+For support, join the [FutureRestore Support server](https://discord.com/invite/96wCSnwYVX) on Discord.
 
 # Features  
 * Supports the following downgrade methods:
@@ -38,10 +41,10 @@ __Only use if you are sure what you're doing.__
   Make sure these projects compile on your system (install it's dependencies):
   * [jssy](https://github.com/tihmstar/jssy);
   * [tsschecker](https://github.com/tihmstar/tsschecker);
-  * [idevicerestore](https://github.com/marijuanARM/idevicerestore)
+  * [idevicerestore](https://github.com/m1stadev/idevicerestore)
 
 ## Report an issue
-You can do it [here](https://github.com/marijuanARM/futurerestore/issues).
+You can do it [here](https://github.com/m1stadev/futurerestore/issues).
 
 ### Restoring on Windows 10
 1.  Try to restore the device, error `-8` occurs;
