@@ -478,8 +478,15 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     mutex_unlock(&_client->device_event_mutex);
 
     try {
-        iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
-        iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+        const char *board = getDeviceBoardNoCopy();
+        info("BOARD: %s\n", board);
+        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap") {
+            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
+            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
+        } else {
+            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
+            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+        }
     } catch (tihmstar::exception &e) {
         reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
     }
@@ -687,8 +694,15 @@ void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
     mutex_unlock(&_client->device_event_mutex);
 
     try {
-        iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
-        iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+        const char *board = getDeviceBoardNoCopy();
+        info("BOARD: %s\n", board);
+        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap") {
+            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
+            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
+        } else {
+            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
+            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+        }
     } catch (tihmstar::exception &e) {
         reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
     }
