@@ -44,6 +44,7 @@ static struct option longopts[] = {
     { "debug",              no_argument,            NULL, 'd' },
     { "exit-recovery",      no_argument,            NULL, 'e' },
     { "latest-sep",         no_argument,            NULL, '0' },
+    { "no-restore",         no_argument,            NULL, 'z' },
     { "latest-baseband",    no_argument,            NULL, '1' },
     { "no-baseband",        no_argument,            NULL, '2' },
 #ifdef HAVE_LIBIPATCHER
@@ -61,6 +62,7 @@ static struct option longopts[] = {
 #define FLAG_NO_BASEBAND        1 << 4
 #define FLAG_IS_PWN_DFU         1 << 5
 #define FLAG_NO_IBSS            1 << 6
+#define FLAG_NO_RESTORE_FR      1 << 7
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] iPSW\n");
@@ -72,6 +74,7 @@ void cmd_help(){
     printf("  -w, --wait\t\t\tKeep rebooting until ApNonce matches APTicket (ApNonce collision, unreliable)\n");
     printf("  -d, --debug\t\t\tShow all code, use to save a log for debug testing\n");
     printf("  -e, --exit-recovery\t\tExit recovery mode and quit\n");
+    printf("  -z, --no-restore\t\tDo not restore and end right before NOR data is sent\n");
     
 #ifdef HAVE_LIBIPATCHER
     printf("\nOptions for downgrading with Odysseus:\n");
@@ -117,6 +120,7 @@ int main_r(int argc, const char * argv[]) {
     int opt = 0;
     long flags = 0;
     bool exitRecovery = false;
+    bool noRestore = false;
     
     int isSepManifestSigned = 0;
     int isBasebandSigned = 0;
@@ -138,7 +142,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wude0123", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wudez0123", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPaths.push_back(optarg);
@@ -185,6 +189,9 @@ int main_r(int argc, const char * argv[]) {
             case 'e': // long option: "exit-recovery"; can be called as short option
                 exitRecovery = true;
                 break;
+            case 'z': // long option: "no-restore"; can be called as short option
+                flags |= FLAG_NO_RESTORE_FR;
+                break;
             case 'd': // long option: "debug"; can be called as short option
                 idevicerestore_debug = 1;
                 break;
@@ -213,7 +220,7 @@ int main_r(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS);
+    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS, flags & FLAG_NO_RESTORE_FR);
     retassure(client.init(),"can't init, no device found\n");
     
     printf("futurerestore init done\n");

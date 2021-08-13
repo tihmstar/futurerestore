@@ -106,7 +106,7 @@ extern "C"{
 };
 
 #pragma mark futurerestore
-futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS){
+futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, bool noRestore) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS), _noRestore(noRestore){
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
@@ -924,6 +924,7 @@ void futurerestore::doRestore(const char *ipsw){
     plist_t build_identity = NULL;
 
     client->ipsw = strdup(ipsw);
+    if (_noRestore) client->flags |= FLAG_NO_RESTORE;
     if (!_isUpdateInstall) client->flags |= FLAG_ERASE;
     
     irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, client);
@@ -1339,8 +1340,9 @@ void futurerestore::doRestore(const char *ipsw){
     mutex_unlock(&client->device_event_mutex);
 
     info("About to restore device... \n");
-    int result = 0;
-    retassure(!(result = restore_device(client, build_identity, filesystem)), "ERROR: Unable to restore device\n");
+    int result = restore_device(client, build_identity, filesystem);
+    if (result == 2) return;
+    else retassure(!(result), "ERROR: Unable to restore device\n");
 }
 
 int futurerestore::doJustBoot(const char *ipsw, string bootargs){

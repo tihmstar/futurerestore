@@ -58,6 +58,7 @@ class futurerestore {
     bool _isUpdateInstall = false;
     bool _isPwnDfu = false;
     bool _noIBSS = false;
+    bool _noRestore = false;
     
     char *_firmwareJson = NULL;
     jssytok_t *_firmwareTokens = NULL;;
@@ -84,7 +85,7 @@ class futurerestore {
     void enterPwnRecovery2(plist_t build_identity, std::string bootargs = "");
     
 public:
-    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false);
+    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false, bool noRestore = false);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();
