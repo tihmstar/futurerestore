@@ -517,7 +517,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     info("Booting iBSS, waiting for device to reconnect...\n");
     mutex_lock(&_client->device_event_mutex);
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+    retassure(((_client->mode->index == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
     mutex_unlock(&_client->device_event_mutex);
     retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
     mutex_lock(&_client->device_event_mutex);
@@ -1137,7 +1137,9 @@ void futurerestore::doRestore(const char *ipsw){
     if (_enterPwnRecoveryRequested){
         retassure(getDeviceMode(true) == MODE_DFU, "unexpected device mode\n");
         if(_noIBSS)
-            enterPwnRecovery2(build_identity);
+            info("RIPBOZO W.I.P. no eta bet patient!\n");
+            exit(1);
+            // enterPwnRecovery2(build_identity);
         else
             enterPwnRecovery(build_identity);
     }
