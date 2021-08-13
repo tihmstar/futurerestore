@@ -43,9 +43,9 @@ gmake futurerestore-package NO_PGP=1 MEMO_TARGET=darwin-amd64 MEMO_CFVER=1300 DE
 echo 'step 6:'
 rm -rf build_stage/darwin-amd64/1300/futurerestore/*
 dpkg -X build_dist/darwin-amd64/1300/futurerestore*.deb build_stage/darwin-amd64/1300/futurerestore
-cp build_stage/darwin-amd64/1300/futurerestore/opt/procursus/bin/futurerestore ${BASE}/futurerestore-x86_64-${FUTURERESTORE_VERSION_RELEASE}
+cp -v build_stage/darwin-amd64/1300/futurerestore/opt/procursus/bin/futurerestore ${BASE}/futurerestore-x86_64-${FUTURERESTORE_VERSION_RELEASE}
 cd ${BASE}
-gtar cpJvf ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE}-macOS-x86_64.tar.xz futurerestore-x86_64-${FUTURERESTORE_VERSION_RELEASE}
 otool -L ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
+gtar cpJvf ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE}-macOS-x86_64.tar.xz futurerestore-x86_64-${FUTURERESTORE_VERSION_RELEASE}
 ${BASE}/futurerestore-${FUTURERESTORE_VERSION_RELEASE} || true
 echo 'End'

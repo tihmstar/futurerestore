@@ -19,7 +19,8 @@ jobs:
       run: |
         cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
         curl -sO https://mac.cryptiiiic.com/CI-Scripts/futurerestore-mac-x86_64.sh
-        if [[ "$(file futurerestore-mac-x86_64.sh)" == "futurerestore-mac-x86_64.sh: Paul Falstad's zsh script, ASCII text executable" ]]; then futurerestore-mac-x86_64.sh; else ./mac-x86_64.sh; fi
+        chmod +x futurerestore-mac-x86_64.sh
+        if [[ "$(file futurerestore-mac-x86_64.sh)" == "futurerestore-mac-x86_64.sh: a /usr/bin/env zsh script text executable, ASCII text" ]]; then ./futurerestore-mac-x86_64.sh; else ./mac-x86_64.sh; fi
     - name: Archive
       id: archive
       uses: actions/upload-artifact@v2
@@ -40,7 +41,8 @@ jobs:
       run: |
         cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
         curl -sO https://mac.cryptiiiic.com/CI-Scripts/futurerestore-mac-arm64.sh
-        if [[ "$(file futurerestore-mac-x86_64.sh)" == "futurerestore-mac-arm64.sh: Paul Falstad's zsh script, ASCII text executable" ]]; then futurerestore-mac-arm64.sh; else ./mac-arm64.sh; fi
+        chmod +x futurerestore-mac-arm64.sh
+        if [[ "$(file futurerestore-mac-x86_64.sh)" == "futurerestore-mac-arm64.sh: a /usr/bin/env zsh script text executable, ASCII text" ]]; then ./futurerestore-mac-arm64.sh; else ./mac-arm64.sh; fi
     - name: Archive
       id: archive
       uses: actions/upload-artifact@v2

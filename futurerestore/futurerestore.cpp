@@ -1136,10 +1136,11 @@ void futurerestore::doRestore(const char *ipsw){
     //check for enterpwnrecovery, because we could be in DFU mode
     if (_enterPwnRecoveryRequested){
         retassure(getDeviceMode(true) == MODE_DFU, "unexpected device mode\n");
-        if(_noIBSS)
+        if(_noIBSS) {
             info("RIPBOZO W.I.P. no eta bet patient!\n");
             exit(1);
             // enterPwnRecovery2(build_identity);
+        }
         else
             enterPwnRecovery(build_identity);
     }
