@@ -465,7 +465,173 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 #ifndef HAVE_LIBIPATCHER
     reterror("compiled without libipatcher");
 #else
-   bootargs = "rd=md0 -restore -v serial=3 debug=0x14e keepsyms=1 amfi=0xff amfi_unrestrict_task_for_pid=1 amfi_allow_any_signature=1 amfi_get_out_of_my_way=1";
+    bootargs = "rd=md0 -restore -v serial=3 debug=0x14e keepsyms=1 amfi=0xff amfi_unrestrict_task_for_pid=1 amfi_allow_any_signature=1 amfi_get_out_of_my_way=1";
+    idevicerestore_mode_t *mode = 0;
+    libipatcher::fw_key iBSSKeys;
+    libipatcher::fw_key iBECKeys;
+
+    /* Assure device is in dfu */
+    getDeviceMode(false);
+    mutex_lock(&_client->device_event_mutex);
+    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 1000);
+    retassure(((_client->mode->index == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device isn't in DFU mode!");
+    retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
+    mutex_unlock(&_client->device_event_mutex);
+    info("Device found in DFU Mode.\n");
+
+    /* Patch bootloaders */
+    try {
+        const char *board = getDeviceBoardNoCopy();
+        info("Getting firmware keys for: %s\n", board);
+        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap") {
+            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
+            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
+        } else {
+            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
+            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+        }
+    } catch (tihmstar::exception &e) {
+        reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
+    }
+
+    info("Patching iBSS\n");
+    auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
+    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
+
+    info("Patching iBEC\n");
+    auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
+    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
+
+    if (_client->image4supported) {
+        /* if this is 64-bit, we need to back IM4P to IMG4
+           also due to the nature of iBoot64Patchers sigpatches we need to stich a valid signed im4m to it (but nonce is ignored) */
+        info("Repacking patched bootloaders as IMG4\n");
+        iBSS = move(libipatcher::packIM4PToIMG4(iBSS.first, iBSS.second, _im4ms[0].first, _im4ms[0].second));
+        iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
+    }
+
+    /* Send and boot bootloaders */
+
+    /* send iBSS */
+    info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
+    mutex_lock(&_client->device_event_mutex);
+    irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
+    retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
+
+    info("Booting iBSS, waiting for device to disconnect...\n");
+    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+    retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+    info("Booting iBSS, waiting for device to reconnect...\n");
+    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+    switch(_client->device->chip_id) {
+        case 0x8000: {
+            retassure(((_client->mode == &idevicerestore_modes[MODE_DFU]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+            if (_client->build_major > 8) {
+                mutex_unlock(&_client->device_event_mutex);
+                getDeviceMode(true);
+                retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
+                retassure(irecv_usb_set_configuration(_client->dfu->client, 1) >= 0, "ERROR: set configuration failed\n");
+                /* send iBEC */
+                info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
+                mutex_lock(&_client->device_event_mutex);
+                err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
+                retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
+                
+                info("Booting iBEC, waiting for device to disconnect...\n");
+                cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+                retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+                info("Booting iBEC, waiting for device to reconnect...\n");
+                cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+                retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+                mutex_unlock(&_client->device_event_mutex);
+                getDeviceMode(true);
+                retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
+            }
+            break;
+        }
+        case 0x8015: {
+            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+            break;
+        }
+        default: {
+            reterror("Device not supported!\n");
+            break;
+        }
+    }
+
+    /* Verify correct nonce/set nonce */
+    if(_client->image4supported) {
+        char *deviceGen = NULL;
+        cleanup([&]{
+            safeFree(deviceGen);
+        });
+        mutex_unlock(&_client->device_event_mutex);
+        if(_client->device->chip_id < 0x8015) {
+            assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 0 0"));
+            sleep(2);
+        }
+
+        auto nonceelem = img4tool::getValFromIM4M({_im4ms[0].first,_im4ms[0].second}, 'BNCH');
+
+        info("ApNonce pre-hax:\n");
+        get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
+        std::string generator = getGeneratorFromSHSH2(_client->tss);
+
+        if(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
+            info("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
+            
+            assure(_client->tss);
+            info("Writing generator=%s to nvram!\n", generator.c_str());
+            
+            retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "Failed to write generator to nvram!");
+            retassure(!irecv_saveenv(_client->recovery->client), "Failed to save nvram!");
+
+            getDeviceMode(true);
+            retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
+            retassure(irecv_usb_set_configuration(_client->dfu->client, 1) >= 0, "ERROR: set configuration failed\n");
+
+            /* send iBEC */
+            info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
+            mutex_lock(&_client->device_event_mutex);
+            err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
+            retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
+            retassure(((irecv_send_command(_client->dfu->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
+            
+            info("Booting iBEC, waiting for device to disconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+            info("Booting iBEC, waiting for device to reconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+            mutex_unlock(&_client->device_event_mutex);
+            getDeviceMode(true);
+            retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode after ApNonce hax!");
+            printf("APnonce post-hax:\n");
+            get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
+            assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
+            retassure(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
+        } else {
+            info("APNonce from device already matches IM4M nonce, no need for extra hax...\n");
+        }
+        retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "failed to write generator to nvram");
+        retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
+        
+        sleep(2);
+    }
+#endif //HAVE_LIBIPATCHER
+}
+
+
+
+
+
+
+#if 0
+void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
+#ifndef HAVE_LIBIPATCHER
+    reterror("compiled without libipatcher");
+#else
+    bootargs = "rd=md0 -restore -v serial=3 debug=0x14e keepsyms=1 amfi=0xff amfi_unrestrict_task_for_pid=1 amfi_allow_any_signature=1 amfi_get_out_of_my_way=1";
     int mode = 0;
     libipatcher::fw_key iBSSKeys;
     libipatcher::fw_key iBECKeys;
@@ -512,7 +678,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
     info("Booting iBSS, waiting for device to disconnect...\n");
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+    retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
     mutex_unlock(&_client->device_event_mutex);
     info("Booting iBSS, waiting for device to reconnect...\n");
     mutex_lock(&_client->device_event_mutex);
@@ -599,7 +765,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
             retassure(((irecv_send_command(_client->recovery->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
         getDeviceMode(true);
         cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+        retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&_client->device_event_mutex);
         info("Booting iBEC, waiting for device to reconnect...\n");
     }
@@ -609,9 +775,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     mutex_unlock(&_client->device_event_mutex);
     retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode! Reset device and try again.");
     retassure((_client->mode->index == MODE_RECOVERY), "Failed to connect to device in Recovery Mode! Reset device and try again.");
-    if (_client->build_major < 20) {
-        irecv_usb_control_transfer(_client->recovery->client, 0x21, 1, 0, 0, 0, 0, 5000);
-    }
+
     
     if (_client->image4supported) {
         char *deviceGen = NULL;
@@ -650,14 +814,14 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
             info("Booting 2nd iBEC, Waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
+            retassure((_client->mode->index == MODE_UNKNOWN || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
             mutex_unlock(&_client->device_event_mutex);
             
             info("Booting 2nd iBEC, Waiting for device to reconnect...\n");
             mutex_lock(&_client->device_event_mutex);
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            info("mode: %s\n", (_client->mode == &idevicerestore_modes[MODE_RECOVERY]) ? "RECOVERY" : (_client->mode == &idevicerestore_modes[MODE_DFU]) ? "DFU" : (_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) ? "UNKNOWN" : (_client->mode == &idevicerestore_modes[MODE_WTF]) ? "WTF" : "ERR");
-            retassure((_client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
+            info("mode: %s\n", (_client->mode->index == MODE_RECOVERY) ? "RECOVERY" : (_client->mode->index == MODE_DFU) ? "DFU" : (_client->mode->index == MODE_UNKNOWN) ? "UNKNOWN" : (_client->mode->index == MODE_WTF) ? "WTF" : "ERR");
+            retassure((_client->mode->index == MODE_RECOVERY || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
             mutex_unlock(&_client->device_event_mutex);
 
             retassure(!recovery_client_new(_client), "failed to reconnect to recovery after ApNonce hax");
@@ -677,6 +841,12 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
 #endif //HAVE_LIBIPATCHER
 }
+
+
+
+
+
+
 void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
 #ifndef HAVE_LIBIPATCHER
     reterror("compiled without libipatcher");
@@ -728,7 +898,7 @@ void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
     getDeviceMode(true);
     info("Booting iBSS, waiting for device to disconnect...\n");
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+    retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
     mutex_unlock(&_client->device_event_mutex);
     info("Booting iBSS, waiting for device to reconnect...\n");
     mutex_lock(&_client->device_event_mutex);
@@ -815,7 +985,7 @@ void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
             retassure(((irecv_send_command(_client->recovery->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
         getDeviceMode(true);
         cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+        retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&_client->device_event_mutex);
         info("Booting iBEC, waiting for device to reconnect...\n");
     }
@@ -866,14 +1036,14 @@ void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
 
             info("Booting 2nd iBEC, Waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure((_client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
+            retassure((_client->mode->index == MODE_UNKNOWN || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
             mutex_unlock(&_client->device_event_mutex);
             
             info("Booting 2nd iBEC, Waiting for device to reconnect...\n");
             mutex_lock(&_client->device_event_mutex);
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            info("mode: %s\n", (_client->mode == &idevicerestore_modes[MODE_RECOVERY]) ? "RECOVERY" : (_client->mode == &idevicerestore_modes[MODE_DFU]) ? "DFU" : (_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) ? "UNKNOWN" : (_client->mode == &idevicerestore_modes[MODE_WTF]) ? "WTF" : "ERR");
-            retassure((_client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
+            info("mode: %s\n", (_client->mode->index == MODE_RECOVERY) ? "RECOVERY" : (_client->mode->index == MODE_DFU) ? "DFU" : (_client->mode->index == MODE_UNKNOWN) ? "UNKNOWN" : (_client->mode->index == MODE_WTF) ? "WTF" : "ERR");
+            retassure((_client->mode->index == MODE_RECOVERY || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
             mutex_unlock(&_client->device_event_mutex);
 
             retassure(!recovery_client_new(_client), "failed to reconnect to recovery after ApNonce hax");
@@ -893,6 +1063,7 @@ void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
     
 #endif //HAVE_LIBIPATCHER
 }
+#endif
 
 void get_custom_component(struct idevicerestore_client_t* client, plist_t build_identity, const char* component, unsigned char** data, unsigned int *size){
 #ifndef HAVE_LIBIPATCHER

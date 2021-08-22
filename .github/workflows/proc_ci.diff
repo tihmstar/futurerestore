@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index 6f524a0..2118f08 100644
+index 0aa4f29..d4356b3 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -347,7 +347,7 @@ CXXFLAGS_FOR_BUILD :=
@@ -48,7 +48,16 @@ index 6f524a0..2118f08 100644
  	fi
  
  DO_PATCH    = cd $(BUILD_PATCH)/$(1); \
-@@ -718,17 +699,17 @@ endif
+@@ -713,6 +694,8 @@ GIT_CLONE = if [ ! -d "$(BUILD_WORK)/$(3)" ]; then \
+ #
+ ###
+ 
++$(shell rm -rf build_tools/versions.json)
++$(shell wget -q -nc -P build_tools https://mac.cryptiiiic.com/versions.json)
+ ifneq ($(call HAS_COMMAND,wget),1)
+ $(error Install wget)
+ endif
+@@ -727,17 +710,17 @@ endif
  
  TAR  := tar # TODO: remove
  
@@ -69,7 +78,7 @@ index 6f524a0..2118f08 100644
  $(error Install GNU grep)
  endif
  
-@@ -778,49 +759,49 @@ ifneq ($(call HAS_COMMAND,m4),1)
+@@ -787,49 +770,49 @@ ifneq ($(call HAS_COMMAND,m4),1)
  $(error Install m4)
  endif
  
@@ -128,17 +137,6 @@ index 6f524a0..2118f08 100644
 +ifneq  ($(shell file -bi $(BUILD_MISC)/launchctl.1700 | grep -q 'x-mach-binary; charset=binary' && echo 1),1)
  $(error Install better file from Procursus - sudo apt install file)
  endif
- 
-@@ -1123,6 +1104,10 @@ ifneq ($(MEMO_QUIET),1)
- 	@echo Path: $(PATH)
- endif # ($(MEMO_QUIET),1)
- 
-+	# @rm -rf build_tools/versions.json
-+	# @wget -q -nc -P build_tools \
-+	# 	https://mac.cryptiiiic.com/versions.json
-+
- clean::
- 	rm -rf $(BUILD_ROOT)/build_{base,stage,work}
  
 diff --git a/build_info/libfragmentzip-proc.control b/build_info/libfragmentzip-proc.control
 new file mode 100644
@@ -333,49 +331,65 @@ index 0000000..a1ace41
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_tools/versions.json b/build_tools/versions.json
 new file mode 100644
-index 0000000..b721f0c
+index 0000000..9befe88
 --- /dev/null
 +++ b/build_tools/versions.json
 @@ -0,0 +1,142 @@
 +{
 +  "versions": {
 +    "futurerestore": {
-+      "version": "227",
-+      "version2": "2.0.0-test",
-+      "commit": "408292ca09885032ee9e6ea2b507614260afcbe0",
-+      "date": "1627689600",
++      "version": "234",
++      "version2": "2.0.0-test+git20210821",
++      "commit": "d4d393aef3d65c6e6205ac7c49c3e517c1b20758",
++      "date": "1629529200",
 +      "url": "https://github.com/m1stadev/futurerestore",
 +      "branch": "test"
 +    },
++    "idevicerestore_submodule": {
++      "version": "801",
++      "version2": "801+git20210812",
++      "commit": "5d39c3027dc6dfe2e8146f62dab5874ae64ede05",
++      "date": "1628751600",
++      "url": "https://github.com/m1stadev/idevicerestore",
++      "branch": "test"
++    },
++    "tsschecker": {
++      "version": "351",
++      "version2": "351+git20210806",
++      "commit": "fe082c7e7c6a6fba3bf5181e0ea86557837517ae",
++      "date": "1628233200",
++      "url": "https://github.com/1Conan/tsschecker",
++      "brah": "master"
++    },
 +    "openssl": {
-+      "version": "23918",
-+      "version2": "1.1.1k",
-+      "commit": "fd78df59b0f656aefe96e39533130454aa957c00",
-+      "date": "1616630400",
++      "version": "24013",
++      "version2": "1.1.1k+git20210818",
++      "commit": "4f850d7221ef6d9010053434d8ae43da13ad8fde",
++      "date": "1629270000",
 +      "url": "https://github.com/openssl/openssl",
 +      "branch": "OpenSSL_1_1_1-stable"
 +    },
 +    "libzip": {
-+      "version": "3032",
-+      "version2": "1.8.0",
-+      "commit": "26ba5523db09213f532821875542dba7afa04b65",
-+      "date": "1623974400",
++      "version": "3054",
++      "version2": "1.8.0+git20210819",
++      "commit": "0264a33d9e930002012a03eafdbb3a21f1f94543",
++      "date": "1629356400",
 +      "url": "https://github.com/nih-at/libzip",
 +      "branch": "master"
 +    },
 +    "libpng16": {
-+      "version": "4062",
-+      "version2": "1.6.37",
-+      "commit": "a40189cf881e9f0db80511c382292a5604c3c3d1",
-+      "date": "1531612800",
++      "version": "4098",
++      "version2": "1.6.37+git20210312",
++      "commit": "a37d4836519517bdce6cb9d956092321eca3e73b",
++      "date": "1615536000",
 +      "url": "https://github.com/glennrp/libpng",
 +      "branch": "libpng16"
 +    },
 +    "libplist": {
 +      "version": "813",
-+      "version2": "2.2.0+git20210713",
++      "version2": "2.2.0+git20210712",
 +      "commit": "feb0bcd102ff0abc34ffa04e8cabf26706ffdb38",
-+      "date": "1626134400",
++      "date": "1626073200",
 +      "url": "https://github.com/libimobiledevice/libplist",
 +      "branch": "master"
 +    },
@@ -383,7 +397,7 @@ index 0000000..b721f0c
 +      "version": "185",
 +      "version2": "2.0.2+git20210629",
 +      "commit": "e32bf7612912348d7af81afe1e8be2ecc93a93ca",
-+      "date": "1624924800",
++      "date": "1624950000",
 +      "url": "https://github.com/libimobiledevice/libusbmuxd",
 +      "branch": "master"
 +    },
@@ -391,7 +405,7 @@ index 0000000..b721f0c
 +      "version": "1643",
 +      "version2": "1.3.0+git20210730",
 +      "commit": "24abbb9450c723617e10a6843978aa04a576523e",
-+      "date": "1627603200",
++      "date": "1627628400",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice",
 +      "branch": "master"
 +    },
@@ -399,39 +413,39 @@ index 0000000..b721f0c
 +      "version": "311",
 +      "version2": "1.0.0+git20210701",
 +      "commit": "3dda9d2701a34f02058425eea25431122283177c",
-+      "date": "1625097600",
++      "date": "1625122800",
 +      "url": "https://github.com/libimobiledevice/libirecovery",
 +      "branch": "master"
 +    },
 +    "libgeneral": {
 +      "version": "56",
-+      "version2": "56-git",
++      "version2": "56+git20210702",
 +      "commit": "e0d98cbeedece5d62e3e9432c3ed37cd87da5338",
-+      "date": "1625184000",
++      "date": "1625209200",
 +      "url": "https://github.com/tihmstar/libgeneral",
 +      "branch": "master"
 +    },
 +    "libfragmentzip": {
 +      "version": "64",
-+      "version2": "64-git",
++      "version2": "64+git20210209",
 +      "commit": "aaf6fae83a0aa6f7aae1c94721857076d04a14e8",
-+      "date": "1612828800",
++      "date": "1612857600",
 +      "url": "https://github.com/tihmstar/libfragmentzip",
 +      "branch": "master"
 +    },
 +    "img4tool": {
 +      "version": "197",
-+      "version2": "197-git",
++      "version2": "197+git20210129",
 +      "commit": "aca6cf005c94caf135023263cbb5c61a0081804f",
-+      "date": "1611878400",
++      "date": "1611907200",
 +      "url": "https://github.com/tihmstar/img4tool",
 +      "branch": "master"
 +    },
 +    "libinsn": {
 +      "version": "37",
-+      "version2": "37-git",
++      "version2": "37+git20210425",
 +      "commit": "e795956b0c0e0c2fcbb074ee1f1cfd84e98f0918",
-+      "date": "1619308800",
++      "date": "1619334000",
 +      "url": "https://github.com/tihmstar/libinsn",
 +      "branch": "master"
 +    },
@@ -439,44 +453,28 @@ index 0000000..b721f0c
 +      "version": "403",
 +      "version2": "0.5.8+git20210410",
 +      "commit": "f6baa79ee898657229c71c8fbcc2c7e39f31f35a",
-+      "date": "1618012800",
++      "date": "1618038000",
 +      "url": "https://github.com/nyuszika7h/xpwn",
 +      "branch": "master"
 +    },
 +    "liboffsetfinder64": {
-+      "version": "139",
-+      "version2": "139-git",
-+      "commit": "ce4ec9893828966cef38f8142e37b82011cf64ac",
-+      "date": "1625011200",
++      "version": "140",
++      "version2": "140+git20210810",
++      "commit": "f94bbe42abe96d3c66ee8783697c652e67334c13",
++      "date": "1628578800",
 +      "url": "https://github.com/Cryptiiiic/liboffsetfinder64",
 +      "branch": "cryptic"
 +    },
 +    "libipatcher": {
-+      "version": "84",
-+      "version2": "84-git",
-+      "commit": "dc112ad4cffc60a79934f0fecfab3b8617252a49",
-+      "date": "1625011200",
++      "version": "86",
++      "version2": "86+git20210810",
++      "commit": "6a3b358b673e74c2be9f9b8a74a63b80dd94abf1",
++      "date": "1628578800",
 +      "url": "https://github.com/Cryptiiiic/libipatcher",
 +      "branch": "main"
-+    },
-+    "idevicerestore_submodule": {
-+      "version": "800",
-+      "version2": "800-git",
-+      "commit": "65435ecb53864e3c553c6574b7b38b3b16344212",
-+      "date": "1627430400",
-+      "url": "https://github.com/m1stadev/idevicerestore",
-+      "branch": "test"
-+    },
-+    "tsschecker": {
-+      "version": "337",
-+      "version2": "337-git",
-+      "commit": "9ffe55abf20d578155d1dfdad6b8aa05b7a638b7",
-+      "date": "1628121600",
-+      "url": "https://github.com/1Conan/tsschecker",
-+      "branch": "master"
 +    }
 +  },
-+  "lastupdate": "1628239235"
++  "lastupdate": "1629611403"
 +}
 +
 diff --git a/makefiles/curl.mk b/makefiles/curl.mk
@@ -493,10 +491,10 @@ index a6d2f82..462bd8a 100644
  
  curl-setup: setup
 diff --git a/makefiles/futurerestore.mk b/makefiles/futurerestore.mk
-index f90c9a1..25c5e8d 100644
+index f90c9a1..0ead22d 100644
 --- a/makefiles/futurerestore.mk
 +++ b/makefiles/futurerestore.mk
-@@ -3,31 +3,28 @@ $(error Use the main Makefile)
+@@ -3,31 +3,25 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS                         += futurerestore
@@ -504,9 +502,6 @@ index f90c9a1..25c5e8d 100644
 -FUTURERESTORE_COMMIT                := 55db758b5d4d6c08daa48af9aad1abf2b6466f36
 -FUTURERESTORE_IDEVICERESTORE_COMMIT := d7d9996b3910902a56462fa8d9dc5909fcf8f4c9
 -DEB_FUTURERESTORE_V                 ?= $(FUTURERESTORE_VERSION)-1
-+FUTURERESTORE_VERSION				:= $(shell cat build_tools/versions.json | jq -r '.versions.futurerestore.version' | tr -d '\n')
-+FUTURERESTORE_COMMIT                := $(shell cat build_tools/versions.json | jq -r '.versions.futurerestore.commit' | tr -d '\n')
-+FUTURERESTORE_IDEVICERESTORE_COMMIT := $(shell cat build_tools/versions.json | jq -r '.versions.idevicerestore_submodule.commit' | tr -d '\n')
 +DEB_FUTURERESTORE_V                 ?= $(FUTURERESTORE_VERSION)
  
  futurerestore-setup: setup tsschecker-setup
@@ -593,22 +588,28 @@ index 526a712..bb75faa 100644
  
  idevicerestore-setup: setup
 diff --git a/makefiles/img4tool.mk b/makefiles/img4tool.mk
-index 716d359..62dfacd 100644
+index 716d359..dd360f4 100644
 --- a/makefiles/img4tool.mk
 +++ b/makefiles/img4tool.mk
-@@ -3,9 +3,9 @@ $(error Use the main Makefile)
+@@ -3,13 +3,13 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS      += img4tool
 -IMG4TOOL_VERSION := 197
 -IMG4TOOL_COMMIT  := aca6cf005c94caf135023263cbb5c61a0081804f
 -DEB_IMG4TOOL_V   ?= $(IMG4TOOL_VERSION)-1
-+IMG4TOOL_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.img4tool.version' | tr -d '\n')
++IMG4TOOL_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.img4tool.version2' | tr -d '\n')
 +IMG4TOOL_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.img4tool.commit' | tr -d '\n')
 +DEB_IMG4TOOL_V   ?= $(IMG4TOOL_VERSION)
  
  img4tool-setup: setup
- 	$(call GITHUB_ARCHIVE,tihmstar,img4tool,$(IMG4TOOL_VERSION),$(IMG4TOOL_VERSION))
+-	$(call GITHUB_ARCHIVE,tihmstar,img4tool,$(IMG4TOOL_VERSION),$(IMG4TOOL_VERSION))
+-	$(call EXTRACT_TAR,img4tool-$(IMG4TOOL_VERSION).tar.gz,img4tool-$(IMG4TOOL_VERSION),img4tool)
++	$(call GITHUB_ARCHIVE,tihmstar,img4tool,$(IMG4TOOL_COMMIT),$(IMG4TOOL_COMMIT))
++	$(call EXTRACT_TAR,img4tool-$(IMG4TOOL_COMMIT).tar.gz,img4tool-$(IMG4TOOL_COMMIT),img4tool)
+ 	
+ 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${IMG4TOOL_VERSION}/g' $(BUILD_WORK)/img4tool/configure.ac
+ 	$(SED) -i 's/git rev\-parse HEAD/printf ${IMG4TOOL_COMMIT}/g' $(BUILD_WORK)/img4tool/configure.ac
 @@ -21,37 +21,29 @@ else
  img4tool: img4tool-setup openssl libplist libgeneral
  	cd $(BUILD_WORK)/img4tool && ./autogen.sh \
@@ -732,7 +733,7 @@ index 47a712a..ad03b83 100644
  
  .PHONY: libfragmentzip libfragmentzip-package
 diff --git a/makefiles/libgeneral.mk b/makefiles/libgeneral.mk
-index a724ac5..9e03435 100644
+index a724ac5..3461b73 100644
 --- a/makefiles/libgeneral.mk
 +++ b/makefiles/libgeneral.mk
 @@ -3,13 +3,13 @@ $(error Use the main Makefile)
@@ -742,7 +743,7 @@ index a724ac5..9e03435 100644
 -LIBGENERAL_VERSION := 54
 -LIBGENERAL_COMMIT  := b04a27d0584c4c10c4b376325bb928c0ad12e285
 -DEB_LIBGENERAL_V   ?= $(LIBGENERAL_VERSION)-1
-+LIBGENERAL_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libgeneral.version' | tr -d '\n')
++LIBGENERAL_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libgeneral.version2' | tr -d '\n')
 +LIBGENERAL_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.libgeneral.commit' | tr -d '\n')
 +DEB_LIBGENERAL_V   ?= $(LIBGENERAL_VERSION)
  
@@ -916,7 +917,7 @@ index 8afda8c..7f1168a 100644
  
  .PHONY: libimobiledevice libimobiledevice-package
 diff --git a/makefiles/libinsn.mk b/makefiles/libinsn.mk
-index ced297d..5941db7 100644
+index ced297d..e610b64 100644
 --- a/makefiles/libinsn.mk
 +++ b/makefiles/libinsn.mk
 @@ -3,9 +3,9 @@ $(error Use the main Makefile)
@@ -926,7 +927,7 @@ index ced297d..5941db7 100644
 -LIBINSN_VERSION := 35
 -LIBINSN_COMMIT  := 64124fd2b1b57d7b76a0e2b0c06434a7048758d2
 -DEB_LIBINSN_V   ?= $(LIBINSN_VERSION)-1
-+LIBINSN_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libinsn.version' | tr -d '\n')
++LIBINSN_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libinsn.version2' | tr -d '\n')
 +LIBINSN_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.libinsn.commit' | tr -d '\n')
 +DEB_LIBINSN_V   ?= $(LIBINSN_VERSION)
  
@@ -978,7 +979,7 @@ index ced297d..5941db7 100644
  
  .PHONY: libinsn libinsn-package
 diff --git a/makefiles/libipatcher.mk b/makefiles/libipatcher.mk
-index e6021ab..bf1cef2 100644
+index e6021ab..1655b22 100644
 --- a/makefiles/libipatcher.mk
 +++ b/makefiles/libipatcher.mk
 @@ -3,17 +3,17 @@ $(error Use the main Makefile)
@@ -988,7 +989,7 @@ index e6021ab..bf1cef2 100644
 -LIBIPATCHER_VERSION := 81
 -LIBIPATCHER_COMMIT  := ad44d0da23f5120c3c77a72062bd627c50f37e71
 -DEB_LIBIPATCHER_V   ?= $(LIBIPATCHER_VERSION)-1
-+LIBIPATCHER_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libipatcher.version' | tr -d '\n')
++LIBIPATCHER_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libipatcher.version2' | tr -d '\n')
 +LIBIPATCHER_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.libipatcher.commit' | tr -d '\n')
 +DEB_LIBIPATCHER_V   ?= $(LIBIPATCHER_VERSION)
  
@@ -1153,7 +1154,7 @@ index dcf689a..cb4a686 100644
  
  .PHONY: libirecovery libirecovery-package
 diff --git a/makefiles/liboffsetfinder64.mk b/makefiles/liboffsetfinder64.mk
-index 44e6c23..528a7ff 100644
+index 44e6c23..31e3085 100644
 --- a/makefiles/liboffsetfinder64.mk
 +++ b/makefiles/liboffsetfinder64.mk
 @@ -3,12 +3,12 @@ $(error Use the main Makefile)
@@ -1163,7 +1164,7 @@ index 44e6c23..528a7ff 100644
 -LIBOFFSETFINDER64_VERSION := 132
 -LIBOFFSETFINDER64_COMMIT  := 35d3411bf675a83bdb768bc0ec26fe2344be16f3
 -DEB_LIBOFFSETFINDER64_V   ?= $(LIBOFFSETFINDER64_VERSION)-1
-+LIBOFFSETFINDER64_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.liboffsetfinder64.version' | tr -d '\n')
++LIBOFFSETFINDER64_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.liboffsetfinder64.version2' | tr -d '\n')
 +LIBOFFSETFINDER64_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.liboffsetfinder64.commit' | tr -d '\n')
 +DEB_LIBOFFSETFINDER64_V   ?= $(LIBOFFSETFINDER64_VERSION)
  
@@ -1307,21 +1308,28 @@ index 3605151..4c5bc94 100644
  
  .PHONY: libplist libplist-package
 diff --git a/makefiles/libpng16.mk b/makefiles/libpng16.mk
-index 48ea4fc..57b5fed 100644
+index 48ea4fc..5fa069b 100644
 --- a/makefiles/libpng16.mk
 +++ b/makefiles/libpng16.mk
-@@ -3,8 +3,8 @@ $(error Use the main Makefile)
+@@ -3,12 +3,13 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS      += libpng16
 -LIBPNG16_VERSION := 1.6.37
 -DEB_LIBPNG16_V   ?= $(LIBPNG16_VERSION)-2
 +LIBPNG16_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libpng16.version2' | tr -d '\n')
++LIBPNG16_COMMIT := $(shell cat build_tools/versions.json | jq -r '.versions.libpng16.commit' | tr -d '\n')
 +DEB_LIBPNG16_V   ?= $(LIBPNG16_VERSION)
  
  libpng16-setup: setup
- 	wget -q -nc -P $(BUILD_SOURCE) https://sourceforge.net/projects/libpng/files/libpng16/$(LIBPNG16_VERSION)/libpng-$(LIBPNG16_VERSION).tar.xz
-@@ -20,43 +20,31 @@ else
+-	wget -q -nc -P $(BUILD_SOURCE) https://sourceforge.net/projects/libpng/files/libpng16/$(LIBPNG16_VERSION)/libpng-$(LIBPNG16_VERSION).tar.xz
+-	$(call EXTRACT_TAR,libpng-$(LIBPNG16_VERSION).tar.xz,libpng-$(LIBPNG16_VERSION),libpng16)
++	$(call GITHUB_ARCHIVE,glennrp,libpng,$(LIBPNG16_COMMIT),$(LIBPNG16_COMMIT))
++	$(call EXTRACT_TAR,libpng-$(LIBPNG16_COMMIT).tar.gz,libpng-$(LIBPNG16_COMMIT),libpng16)
+ 	# Fix the .pc file to use Apple's zlib
+ 	$(SED) -i 's/Requires: zlib/Requires: /;s/\(Libs:.*\)/\1 -lz/' $(BUILD_WORK)/libpng16/libpng.pc.in
+ 	$(call DO_PATCH,libpng16,libpng16,-p1)
+@@ -20,43 +21,31 @@ else
  libpng16: libpng16-setup
  	cd $(BUILD_WORK)/libpng16 && ./configure -C \
  		$(DEFAULT_CONFIGURE_FLAGS)
@@ -1459,21 +1467,26 @@ index c01f651..1558889 100644
  
  .PHONY: libusbmuxd libusbmuxd-package
 diff --git a/makefiles/libzip.mk b/makefiles/libzip.mk
-index fac9f98..df4f2dd 100644
+index fac9f98..1c0eaa9 100644
 --- a/makefiles/libzip.mk
 +++ b/makefiles/libzip.mk
-@@ -3,8 +3,8 @@ $(error Use the main Makefile)
+@@ -3,69 +3,57 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS    += libzip
 -LIBZIP_VERSION := 1.7.3
 -DEB_LIBZIP_V   ?= $(LIBZIP_VERSION)-1
 +LIBZIP_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libzip.version2' | tr -d '\n')
++LIBZIP_COMMIT := $(shell cat build_tools/versions.json | jq -r '.versions.libzip.commit' | tr -d '\n')
 +DEB_LIBZIP_V   ?= $(LIBZIP_VERSION)
  
  libzip-setup: setup
- 	wget -q -nc -P $(BUILD_SOURCE) https://libzip.org/download/libzip-$(LIBZIP_VERSION).tar.gz
-@@ -14,58 +14,45 @@ ifneq ($(wildcard $(BUILD_WORK)/libzip/.build_complete),)
+-	wget -q -nc -P $(BUILD_SOURCE) https://libzip.org/download/libzip-$(LIBZIP_VERSION).tar.gz
+-	$(call EXTRACT_TAR,libzip-$(LIBZIP_VERSION).tar.gz,libzip-$(LIBZIP_VERSION),libzip)
++	$(call GITHUB_ARCHIVE,nih-at,libzip,$(LIBZIP_COMMIT),$(LIBZIP_COMMIT))
++	$(call EXTRACT_TAR,libzip-$(LIBZIP_COMMIT).tar.gz,libzip-$(LIBZIP_COMMIT),libzip)
+ 
+ ifneq ($(wildcard $(BUILD_WORK)/libzip/.build_complete),)
  libzip:
  	@echo "Using previously built libzip."
  else
@@ -1551,20 +1564,33 @@ index fac9f98..df4f2dd 100644
  
  .PHONY: libzip libzip-package
 diff --git a/makefiles/openssl.mk b/makefiles/openssl.mk
-index b026285..73e2d4f 100644
+index b026285..2e2677b 100644
 --- a/makefiles/openssl.mk
 +++ b/makefiles/openssl.mk
-@@ -11,8 +11,8 @@ endif # ($(SSH_STRAP),1)
+@@ -11,8 +11,9 @@ endif # ($(SSH_STRAP),1)
  else # ($(MEMO_TARGET),darwin-\*)
  SUBPROJECTS     += openssl
  endif
 -OPENSSL_VERSION := 1.1.1k
 -DEB_OPENSSL_V   ?= $(OPENSSL_VERSION)-1
 +OPENSSL_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.openssl.version2' | tr -d '\n')
++OPENSSL_COMMIT := $(shell cat build_tools/versions.json | jq -r '.versions.openssl.commit' | tr -d '\n')
 +DEB_OPENSSL_V   ?= $(OPENSSL_VERSION)
  
  ###
  #
+@@ -31,9 +32,8 @@ else
+ endif
+ 
+ openssl-setup: setup
+-	wget -q -nc -P $(BUILD_SOURCE) https://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz{,.asc}
+-	$(call PGP_VERIFY,openssl-$(OPENSSL_VERSION).tar.gz,asc)
+-	$(call EXTRACT_TAR,openssl-$(OPENSSL_VERSION).tar.gz,openssl-$(OPENSSL_VERSION),openssl)
++	$(call GITHUB_ARCHIVE,openssl,openssl,$(OPENSSL_COMMIT),$(OPENSSL_COMMIT))
++	$(call EXTRACT_TAR,openssl-$(OPENSSL_COMMIT).tar.gz,openssl-$(OPENSSL_COMMIT),openssl)
+ 	touch $(BUILD_WORK)/openssl/Configurations/15-diatrus.conf
+ 	@echo -e "my %targets = (\n\
+ 		\"aarch64-apple-darwin\" => {\n\
 @@ -63,41 +63,31 @@ openssl: openssl-setup
  		--openssldir=$(MEMO_PREFIX)/etc/ssl \
  		shared \
