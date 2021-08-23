@@ -481,8 +481,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
     /* Patch bootloaders */
     try {
-        const char *board = getDeviceBoardNoCopy();
-        info("Getting firmware keys for: %s\n", board);
+        std::string board = getDeviceBoardNoCopy();
+        info("Getting firmware keys for: %s\n", board.c_str());
         if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap") {
             iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
             iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
@@ -511,6 +511,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     }
 
     /* Send and boot bootloaders */
+
+    // if(_noIBSS) goto label;
 
     /* send iBSS */
     info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
@@ -556,6 +558,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         reterror("Device not supported!\n");
     }
 
+// label:
     /* Verify correct nonce/set nonce */
     if(_client->image4supported) {
         char *deviceGen = NULL;
@@ -608,6 +611,26 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
             assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
             retassure(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
         } else {
+            getDeviceMode(true);
+            retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
+            retassure(irecv_usb_set_configuration(_client->dfu->client, 1) >= 0, "ERROR: set configuration failed\n");
+            /* send iBEC */
+            info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
+            mutex_lock(&_client->device_event_mutex);
+            err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
+            retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
+            retassure(((irecv_send_command(_client->dfu->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
+
+            info("Booting iBEC, waiting for device to disconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+            info("Booting iBEC, waiting for device to reconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+            mutex_unlock(&_client->device_event_mutex);
+            getDeviceMode(true);
+            retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode after ApNonce hax!");
+            assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
             info("APNonce from device already matches IM4M nonce, no need for extra hax...\n");
         }
         retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "failed to write generator to nvram");
@@ -1303,14 +1326,8 @@ void futurerestore::doRestore(const char *ipsw){
 
     //check for enterpwnrecovery, because we could be in DFU mode
     if (_enterPwnRecoveryRequested){
-        retassure(getDeviceMode(true) == MODE_DFU, "unexpected device mode\n");
-        if(_noIBSS) {
-            info("RIPBOZO W.I.P. no eta bet patient!\n");
-            exit(1);
-            // enterPwnRecovery2(build_identity);
-        }
-        else
-            enterPwnRecovery(build_identity);
+        retassure((getDeviceMode(true) == MODE_DFU) || (getDeviceMode(false) == MODE_RECOVERY && _noIBSS), "unexpected device mode\n");
+        enterPwnRecovery(build_identity);
     }
     
     // Get filesystem name from build identity
