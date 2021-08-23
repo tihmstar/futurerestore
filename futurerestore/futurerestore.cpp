@@ -523,40 +523,37 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
     info("Booting iBSS, waiting for device to reconnect...\n");
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    switch(_client->device->chip_id) {
-        case 0x8000: {
-            retassure(((_client->mode == &idevicerestore_modes[MODE_DFU]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
-            if (_client->build_major > 8) {
-                mutex_unlock(&_client->device_event_mutex);
-                getDeviceMode(true);
-                retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
-                retassure(irecv_usb_set_configuration(_client->dfu->client, 1) >= 0, "ERROR: set configuration failed\n");
-                /* send iBEC */
-                info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
-                mutex_lock(&_client->device_event_mutex);
-                err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
-                retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
-                
-                info("Booting iBEC, waiting for device to disconnect...\n");
-                cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-                retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
-                info("Booting iBEC, waiting for device to reconnect...\n");
-                cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-                retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
-                mutex_unlock(&_client->device_event_mutex);
-                getDeviceMode(true);
-                retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
-            }
-            break;
+    if((_client->device->chip_id >= 0x7000 && _client->device->chip_id <= 0x8004) || (_client->device->chip_id >= 0x8900 && _client->device->chip_id <= 0x8965)) {
+        retassure(((_client->mode == &idevicerestore_modes[MODE_DFU]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+        if (_client->build_major > 8) {
+            mutex_unlock(&_client->device_event_mutex);
+            getDeviceMode(true);
+            retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
+            retassure(irecv_usb_set_configuration(_client->dfu->client, 1) >= 0, "ERROR: set configuration failed\n");
+            /* send iBEC */
+            info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
+            mutex_lock(&_client->device_event_mutex);
+            err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
+            retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
+
+            info("Booting iBEC, waiting for device to disconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+            info("Booting iBEC, waiting for device to reconnect...\n");
+            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+            mutex_unlock(&_client->device_event_mutex);
+            getDeviceMode(true);
+            retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
+            mutex_lock(&_client->device_event_mutex);
         }
-        case 0x8015: {
-            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
-            break;
-        }
-        default: {
-            reterror("Device not supported!\n");
-            break;
-        }
+    } else if((_client->device->chip_id >= 0x8006 && _client->device->chip_id <= 0x8030) || (_client->device->chip_id >= 0x8101 && _client->device->chip_id <= 0x8301)) {
+        mutex_unlock(&_client->device_event_mutex);
+        retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+        mutex_lock(&_client->device_event_mutex);
+    } else {
+        mutex_unlock(&_client->device_event_mutex);
+        reterror("Device not supported!\n");
     }
 
     /* Verify correct nonce/set nonce */
