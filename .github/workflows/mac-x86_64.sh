@@ -19,7 +19,7 @@ sudo ${PROCURSUS}/bin/apt dist-upgrade -y
 sudo ${PROCURSUS}/bin/apt install autopoint autoconf autoconf-archive automake bash bison cmake coreutils docbook-xml docbook-xsl dpkg fakeroot flex findutils gawk gnupg git grep groff ldid libtool make ncurses-bin openssl patch pkg-config po4a python3 sed tar triehash wget xz-utils zstd fd libgeneral-proc libimg4tool-proc libimobiledevice-proc libinsn-proc libipatcher-proc libirecovery-proc liboffsetfinder64-proc libplist-proc libpng16-proc libssl-proc libusbmuxd-proc libxpwn-proc libzip-proc libfragmentzip-proc -y
 echo 'step 3:'
 cd ${BASE}/../..
-export FUTURERESTORE_VERSION=$(git rev-parse HEAD | tr -d '\n')
+export FUTURERESTORE_VERSION=$(git rev-list --count HEAD | tr -d '\n')
 export FUTURERESTORE_VERSION_RELEASE=$(cat version.txt | tr -d '\n')
 echo 'step 4:'
 git submodule init; git submodule update --recursive
