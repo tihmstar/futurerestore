@@ -465,7 +465,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 #ifndef HAVE_LIBIPATCHER
     reterror("compiled without libipatcher");
 #else
-    bootargs = "rd=md0 -restore -v serial=3 debug=0x14e keepsyms=1 amfi=0xff amfi_unrestrict_task_for_pid=1 amfi_allow_any_signature=1 amfi_get_out_of_my_way=1";
+    bootargs = "rd=md0 -restore -progress nand-enable-reformat=0x1 -v serial=0x3 debug=0x14e keepsyms=0x1 amfi=0xff amfi_unrestrict_task_for_pid=0x0 amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1";
     idevicerestore_mode_t *mode = 0;
     libipatcher::fw_key iBSSKeys;
     libipatcher::fw_key iBECKeys;

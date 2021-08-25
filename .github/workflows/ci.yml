@@ -50,34 +50,30 @@ jobs:
         name: futurerestore-macOS-arm64
         path: |
           /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
-  # ubuntu:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v2
-  #     with:
-  #       submodules: 'true'
-  #       fetch-depth: 0
-  #   - name: Install LLVM
-  #     uses: KyleMayes/install-llvm-action@v1
-  #     with:
-  #       version: "12.0.0"
-  #       force-version: true
-  #       ubuntu-version: "20.04"
-  #       directory: /home/runner/work/futurerestore/futurerestore/.github/llvm
-  #   - name: Symlink LLVM
-  #     if: contains(matrix.os, 'ubuntu')
-  #     run: sudo ln -s libclang-12.so.1 /lib/x86_64-linux-gnu/libclang.so
-  #     working-directory: ${{ env.LLVM_PATH }}/lib
-  #   - name: Ubuntu Build
-  #     id: ubuntu
-  #     run: |
-  #       cd /home/runner/work/futurerestore/futurerestore/.github/workflows
-  #       ./ubuntu.sh
-  #   - name: Archive
-  #     id: archive
-  #     uses: actions/upload-artifact@v2
-  #     with:
-  #       name: futurerestore-Ubuntu
-  #       path: |
-  #         /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'true'
+        fetch-depth: 0
+    - name: Linux Build
+      id: linux
+      uses: addnab/docker-run-action@v3
+      with:
+        image: debian:buster-slim
+        options: -v ${{ github.workspace }}/..:/tmp/build/ 
+        run: |
+          /tmp/build/futurerestore/.github/workflows/linux.sh
+    - name: Linux Copy
+      run: |
+        export FUTURERESTORE_VERSION_RELEASE=$(cat /home/runner/work/futurerestore/futurerestore/version.txt | tr -d '\n')
+        docker cp $(docker ps -ql):/tmp/build/futurerestore-${FUTURERESTORE_VERSION_RELEASE}-linux.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/
+    - name: Archive
+      id: archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: futurerestore-linux
+        path: |
+          /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
