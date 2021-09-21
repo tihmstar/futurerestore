@@ -1,8 +1,33 @@
+diff --git a/.gitignore b/.gitignore
+index d08ff9f..8af2a99 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -8,3 +8,4 @@ build_strap/
+ !.gitkeep
+ .DS_Store
+ *.p12
++.idea
 diff --git a/Makefile b/Makefile
-index 0aa4f29..d4356b3 100644
+index f2d34bc..2224eae 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -347,7 +347,7 @@ CXXFLAGS_FOR_BUILD :=
+@@ -65,6 +65,15 @@ WATCHOS_DEPLOYMENT_TARGET   := 5.0
+ MACOSX_DEPLOYMENT_TARGET    := 10.14
+ DARWIN_DEPLOYMENT_VERSION   := 18
+ override MEMO_CFVER         := 1500
++else ifeq ($(shell [ "$(CFVER_WHOLE)" -ge 1300 ] && [ "$(CFVER_WHOLE)" -lt 1400 ] && echo 1),1)
++IPHONEOS_DEPLOYMENT_TARGET  := 10.0
++APPLETVOS_DEPLOYMENT_TARGET := 10.0
++AUDIOOS_DEPLOYMENT_TARGET   := XXX
++BRIDGEOS_DEPLOYMENT_TARGET  := 1.0
++WATCHOS_DEPLOYMENT_TARGET   := 3.0
++MACOSX_DEPLOYMENT_TARGET    := 10.12
++DARWIN_DEPLOYMENT_VERSION   := 16
++override MEMO_CFVER         := 1300
+ else
+ $(error Unsupported CoreFoundation version)
+ endif
+@@ -351,7 +360,7 @@ CXXFLAGS_FOR_BUILD :=
  LDFLAGS_FOR_BUILD  :=
  
  else ifeq ($(UNAME),Darwin)
@@ -11,11 +36,10 @@ index 0aa4f29..d4356b3 100644
  ifneq ($(MEMO_QUIET),1)
  $(warning Building on MacOS)
  endif # ($(MEMO_QUIET),1)
-@@ -428,26 +428,7 @@ BUILD_STRAP    := $(BUILD_ROOT)/build_strap/$(MEMO_TARGET)/$(MEMO_CFVER)
+@@ -435,25 +444,27 @@ BUILD_STRAP    := $(BUILD_ROOT)/build_strap/$(MEMO_TARGET)/$(MEMO_CFVER)
  # Extra scripts for the buildsystem
  BUILD_TOOLS    := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/build_tools
  
--
 -ifeq ($(DEBUG),1)
 -OPTIMIZATION_FLAGS := -g -O0
 -else ifeq ($(MEMO_TARGET),bridgeos-arm64)
@@ -36,37 +60,47 @@ index 0aa4f29..d4356b3 100644
 -OPTIMIZATION_FLAGS += -lto_library $(MEMO_ALT_LTO_LIB)
 -endif
 +OPTIMIZATION_FLAGS := -fembed-bitcode=off -fno-lto -Os
++
++#ifeq ($(DEBUG),1)
++#OPTIMIZATION_FLAGS := -g -O0
++#else ifeq ($(MEMO_TARGET),bridgeos-arm64)
++#OPTIMIZATION_FLAGS := -Oz
++#else
++#OPTIMIZATION_FLAGS := -Os
++#ifeq ($(UNAME),Darwin)
++#OPTIMIZATION_FLAGS += -flto=thin
++#else ifeq ($(MEMO_FORCE_LTO),1)
++#OPTIMIZATION_FLAGS += -flto=thin
++## This flag will prevent ld64 from deleting the object file needed for dsymutil to work.
++## I'm not setting this on macOS because I am unsure if it is needed.
++## See: clang(1)
++#OPTIMIZATION_FLAGS += -Wl,-object_path_lto,/tmp/lto.o
++#endif
++#endif
++#ifdef ($(MEMO_ALT_LTO_LIB))
++#OPTIMIZATION_FLAGS += -lto_library $(MEMO_ALT_LTO_LIB)
++#endif
  
  CFLAGS              := $(OPTIMIZATION_FLAGS) -arch $(MEMO_ARCH) -isysroot $(TARGET_SYSROOT) $(PLATFORM_VERSION_MIN) -isystem $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include -isystem $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)$(MEMO_ALT_PREFIX)/include -F$(BUILD_BASE)$(MEMO_PREFIX)/System/Library/Frameworks -F$(BUILD_BASE)$(MEMO_PREFIX)/Library/Frameworks
  CXXFLAGS            := $(CFLAGS)
-@@ -594,7 +575,7 @@ EXTRACT_TAR = -if [ ! -d $(BUILD_WORK)/$(3) ] || [ "$(4)" = "1" ]; then \
- 		mkdir -p $(3); \
- 		chmod -R 0755 $(2); \
- 		cp -a $(2)/. $(3); \
--		rm -rf $(2); \
-+		rm -r $(2); \
- 	fi
- 
- DO_PATCH    = cd $(BUILD_PATCH)/$(1); \
-@@ -713,6 +694,8 @@ GIT_CLONE = if [ ! -d "$(BUILD_WORK)/$(3)" ]; then \
+@@ -758,6 +769,9 @@ GIT_CLONE = if [ ! -d "$(BUILD_WORK)/$(3)" ]; then \
  #
  ###
  
 +$(shell rm -rf build_tools/versions.json)
 +$(shell wget -q -nc -P build_tools https://mac.cryptiiiic.com/versions.json)
++
  ifneq ($(call HAS_COMMAND,wget),1)
  $(error Install wget)
  endif
-@@ -727,17 +710,17 @@ endif
- 
- TAR  := tar # TODO: remove
+@@ -766,15 +780,15 @@ ifneq ($(call HAS_COMMAND,triehash),1)
+ $(error Install triehash)
+ endif
  
 -ifneq ($(shell PATH=$(PATH) tar --version | grep -q GNU && echo 1),1)
 +ifneq ($(shell tar --version | grep -q GNU && echo 1),1)
  $(error Install GNU tar)
  endif
- 
- SED  := sed # TODO: remove
  
 -ifneq ($(shell PATH=$(PATH) sed --version | grep -q GNU && echo 1),1)
 +ifneq ($(shell sed --version | grep -q GNU && echo 1),1)
@@ -78,7 +112,7 @@ index 0aa4f29..d4356b3 100644
  $(error Install GNU grep)
  endif
  
-@@ -787,49 +770,49 @@ ifneq ($(call HAS_COMMAND,m4),1)
+@@ -824,27 +838,27 @@ ifneq ($(call HAS_COMMAND,m4),1)
  $(error Install m4)
  endif
  
@@ -97,41 +131,15 @@ index 0aa4f29..d4356b3 100644
  $(error Install GNU findutils)
  endif
  
--ifneq ($(shell PATH=$(PATH) rmdir --version | grep -q 'GNU coreutils' && echo 1),1)
-+ifneq ($(shell rmdir --version | grep -q 'GNU coreutils' && echo 1),1)
- $(error Install GNU coreutils)
- endif
- 
 -ifeq ($(shell PATH=$(PATH) install --version | grep -q 'GNU coreutils' && echo 1),1)
--export INSTALL  := $(shell PATH=$(PATH) which install) --strip-program=$(STRIP)
+-export INSTALL := $(shell PATH=$(PATH) which install) --strip-program=$(STRIP)
 +ifeq ($(shell install --version | grep -q 'GNU coreutils' && echo 1),1)
-+export INSTALL  := $(shell which install) --strip-program=$(STRIP)
++export INSTALL := $(shell which install) --strip-program=$(STRIP)
+ export LN_S    := ln -sf
+ export LN_SR   := ln -sfr
  else
  $(error Install GNU coreutils)
  endif
- 
--ifeq ($(shell PATH=$(PATH) wc --version | grep -q 'GNU coreutils' && echo 1),1)
-+ifeq ($(shell wc --version | grep -q 'GNU coreutils' && echo 1),1)
- WC := wc
- else
- $(error Install GNU coreutils)
- endif
- 
--ifeq ($(shell PATH=$(PATH) cp --version | grep -q 'GNU coreutils' && echo 1),1)
-+ifeq ($(shell cp --version | grep -q 'GNU coreutils' && echo 1),1)
- CP := cp
- else
- $(error Install GNU coreutils)
- endif
- export CP
- 
--ifeq ($(shell PATH=$(PATH) ln --version | grep -q 'GNU coreutils' && echo 1),1)
-+ifeq ($(shell ln --version | grep -q 'GNU coreutils' && echo 1),1)
- LN := ln
- else
- $(error Install GNU coreutils)
- endif
- export LN
  
 -ifneq  ($(shell PATH=$(PATH) file -bi $(BUILD_MISC)/launchctl.1700 | grep -q 'x-mach-binary; charset=binary' && echo 1),1)
 +ifneq  ($(shell file -bi $(BUILD_MISC)/launchctl.1700 | grep -q 'x-mach-binary; charset=binary' && echo 1),1)
@@ -179,9 +187,51 @@ index 0000000..8487d7f
 +Section: Libraries
 +Priority: optional
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
+diff --git a/build_info/libimobiledevice-glue-dev.control b/build_info/libimobiledevice-glue-dev.control
+new file mode 100644
+index 0000000..c8f0d12
+--- /dev/null
++++ b/build_info/libimobiledevice-glue-dev.control
+@@ -0,0 +1,8 @@
++Package: libimobiledevice-glue-dev
++Version: @DEB_LIBIMOBILEDEVICEGLUE_V@
++Architecture: @DEB_ARCH@
++Maintainer: @DEB_MAINTAINER@
++Depends: libimobiledevice-glue (= @DEB_LIBIMOBILEDEVICEGLUE_V@), libplist-dev (>= 2.2.0)
++Section: Development
++Priority: standard
++Description: Library with common code used by the libraries and tools around the libimobiledevice project - devel
+diff --git a/build_info/libimobiledevice-glue-proc.control b/build_info/libimobiledevice-glue-proc.control
+new file mode 100644
+index 0000000..249ca79
+--- /dev/null
++++ b/build_info/libimobiledevice-glue-proc.control
+@@ -0,0 +1,8 @@
++Package: libimobiledevice-glue-proc
++Version: @DEB_LIBIMOBILEDEVICEGLUE_V@
++Architecture: @DEB_ARCH@
++Maintainer: @DEB_MAINTAINER@
++Depends: libplist-proc (>= 2.2.0)
++Section: Libraries
++Priority: optional
++Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
+diff --git a/build_info/libimobiledevice-glue.control b/build_info/libimobiledevice-glue.control
+new file mode 100644
+index 0000000..0194648
+--- /dev/null
++++ b/build_info/libimobiledevice-glue.control
+@@ -0,0 +1,8 @@
++Package: libimobiledevice-glue
++Version: @DEB_LIBIMOBILEDEVICEGLUE_V@
++Architecture: @DEB_ARCH@
++Maintainer: @DEB_MAINTAINER@
++Depends: libplist (>= 2.2.0)
++Section: Development
++Priority: standard
++Description: Library with common code used by the libraries and tools around the libimobiledevice project
 diff --git a/build_info/libimobiledevice-proc.control b/build_info/libimobiledevice-proc.control
 new file mode 100644
-index 0000000..b25fade
+index 0000000..dcb9cbb
 --- /dev/null
 +++ b/build_info/libimobiledevice-proc.control
 @@ -0,0 +1,8 @@
@@ -189,7 +239,7 @@ index 0000000..b25fade
 +Version: @DEB_LIBIMOBILEDEVICE_V@
 +Architecture: @DEB_ARCH@
 +Maintainer: @DEB_MAINTAINER@
-+Depends: libssl-proc, libplist-proc, libusbmuxd-proc
++Depends: libssl-proc, libplist-proc, libusbmuxd-proc, libimobiledevice-glue-proc
 +Section: Libraries
 +Priority: optional
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
@@ -223,14 +273,15 @@ index 0000000..73be3e8
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libirecovery-proc.control b/build_info/libirecovery-proc.control
 new file mode 100644
-index 0000000..6f6244a
+index 0000000..2ca37c2
 --- /dev/null
 +++ b/build_info/libirecovery-proc.control
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,8 @@
 +Package: libirecovery-proc
 +Version: @DEB_LIBIRECOVERY_V@
 +Architecture: @DEB_ARCH@
 +Maintainer: @DEB_MAINTAINER@
++Depends: libimobiledevice-glue-proc
 +Section: Libraries
 +Priority: optional
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
@@ -289,7 +340,7 @@ index 0000000..ee3059f
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libusbmuxd-proc.control b/build_info/libusbmuxd-proc.control
 new file mode 100644
-index 0000000..91c5321
+index 0000000..1e05603
 --- /dev/null
 +++ b/build_info/libusbmuxd-proc.control
 @@ -0,0 +1,8 @@
@@ -297,7 +348,7 @@ index 0000000..91c5321
 +Version: @DEB_LIBUSBMUXD_V@
 +Architecture: @DEB_ARCH@
 +Maintainer: @DEB_MAINTAINER@
-+Depends: libplist-proc
++Depends: libplist-proc, libimobiledevice-glue-proc
 +Section: Libraries
 +Priority: optional
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
@@ -331,17 +382,17 @@ index 0000000..a1ace41
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_tools/versions.json b/build_tools/versions.json
 new file mode 100644
-index 0000000..9befe88
+index 0000000..e00fbb0
 --- /dev/null
 +++ b/build_tools/versions.json
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,150 @@
 +{
 +  "versions": {
 +    "futurerestore": {
-+      "version": "234",
-+      "version2": "2.0.0-test+git20210821",
-+      "commit": "d4d393aef3d65c6e6205ac7c49c3e517c1b20758",
-+      "date": "1629529200",
++      "version": "239",
++      "version2": "2.0.0-test+git20210829",
++      "commit": "93266082f8a3b70df2bd7c0506274da0eec08fc9",
++      "date": "1630220400",
 +      "url": "https://github.com/m1stadev/futurerestore",
 +      "branch": "test"
 +    },
@@ -355,25 +406,25 @@ index 0000000..9befe88
 +    },
 +    "tsschecker": {
 +      "version": "351",
-+      "version2": "351+git20210806",
++      "version2": "351+git20210906",
 +      "commit": "fe082c7e7c6a6fba3bf5181e0ea86557837517ae",
-+      "date": "1628233200",
++      "date": "1630911600",
 +      "url": "https://github.com/1Conan/tsschecker",
 +      "brah": "master"
 +    },
 +    "openssl": {
-+      "version": "24013",
-+      "version2": "1.1.1k+git20210818",
-+      "commit": "4f850d7221ef6d9010053434d8ae43da13ad8fde",
-+      "date": "1629270000",
++      "version": "24062",
++      "version2": "1.1.1l+git20210831",
++      "commit": "5402f96aba9dd3d0b3006b8b2651bd27d3cbf326",
++      "date": "1631862000",
 +      "url": "https://github.com/openssl/openssl",
 +      "branch": "OpenSSL_1_1_1-stable"
 +    },
 +    "libzip": {
-+      "version": "3054",
-+      "version2": "1.8.0+git20210819",
-+      "commit": "0264a33d9e930002012a03eafdbb3a21f1f94543",
-+      "date": "1629356400",
++      "version": "3058",
++      "version2": "1.8.0+git20210911",
++      "commit": "e7c81b67ab91d5dc54c2238d9f7d9abab1a0a8c3",
++      "date": "1631343600",
 +      "url": "https://github.com/nih-at/libzip",
 +      "branch": "master"
 +    },
@@ -386,34 +437,42 @@ index 0000000..9befe88
 +      "branch": "libpng16"
 +    },
 +    "libplist": {
-+      "version": "813",
-+      "version2": "2.2.0+git20210712",
-+      "commit": "feb0bcd102ff0abc34ffa04e8cabf26706ffdb38",
-+      "date": "1626073200",
++      "version": "817",
++      "version2": "2.2.0+git20210916",
++      "commit": "97d46c92ba1657f6f0287cc83d4ec8ed1a2c6903",
++      "date": "1631775600",
 +      "url": "https://github.com/libimobiledevice/libplist",
 +      "branch": "master"
 +    },
++    "libimobiledevice_glue": {
++      "version": "18",
++      "version2": "1.0.0+git20210913",
++      "commit": "9a697354801194d076c23a8c904d3241b4b9deee",
++      "date": "1631516400",
++      "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
++      "branch": "master"
++    },
 +    "libusbmuxd": {
-+      "version": "185",
-+      "version2": "2.0.2+git20210629",
-+      "commit": "e32bf7612912348d7af81afe1e8be2ecc93a93ca",
-+      "date": "1624950000",
++      "version": "192",
++      "version2": "2.0.2+git20210913",
++      "commit": "2ec5354a6ff2ba5e2740eabe7402186f29294f79",
++      "date": "1631516400",
 +      "url": "https://github.com/libimobiledevice/libusbmuxd",
 +      "branch": "master"
 +    },
 +    "libimobiledevice": {
-+      "version": "1643",
-+      "version2": "1.3.0+git20210730",
-+      "commit": "24abbb9450c723617e10a6843978aa04a576523e",
-+      "date": "1627628400",
++      "version": "1652",
++      "version2": "1.3.0+git20210913",
++      "commit": "3a10a315a59ff73fe2edfb3dca897ab688407b71",
++      "date": "1631516400",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice",
 +      "branch": "master"
 +    },
 +    "libirecovery": {
-+      "version": "311",
-+      "version2": "1.0.0+git20210701",
-+      "commit": "3dda9d2701a34f02058425eea25431122283177c",
-+      "date": "1625122800",
++      "version": "315",
++      "version2": "1.0.0+git20210916",
++      "commit": "1d90f6accd40e6801559d38386d71d3597f36d3b",
++      "date": "1631775600",
 +      "url": "https://github.com/libimobiledevice/libirecovery",
 +      "branch": "master"
 +    },
@@ -458,10 +517,10 @@ index 0000000..9befe88
 +      "branch": "master"
 +    },
 +    "liboffsetfinder64": {
-+      "version": "140",
-+      "version2": "140+git20210810",
-+      "commit": "f94bbe42abe96d3c66ee8783697c652e67334c13",
-+      "date": "1628578800",
++      "version": "141",
++      "version2": "141+git20210822",
++      "commit": "df8c85442dd0662d969ee1a8c8d2c9558306f029",
++      "date": "1629615600",
 +      "url": "https://github.com/Cryptiiiic/liboffsetfinder64",
 +      "branch": "cryptic"
 +    },
@@ -474,11 +533,11 @@ index 0000000..9befe88
 +      "branch": "main"
 +    }
 +  },
-+  "lastupdate": "1629611403"
++  "lastupdate": "1632174340"
 +}
 +
 diff --git a/makefiles/curl.mk b/makefiles/curl.mk
-index a6d2f82..462bd8a 100644
+index 84ab908..4c9282c 100644
 --- a/makefiles/curl.mk
 +++ b/makefiles/curl.mk
 @@ -3,7 +3,7 @@ $(error Use the main Makefile)
@@ -491,7 +550,7 @@ index a6d2f82..462bd8a 100644
  
  curl-setup: setup
 diff --git a/makefiles/futurerestore.mk b/makefiles/futurerestore.mk
-index f90c9a1..0ead22d 100644
+index 3a15cdc..42735d8 100644
 --- a/makefiles/futurerestore.mk
 +++ b/makefiles/futurerestore.mk
 @@ -3,31 +3,25 @@ $(error Use the main Makefile)
@@ -513,8 +572,8 @@ index f90c9a1..0ead22d 100644
 -	$(call EXTRACT_TAR,idevicerestore-$(FUTURERESTORE_IDEVICERESTORE_COMMIT).tar.gz,idevicerestore-$(FUTURERESTORE_IDEVICERESTORE_COMMIT),futurerestore/external/idevicerestore)
 -	cp -R $(BUILD_WORK)/tsschecker $(BUILD_WORK)/futurerestore/external
 -
--	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${FUTURERESTORE_VERSION}/g' $(BUILD_WORK)/futurerestore/configure.ac
--	$(SED) -i 's/git rev\-parse HEAD/printf ${FUTURERESTORE_COMMIT}/g' $(BUILD_WORK)/futurerestore/configure.ac
+-	sed -i 's/git rev\-list \-\-count HEAD/printf ${FUTURERESTORE_VERSION}/g' $(BUILD_WORK)/futurerestore/configure.ac
+-	sed -i 's/git rev\-parse HEAD/printf ${FUTURERESTORE_COMMIT}/g' $(BUILD_WORK)/futurerestore/configure.ac
 +	ln -sf ${BASE}/../../../futurerestore $(BUILD_WORK)/
  
  ifneq ($(wildcard $(BUILD_WORK)/futurerestore/.build_complete),)
@@ -530,65 +589,12 @@ index f90c9a1..0ead22d 100644
 +		libfragmentzip_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
 +		libcurl_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lcurl" \
 +		libcurl_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
-+		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -lcompression -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lfragmentzip -lusbmuxd-2.0 -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn -lcommon -lxpwn" \
++		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -lcompression -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lfragmentzip -lusbmuxd-2.0 -limobiledevice-glue-1.0 -limobiledevice-1.0 -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn -lcommon -lxpwn" \
  		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
  		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
  	+$(MAKE) -C $(BUILD_WORK)/futurerestore
-diff --git a/makefiles/ideviceinstaller.mk b/makefiles/ideviceinstaller.mk
-index f4fe477..04520a1 100644
---- a/makefiles/ideviceinstaller.mk
-+++ b/makefiles/ideviceinstaller.mk
-@@ -3,12 +3,13 @@ $(error Use the main Makefile)
- endif
- 
- SUBPROJECTS              += ideviceinstaller
--IDEVICEINSTALLER_VERSION := 1.1.1
--DEB_IDEVICEINSTALLER_V   ?= $(IDEVICEINSTALLER_VERSION)-1
-+IDEVICEINSTALLER_COMMIT  := 659e35c047278661aedb4d4688f4d3aad5892cc2
-+IDEVICEINSTALLER_VERSION := 1.1.1+git20210629.$(shell echo $(IDEVICERESTORE_COMMIT) | cut -c -7)
-+DEB_IDEVICEINSTALLER_V   ?= $(IDEVICEINSTALLER_VERSION)
- 
- ideviceinstaller-setup: setup
--	wget -q -nc -P $(BUILD_SOURCE) https://github.com/libimobiledevice/ideviceinstaller/releases/download/$(IDEVICEINSTALLER_VERSION)/ideviceinstaller-$(IDEVICEINSTALLER_VERSION).tar.bz2
--	$(call EXTRACT_TAR,ideviceinstaller-$(IDEVICEINSTALLER_VERSION).tar.bz2,ideviceinstaller-$(IDEVICEINSTALLER_VERSION),ideviceinstaller)
-+	$(call GITHUB_ARCHIVE,libimobiledevice,ideviceinstaller,$(IDEVICEINSTALLER_COMMIT),$(IDEVICEINSTALLER_COMMIT))
-+	$(call EXTRACT_TAR,ideviceinstaller-$(IDEVICEINSTALLER_COMMIT).tar.gz,ideviceinstaller-$(IDEVICEINSTALLER_COMMIT),ideviceinstaller)
- 	$(SED) -i '/AC_FUNC_MALLOC/d' $(BUILD_WORK)/ideviceinstaller/configure.ac
- 
- ifneq ($(wildcard $(BUILD_WORK)/ideviceinstaller/.build_complete),)
-@@ -16,13 +17,12 @@ ideviceinstaller:
- 	@echo "Using previously built ideviceinstaller."
- else
- ideviceinstaller: ideviceinstaller-setup libzip libplist libimobiledevice
--	cd $(BUILD_WORK)/ideviceinstaller && autoreconf -fi
--	cd $(BUILD_WORK)/ideviceinstaller && ./configure -C \
-+	cd $(BUILD_WORK)/ideviceinstaller && ./autogen.sh -C \
- 		$(DEFAULT_CONFIGURE_FLAGS)
- 	+$(MAKE) -C $(BUILD_WORK)/ideviceinstaller V=1
- 	+$(MAKE) -C $(BUILD_WORK)/ideviceinstaller install \
- 		DESTDIR=$(BUILD_STAGE)/ideviceinstaller
--	$(call AFTER_BUILD)
-+	$(call AFTER_BUILD)
- endif
- 
- ideviceinstaller-package: ideviceinstaller-stage
-diff --git a/makefiles/idevicerestore.mk b/makefiles/idevicerestore.mk
-index 526a712..bb75faa 100644
---- a/makefiles/idevicerestore.mk
-+++ b/makefiles/idevicerestore.mk
-@@ -3,8 +3,8 @@ $(error Use the main Makefile)
- endif
- 
- SUBPROJECTS            += idevicerestore
--IDEVICERESTORE_COMMIT  := a2010182daa49f9f3bb63e8993908f8cdbca8b5e
--IDEVICERESTORE_VERSION := 1.0.0+git20210526.$(shell echo $(IDEVICERESTORE_COMMIT) | cut -c -7)
-+IDEVICERESTORE_COMMIT  := dfa05a8c417e785799a0d8ea0f9a58ed89a13085
-+IDEVICERESTORE_VERSION := 1.0.0+git20210629.$(shell echo $(IDEVICERESTORE_COMMIT) | cut -c -7)
- DEB_IDEVICERESTORE_V   ?= $(IDEVICERESTORE_VERSION)
- 
- idevicerestore-setup: setup
 diff --git a/makefiles/img4tool.mk b/makefiles/img4tool.mk
-index 716d359..dd360f4 100644
+index 7c2ce9d..3103a97 100644
 --- a/makefiles/img4tool.mk
 +++ b/makefiles/img4tool.mk
 @@ -3,13 +3,13 @@ $(error Use the main Makefile)
@@ -607,22 +613,18 @@ index 716d359..dd360f4 100644
 -	$(call EXTRACT_TAR,img4tool-$(IMG4TOOL_VERSION).tar.gz,img4tool-$(IMG4TOOL_VERSION),img4tool)
 +	$(call GITHUB_ARCHIVE,tihmstar,img4tool,$(IMG4TOOL_COMMIT),$(IMG4TOOL_COMMIT))
 +	$(call EXTRACT_TAR,img4tool-$(IMG4TOOL_COMMIT).tar.gz,img4tool-$(IMG4TOOL_COMMIT),img4tool)
- 	
- 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${IMG4TOOL_VERSION}/g' $(BUILD_WORK)/img4tool/configure.ac
- 	$(SED) -i 's/git rev\-parse HEAD/printf ${IMG4TOOL_COMMIT}/g' $(BUILD_WORK)/img4tool/configure.ac
-@@ -21,37 +21,29 @@ else
+ 	sed -i 's/git rev\-list \-\-count HEAD/printf ${IMG4TOOL_VERSION}/g' $(BUILD_WORK)/img4tool/configure.ac
+ 	sed -i 's/git rev\-parse HEAD/printf ${IMG4TOOL_COMMIT}/g' $(BUILD_WORK)/img4tool/configure.ac
+ 
+@@ -20,7 +20,6 @@ else
  img4tool: img4tool-setup openssl libplist libgeneral
  	cd $(BUILD_WORK)/img4tool && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS)
 -	+$(MAKE) -C $(BUILD_WORK)/img4tool
  	+$(MAKE) -C $(BUILD_WORK)/img4tool install \
  		DESTDIR="$(BUILD_STAGE)/img4tool"
- 	+$(MAKE) -C $(BUILD_WORK)/img4tool install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
- 
+ 	$(call AFTER_BUILD,copy)
+@@ -29,26 +28,18 @@ endif
  img4tool-package: img4tool-stage
  	# img4tool.mk Package Structure
  	rm -rf $(BUILD_DIST)/*img4tool*/
@@ -657,10 +659,10 @@ index 716d359..dd360f4 100644
  	# img4tool.mk Build cleanup
  	rm -rf $(BUILD_DIST)/*img4tool*/
 diff --git a/makefiles/libfragmentzip.mk b/makefiles/libfragmentzip.mk
-index 47a712a..ad03b83 100644
+index 28a5846..fef6b1d 100644
 --- a/makefiles/libfragmentzip.mk
 +++ b/makefiles/libfragmentzip.mk
-@@ -3,13 +3,13 @@ $(error Use the main Makefile)
+@@ -3,14 +3,13 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS            += libfragmentzip
@@ -674,12 +676,13 @@ index 47a712a..ad03b83 100644
  libfragmentzip-setup: setup
 -	$(call GITHUB_ARCHIVE,tihmstar,libfragmentzip,$(LIBFRAGMENTZIP_VERSION),$(LIBFRAGMENTZIP_VERSION))
 -	$(call EXTRACT_TAR,libfragmentzip-$(LIBFRAGMENTZIP_VERSION).tar.gz,libfragmentzip-$(LIBFRAGMENTZIP_VERSION),libfragmentzip)
+-	sed -i 's/@libz_requires@//;s/\(Libs:.*\)/\1 -lz/' $(BUILD_WORK)/libfragmentzip/libfragmentzip.pc.in
 +	$(call GITHUB_ARCHIVE,tihmstar,libfragmentzip,$(LIBFRAGMENTZIP_COMMIT),$(LIBFRAGMENTZIP_COMMIT))
 +	$(call EXTRACT_TAR,libfragmentzip-$(LIBFRAGMENTZIP_COMMIT).tar.gz,libfragmentzip-$(LIBFRAGMENTZIP_COMMIT),libfragmentzip)
- 	
- 	$(SED) -i 's/@libz_requires@//;s/\(Libs:.*\)/\1 -lz/' $(BUILD_WORK)/libfragmentzip/libfragmentzip.pc.in
- 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${LIBFRAGMENTZIP_VERSION}/g' $(BUILD_WORK)/libfragmentzip/configure.ac
-@@ -19,39 +19,38 @@ ifneq ($(wildcard $(BUILD_WORK)/libfragmentzip/.build_complete),)
+ 	sed -i 's/git rev\-list \-\-count HEAD/printf ${LIBFRAGMENTZIP_VERSION}/g' $(BUILD_WORK)/libfragmentzip/configure.ac
+ 	sed -i 's/git rev\-parse HEAD/printf ${LIBFRAGMENTZIP_COMMIT}/g' $(BUILD_WORK)/libfragmentzip/configure.ac
+ 
+@@ -18,12 +17,13 @@ ifneq ($(wildcard $(BUILD_WORK)/libfragmentzip/.build_complete),)
  libfragmentzip:
  	@echo "Using previously built libfragmentzip."
  else
@@ -694,11 +697,8 @@ index 47a712a..ad03b83 100644
 -	+$(MAKE) -C $(BUILD_WORK)/libfragmentzip
  	+$(MAKE) -C $(BUILD_WORK)/libfragmentzip install \
  		DESTDIR="$(BUILD_STAGE)/libfragmentzip"
- 	+$(MAKE) -C $(BUILD_WORK)/libfragmentzip install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -31,24 +31,21 @@ endif
  
  libfragmentzip-package: libfragmentzip-stage
  	# libfragmentzip.mk Package Structure
@@ -733,7 +733,7 @@ index 47a712a..ad03b83 100644
  
  .PHONY: libfragmentzip libfragmentzip-package
 diff --git a/makefiles/libgeneral.mk b/makefiles/libgeneral.mk
-index a724ac5..3461b73 100644
+index 48a1891..6caee9b 100644
 --- a/makefiles/libgeneral.mk
 +++ b/makefiles/libgeneral.mk
 @@ -3,13 +3,13 @@ $(error Use the main Makefile)
@@ -753,20 +753,17 @@ index a724ac5..3461b73 100644
 +	$(call GITHUB_ARCHIVE,tihmstar,libgeneral,$(LIBGENERAL_COMMIT),$(LIBGENERAL_COMMIT))
 +	$(call EXTRACT_TAR,libgeneral-$(LIBGENERAL_COMMIT).tar.gz,libgeneral-$(LIBGENERAL_COMMIT),libgeneral)
  	
- 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${LIBGENERAL_VERSION}/g' $(BUILD_WORK)/libgeneral/configure.ac
- 	$(SED) -i 's/git rev\-parse HEAD/printf ${LIBGENERAL_COMMIT}/g' $(BUILD_WORK)/libgeneral/configure.ac
-@@ -21,34 +21,31 @@ else
+ 	sed -i 's/git rev\-list \-\-count HEAD/printf ${LIBGENERAL_VERSION}/g' $(BUILD_WORK)/libgeneral/configure.ac
+ 	sed -i 's/git rev\-parse HEAD/printf ${LIBGENERAL_COMMIT}/g' $(BUILD_WORK)/libgeneral/configure.ac
+@@ -21,7 +21,6 @@ else
  libgeneral: libgeneral-setup
  	cd $(BUILD_WORK)/libgeneral && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS)
 -	+$(MAKE) -C $(BUILD_WORK)/libgeneral
  	+$(MAKE) -C $(BUILD_WORK)/libgeneral install \
  		DESTDIR="$(BUILD_STAGE)/libgeneral"
- 	+$(MAKE) -C $(BUILD_WORK)/libgeneral install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -29,24 +28,21 @@ endif
  
  libgeneral-package: libgeneral-stage
  	# libgeneral.mk Package Structure
@@ -800,47 +797,60 @@ index a724ac5..3461b73 100644
 +	rm -rf $(BUILD_DIST)/libgeneral-proc
  
  .PHONY: libgeneral libgeneral-package
-diff --git a/makefiles/libideviceactivation.mk b/makefiles/libideviceactivation.mk
-index f514611..0a5cd93 100644
---- a/makefiles/libideviceactivation.mk
-+++ b/makefiles/libideviceactivation.mk
-@@ -3,19 +3,20 @@ $(error Use the main Makefile)
- endif
- 
- SUBPROJECTS                  += libideviceactivation
--LIBIDEVICEACTIVATION_VERSION := 1.1.1
--DEB_LIBIDEVICEACTIVATION_V   ?= $(LIBIDEVICEACTIVATION_VERSION)-1
-+LIBIDEVICEACTIVATION_COMMIT  := b2d7536e612b8c98d669df7d92520c107104efa0
-+LIBIDEVICEACTIVATION_VERSION := 1.1.1+git20210629.$(shell echo $(LIBIDEVICEACTIVATION_COMMIT) | cut -c -7)
-+DEB_LIBIDEVICEACTIVATION_V   ?= $(LIBIDEVICEACTIVATION_VERSION)
- 
- libideviceactivation-setup: setup
--	wget -q -nc -P $(BUILD_SOURCE) https://github.com/libimobiledevice/libideviceactivation/releases/download/$(LIBIDEVICEACTIVATION_VERSION)/libideviceactivation-$(LIBIDEVICEACTIVATION_VERSION).tar.bz2
--	$(call EXTRACT_TAR,libideviceactivation-$(LIBIDEVICEACTIVATION_VERSION).tar.bz2,libideviceactivation-$(LIBIDEVICEACTIVATION_VERSION),libideviceactivation)
-+	$(call GITHUB_ARCHIVE,libimobiledevice,libideviceactivation,$(LIBIDEVICEACTIVATION_COMMIT),$(LIBIDEVICEACTIVATION_COMMIT))
-+	$(call EXTRACT_TAR,libideviceactivation-$(LIBIDEVICEACTIVATION_COMMIT).tar.gz,libideviceactivation-$(LIBIDEVICEACTIVATION_COMMIT),libideviceactivation)
- 
- ifneq ($(wildcard $(BUILD_WORK)/libideviceactivation/.build_complete),)
- libideviceactivation:
- 	@echo "Using previously built libideviceactivation."
- else
- libideviceactivation: libideviceactivation-setup libplist libimobiledevice curl
--	cd $(BUILD_WORK)/libideviceactivation && ./configure -C \
-+	cd $(BUILD_WORK)/libideviceactivation && ./autogen.sh -C \
- 		$(DEFAULT_CONFIGURE_FLAGS) \
- 		libxml2_CFLAGS=-I$(TARGET_SYSROOT)/usr/include/libxml2 \
- 		libxml2_LIBS=-lxml2
-@@ -24,7 +25,7 @@ libideviceactivation: libideviceactivation-setup libplist libimobiledevice curl
- 		DESTDIR=$(BUILD_STAGE)/libideviceactivation
- 	+$(MAKE) -C $(BUILD_WORK)/libideviceactivation install \
- 		DESTDIR=$(BUILD_BASE)
--	$(call AFTER_BUILD)
-+	$(call AFTER_BUILD)
- endif
- 
- libideviceactivation-package: libideviceactivation-stage
+diff --git a/makefiles/libimobiledevice-glue.mk b/makefiles/libimobiledevice-glue.mk
+new file mode 100644
+index 0000000..e41c496
+--- /dev/null
++++ b/makefiles/libimobiledevice-glue.mk
+@@ -0,0 +1,46 @@
++ifneq ($(PROCURSUS),1)
++$(error Use the main Makefile)
++endif
++
++SUBPROJECTS              += libimobiledevice-glue
++LIBIMOBILEDEVICEGLUE_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.libimobiledevice_glue.commit' | tr -d '\n')
++LIBIMOBILEDEVICEGLUE_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libimobiledevice_glue.version2' | tr -d '\n').$(shell echo $(LIBIMOBILEDEVICEGLUE_COMMIT) | cut -c -7)
++DEB_LIBIMOBILEDEVICEGLUE_V   ?= $(LIBIMOBILEDEVICEGLUE_VERSION)
++
++libimobiledevice-glue-setup: setup
++	$(call GITHUB_ARCHIVE,libimobiledevice,libimobiledevice-glue,$(LIBIMOBILEDEVICEGLUE_COMMIT),$(LIBIMOBILEDEVICEGLUE_COMMIT))
++	$(call EXTRACT_TAR,libimobiledevice-glue-$(LIBIMOBILEDEVICEGLUE_COMMIT).tar.gz,libimobiledevice-glue-$(LIBIMOBILEDEVICEGLUE_COMMIT),libimobiledevice-glue)
++
++ifneq ($(wildcard $(BUILD_WORK)/libimobiledevice-glue/.build_complete),)
++libimobiledevice-glue:
++	@echo "Using previously built libimobiledevice-glue."
++else
++libimobiledevice-glue: libimobiledevice-glue-setup libplist
++	cd $(BUILD_WORK)/libimobiledevice-glue && ./autogen.sh \
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		--without-cython
++	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice-glue install \
++		DESTDIR="$(BUILD_STAGE)/libimobiledevice-glue"
++	$(call AFTER_BUILD,copy)
++endif
++
++libimobiledevice-glue-package: libimobiledevice-glue-stage
++	# libimobiledevice-glue.mk Package Structure
++	rm -rf $(BUILD_DIST)/libimobiledevice-glue-proc
++	mkdir -p $(BUILD_DIST)/libimobiledevice-glue-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libimobiledevice-glue}
++
++	# libimobiledevice-glue.mk Prep libimobiledevice-glue-proc
++	cp -a $(BUILD_STAGE)/libimobiledevice-glue/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib $(BUILD_DIST)/libimobiledevice-glue-proc/Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
++	cp -a $(BUILD_STAGE)/libimobiledevice-glue/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include $(BUILD_DIST)/libimobiledevice-glue-proc/Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
++	touch $(BUILD_DIST)/libimobiledevice-glue-proc/Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libimobiledevice-glue/.build_complete
++
++	# libimobiledevice-glue.mk Sign
++	$(call SIGN,libimobiledevice-glue-proc,general.xml)
++
++	# libimobiledevice-glue.mk Make .debs
++	$(call PACK,libimobiledevice-glue-proc,DEB_LIBIMOBILEDEVICEGLUE_V)
++
++	# libimobiledevice-glue.mk Build cleanup
++	rm -rf $(BUILD_DIST)/libimobiledevice-glue-proc
++
++.PHONY: libimobiledevice-glue libimobiledevice-glue-package
 diff --git a/makefiles/libimobiledevice.mk b/makefiles/libimobiledevice.mk
-index 8afda8c..7f1168a 100644
+index e05b026..fd399f8 100644
 --- a/makefiles/libimobiledevice.mk
 +++ b/makefiles/libimobiledevice.mk
 @@ -3,8 +3,8 @@ $(error Use the main Makefile)
@@ -854,28 +864,20 @@ index 8afda8c..7f1168a 100644
  DEB_LIBIMOBILEDEVICE_V   ?= $(LIBIMOBILEDEVICE_VERSION)
  
  libimobiledevice-setup: setup
-@@ -19,41 +19,39 @@ libimobiledevice: libimobiledevice-setup libusbmuxd libplist openssl
+@@ -15,11 +15,10 @@ ifneq ($(wildcard $(BUILD_WORK)/libimobiledevice/.build_complete),)
+ libimobiledevice:
+ 	@echo "Using previously built libimobiledevice."
+ else
+-libimobiledevice: libimobiledevice-setup libusbmuxd libplist openssl
++libimobiledevice: libimobiledevice-setup libusbmuxd libplist openssl libimobiledevice-glue
  	cd $(BUILD_WORK)/libimobiledevice && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS) \
  		--without-cython
 -	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice
--	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice install \
-+	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice/include install \
+ 	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice install \
  		DESTDIR="$(BUILD_STAGE)/libimobiledevice"
--	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice install \
-+	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice/common install \
-+		DESTDIR="$(BUILD_STAGE)/libimobiledevice"
-+	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice/src install \
-+		DESTDIR="$(BUILD_STAGE)/libimobiledevice"
-+	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice/include install \
-+		DESTDIR="$(BUILD_BASE)"
-+	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice/common install \
- 		DESTDIR="$(BUILD_BASE)"
-+	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice/src install \
-+		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -27,31 +26,21 @@ endif
  
  libimobiledevice-package: libimobiledevice-stage
  	# libimobiledevice.mk Package Structure
@@ -883,16 +885,16 @@ index 8afda8c..7f1168a 100644
 -	mkdir -p $(BUILD_DIST)/libimobiledevice6/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib \
 -		$(BUILD_DIST)/libimobiledevice-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib \
 -		$(BUILD_DIST)/libimobiledevice-utils/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
--
++	rm -rf $(BUILD_DIST)/libimobiledevice-proc
++	mkdir -p $(BUILD_DIST)/libimobiledevice-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libimobiledevice}
+ 
 -	# libimobiledevice.mk Prep libimobiledevice6
 -	cp -a $(BUILD_STAGE)/libimobiledevice/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/libimobiledevice-1.0.6.dylib $(BUILD_DIST)/libimobiledevice6/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
 -
 -	# libimobiledevice.mk Prep libimobiledevice-dev
 -	cp -a $(BUILD_STAGE)/libimobiledevice/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/{pkgconfig,libimobiledevice-1.0.{a,dylib}} $(BUILD_DIST)/libimobiledevice-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
 -	cp -a $(BUILD_STAGE)/libimobiledevice/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include $(BUILD_DIST)/libimobiledevice-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
-+	rm -rf $(BUILD_DIST)/libimobiledevice-proc
-+	mkdir -p $(BUILD_DIST)/libimobiledevice-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libimobiledevice}
- 
+-
 -	# libimobiledevice.mk Prep libimobiledevice-utils
 -	cp -a $(BUILD_STAGE)/libimobiledevice/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/{bin,share} $(BUILD_DIST)/libimobiledevice-utils/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
 +	# libimobiledevice.mk Prep libimobiledevice-proc
@@ -903,7 +905,7 @@ index 8afda8c..7f1168a 100644
  	# libimobiledevice.mk Sign
 -	$(call SIGN,libimobiledevice6,general.xml)
 -	$(call SIGN,libimobiledevice-utils,general.xml)
-+	$(call SIGN,libimobiledevice-proc,general.xml)
++	$(call SIGN,libimobiledevice-dev,general.xml)
  
  	# libimobiledevice.mk Make .debs
 -	$(call PACK,libimobiledevice6,DEB_LIBIMOBILEDEVICE_V)
@@ -917,7 +919,7 @@ index 8afda8c..7f1168a 100644
  
  .PHONY: libimobiledevice libimobiledevice-package
 diff --git a/makefiles/libinsn.mk b/makefiles/libinsn.mk
-index ced297d..e610b64 100644
+index c1f5f54..c7d587e 100644
 --- a/makefiles/libinsn.mk
 +++ b/makefiles/libinsn.mk
 @@ -3,9 +3,9 @@ $(error Use the main Makefile)
@@ -933,18 +935,15 @@ index ced297d..e610b64 100644
  
  libinsn-setup: setup
  	$(call GITHUB_ARCHIVE,tihmstar,libinsn,$(LIBINSN_COMMIT),$(LIBINSN_COMMIT))
-@@ -21,34 +21,31 @@ else
+@@ -20,7 +20,6 @@ else
  libinsn: libinsn-setup libgeneral
  	cd $(BUILD_WORK)/libinsn && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS)
 -	+$(MAKE) -C $(BUILD_WORK)/libinsn
  	+$(MAKE) -C $(BUILD_WORK)/libinsn install \
  		DESTDIR="$(BUILD_STAGE)/libinsn"
- 	+$(MAKE) -C $(BUILD_WORK)/libinsn install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -28,24 +27,21 @@ endif
  
  libinsn-package: libinsn-stage
  	# libinsn.mk Package Structure
@@ -979,7 +978,7 @@ index ced297d..e610b64 100644
  
  .PHONY: libinsn libinsn-package
 diff --git a/makefiles/libipatcher.mk b/makefiles/libipatcher.mk
-index e6021ab..1655b22 100644
+index f077742..9255e15 100644
 --- a/makefiles/libipatcher.mk
 +++ b/makefiles/libipatcher.mk
 @@ -3,17 +3,17 @@ $(error Use the main Makefile)
@@ -1006,7 +1005,7 @@ index e6021ab..1655b22 100644
  	$(call EXTRACT_TAR,jssy-master.tar.gz,jssy-master,libipatcher/external/jssy)
  	$(call EXTRACT_TAR,iBoot32Patcher-master.tar.gz,iBoot32Patcher-master,libipatcher/external/iBoot32Patcher)
  
-@@ -27,41 +27,38 @@ ifneq ($(wildcard $(BUILD_WORK)/libipatcher/.build_complete),)
+@@ -27,39 +27,35 @@ ifneq ($(wildcard $(BUILD_WORK)/libipatcher/.build_complete),)
  libipatcher:
  	@echo "Using previously built libipatcher."
  else
@@ -1022,10 +1021,7 @@ index e6021ab..1655b22 100644
  	+$(MAKE) -C $(BUILD_WORK)/libipatcher install \
 +		LIBS="-lcurl" \
  		DESTDIR="$(BUILD_STAGE)/libipatcher"
- 	+$(MAKE) -C $(BUILD_WORK)/libipatcher install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
+ 	$(call AFTER_BUILD,copy)
  endif
  
  libipatcher-package: libipatcher-stage
@@ -1061,7 +1057,7 @@ index e6021ab..1655b22 100644
  
  .PHONY: libipatcher libipatcher-package
 diff --git a/makefiles/libirecovery.mk b/makefiles/libirecovery.mk
-index dcf689a..cb4a686 100644
+index ff54eb1..592fae0 100644
 --- a/makefiles/libirecovery.mk
 +++ b/makefiles/libirecovery.mk
 @@ -3,8 +3,8 @@ $(error Use the main Makefile)
@@ -1075,44 +1071,22 @@ index dcf689a..cb4a686 100644
  DEB_LIBIRECOVERY_V   ?= $(LIBIRECOVERY_VERSION)
  
  libirecovery-setup: setup
-@@ -15,46 +15,52 @@ ifneq ($(wildcard $(BUILD_WORK)/libirecovery/.build_complete),)
+@@ -15,12 +15,10 @@ ifneq ($(wildcard $(BUILD_WORK)/libirecovery/.build_complete),)
  libirecovery:
  	@echo "Using previously built libirecovery."
  else
 -libirecovery: libirecovery-setup readline libusb
-+ifeq ($(MEMO_TARGET),darwin-amd64)
-+$(warning Building with IOKit)
-+ENABLE_IOKIT := yes
-+else ifeq ($(MEMO_TARGET),darwin-arm64)
-+$(warning Building with IOKit)
-+ENABLE_IOKIT := yes
-+else ifeq ($(MEMO_TARGET),darwin-arm64e)
-+$(warning Building with IOKit)
-+ENABLE_IOKIT := yes
-+else
-+$(warning Not building with IOKit)
-+ENABLE_IOKIT := no
-+endif
-+libirecovery: libirecovery-setup
++libirecovery: libirecovery-setup libimobiledevice-glue
  	cd $(BUILD_WORK)/libirecovery && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS) \
 -		--with-iokit=no
 -	+$(MAKE) -C $(BUILD_WORK)/libirecovery \
 -		CFLAGS="$(CFLAGS) -I$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/libusb-1.0"
--	+$(MAKE) -C $(BUILD_WORK)/libirecovery install \
-+		--with-iokit=$(ENABLE_IOKIT)
-+	+$(MAKE) -C $(BUILD_WORK)/libirecovery/include install \
-+		DESTDIR=$(BUILD_STAGE)/libirecovery
-+	+$(MAKE) -C $(BUILD_WORK)/libirecovery/src install \
++		--with-iokit=yes
+ 	+$(MAKE) -C $(BUILD_WORK)/libirecovery install \
  		DESTDIR=$(BUILD_STAGE)/libirecovery
--	+$(MAKE) -C $(BUILD_WORK)/libirecovery install \
-+	+$(MAKE) -C $(BUILD_WORK)/libirecovery/include install \
- 		DESTDIR=$(BUILD_BASE)
-+	+$(MAKE) -C $(BUILD_WORK)/libirecovery/src install \
-+		DESTDIR=$(BUILD_BASE)
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -28,31 +26,21 @@ endif
  
  libirecovery-package: libirecovery-stage
  	# libirecovery.mk Package Structure
@@ -1120,16 +1094,16 @@ index dcf689a..cb4a686 100644
 -	mkdir -p $(BUILD_DIST)/libirecovery3/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib \
 -		$(BUILD_DIST)/libirecovery-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib \
 -		$(BUILD_DIST)/libirecovery-utils/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
--
++	rm -rf $(BUILD_DIST)/libirecovery-proc
++	mkdir -p $(BUILD_DIST)/libirecovery-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libirecovery}
+ 
 -	# libirecovery.mk Prep libirecovery3
 -	cp -a $(BUILD_STAGE)/libirecovery/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/libirecovery-1.0.3.dylib $(BUILD_DIST)/libirecovery3/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/
 -
 -	# libirecovery.mk Prep libirecovery-dev
 -	cp -a $(BUILD_STAGE)/libirecovery/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/{pkgconfig,libirecovery-1.0.{a,dylib}} $(BUILD_DIST)/libirecovery-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
 -	cp -a $(BUILD_STAGE)/libirecovery/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include $(BUILD_DIST)/libirecovery-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
-+	rm -rf $(BUILD_DIST)/libirecovery-proc
-+	mkdir -p $(BUILD_DIST)/libirecovery-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libirecovery}
- 
+-
 -	# libirecovery.mk Prep libirecovery-utils
 -	cp -a $(BUILD_STAGE)/libirecovery/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/bin $(BUILD_DIST)/libirecovery-utils/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
 +	# libirecovery.mk Prep libirecovery-proc
@@ -1154,7 +1128,7 @@ index dcf689a..cb4a686 100644
  
  .PHONY: libirecovery libirecovery-package
 diff --git a/makefiles/liboffsetfinder64.mk b/makefiles/liboffsetfinder64.mk
-index 44e6c23..31e3085 100644
+index 8a69708..67d21ee 100644
 --- a/makefiles/liboffsetfinder64.mk
 +++ b/makefiles/liboffsetfinder64.mk
 @@ -3,12 +3,12 @@ $(error Use the main Makefile)
@@ -1173,19 +1147,16 @@ index 44e6c23..31e3085 100644
 +	$(call GITHUB_ARCHIVE,Cryptiiiic,liboffsetfinder64,$(LIBOFFSETFINDER64_COMMIT),$(LIBOFFSETFINDER64_COMMIT))
  	$(call EXTRACT_TAR,liboffsetfinder64-$(LIBOFFSETFINDER64_COMMIT).tar.gz,liboffsetfinder64-$(LIBOFFSETFINDER64_COMMIT),liboffsetfinder64)
  
- 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${LIBOFFSETFINDER64_VERSION}/g' $(BUILD_WORK)/liboffsetfinder64/configure.ac
-@@ -21,34 +21,31 @@ else
+ 	sed -i 's/git rev\-list \-\-count HEAD/printf ${LIBOFFSETFINDER64_VERSION}/g' $(BUILD_WORK)/liboffsetfinder64/configure.ac
+@@ -21,7 +21,6 @@ else
  liboffsetfinder64: liboffsetfinder64-setup libgeneral libinsn img4tool openssl libplist
  	cd $(BUILD_WORK)/liboffsetfinder64 && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS)
 -	+$(MAKE) -C $(BUILD_WORK)/liboffsetfinder64
  	+$(MAKE) -C $(BUILD_WORK)/liboffsetfinder64 install \
  		DESTDIR="$(BUILD_STAGE)/liboffsetfinder64"
- 	+$(MAKE) -C $(BUILD_WORK)/liboffsetfinder64 install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -29,24 +28,21 @@ endif
  
  liboffsetfinder64-package: liboffsetfinder64-stage
  	# liboffsetfinder64.mk Package Structure
@@ -1220,7 +1191,7 @@ index 44e6c23..31e3085 100644
  
  .PHONY: liboffsetfinder64 liboffsetfinder64-package
 diff --git a/makefiles/libplist.mk b/makefiles/libplist.mk
-index 3605151..4c5bc94 100644
+index 13c07db..01ae375 100644
 --- a/makefiles/libplist.mk
 +++ b/makefiles/libplist.mk
 @@ -3,12 +3,13 @@ $(error Use the main Makefile)
@@ -1228,9 +1199,10 @@ index 3605151..4c5bc94 100644
  
  SUBPROJECTS       += libplist
 -LIBPLIST_VERSION  := 2.2.0
+-DEB_LIBPLIST_V    ?= $(LIBPLIST_VERSION)
 +LIBPLIST_COMMIT	 := $(shell cat build_tools/versions.json | jq -r '.versions.libplist.commit' | tr -d '\n')
 +LIBPLIST_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.libplist.version2' | tr -d '\n').$(shell echo $(LIBPLIST_COMMIT) | cut -c -7)
- DEB_LIBPLIST_V    ?= $(LIBPLIST_VERSION)
++DEB_LIBPLIST_V ?= $(LIBPLIST_VERSION)
  
  libplist-setup: setup
 -	$(call GITHUB_ARCHIVE,libimobiledevice,libplist,$(LIBPLIST_VERSION),$(LIBPLIST_VERSION))
@@ -1240,19 +1212,15 @@ index 3605151..4c5bc94 100644
  
  ifneq ($(wildcard $(BUILD_WORK)/libplist/.build_complete),)
  libplist:
-@@ -18,56 +19,33 @@ libplist: libplist-setup
+@@ -18,7 +19,6 @@ libplist: libplist-setup
  	cd $(BUILD_WORK)/libplist && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS) \
  		--without-cython
 -	+$(MAKE) -C $(BUILD_WORK)/libplist
  	+$(MAKE) -C $(BUILD_WORK)/libplist install \
  		DESTDIR="$(BUILD_STAGE)/libplist"
- 	+$(MAKE) -C $(BUILD_WORK)/libplist install \
- 		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
- 
+ 	$(call AFTER_BUILD,copy)
+@@ -27,45 +27,22 @@ endif
  libplist-package: .SHELLFLAGS=-O extglob -c
  libplist-package: libplist-stage
  	# libplist.mk Package Structure
@@ -1308,7 +1276,7 @@ index 3605151..4c5bc94 100644
  
  .PHONY: libplist libplist-package
 diff --git a/makefiles/libpng16.mk b/makefiles/libpng16.mk
-index 48ea4fc..5fa069b 100644
+index 6a85159..eea4258 100644
 --- a/makefiles/libpng16.mk
 +++ b/makefiles/libpng16.mk
 @@ -3,12 +3,13 @@ $(error Use the main Makefile)
@@ -1327,20 +1295,17 @@ index 48ea4fc..5fa069b 100644
 +	$(call GITHUB_ARCHIVE,glennrp,libpng,$(LIBPNG16_COMMIT),$(LIBPNG16_COMMIT))
 +	$(call EXTRACT_TAR,libpng-$(LIBPNG16_COMMIT).tar.gz,libpng-$(LIBPNG16_COMMIT),libpng16)
  	# Fix the .pc file to use Apple's zlib
- 	$(SED) -i 's/Requires: zlib/Requires: /;s/\(Libs:.*\)/\1 -lz/' $(BUILD_WORK)/libpng16/libpng.pc.in
+ 	sed -i 's/Requires: zlib/Requires: /;s/\(Libs:.*\)/\1 -lz/' $(BUILD_WORK)/libpng16/libpng.pc.in
  	$(call DO_PATCH,libpng16,libpng16,-p1)
-@@ -20,43 +21,31 @@ else
+@@ -20,7 +21,6 @@ else
  libpng16: libpng16-setup
  	cd $(BUILD_WORK)/libpng16 && ./configure -C \
  		$(DEFAULT_CONFIGURE_FLAGS)
 -	+$(MAKE) -C $(BUILD_WORK)/libpng16
  	+$(MAKE) -C $(BUILD_WORK)/libpng16 install \
  		DESTDIR=$(BUILD_STAGE)/libpng16
- 	+$(MAKE) -C $(BUILD_WORK)/libpng16 install \
- 		DESTDIR=$(BUILD_BASE)
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -28,33 +28,21 @@ endif
  
  libpng16-package: libpng16-stage
  	# libpng16.mk Package Structure
@@ -1384,10 +1349,10 @@ index 48ea4fc..5fa069b 100644
  
  .PHONY: libpng16 libpng16-package
 diff --git a/makefiles/libusbmuxd.mk b/makefiles/libusbmuxd.mk
-index c01f651..1558889 100644
+index 80d1dfd..9b2959f 100644
 --- a/makefiles/libusbmuxd.mk
 +++ b/makefiles/libusbmuxd.mk
-@@ -3,12 +3,13 @@ $(error Use the main Makefile)
+@@ -3,21 +3,21 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS        += libusbmuxd
@@ -1404,28 +1369,17 @@ index c01f651..1558889 100644
  
  ifneq ($(wildcard $(BUILD_WORK)/libusbmuxd/.build_complete),)
  libusbmuxd:
-@@ -17,41 +18,39 @@ else
- libusbmuxd: libusbmuxd-setup libplist
+ 	@echo "Using previously built libusbmuxd."
+ else
+-libusbmuxd: libusbmuxd-setup libplist
++libusbmuxd: libusbmuxd-setup libplist libimobiledevice-glue
  	cd $(BUILD_WORK)/libusbmuxd && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS)
 -	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd
--	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd install \
-+	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd/include install \
+ 	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd install \
  		DESTDIR="$(BUILD_STAGE)/libusbmuxd"
--	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd install \
-+		+$(MAKE) -C $(BUILD_WORK)/libusbmuxd/common install \
-+		DESTDIR="$(BUILD_STAGE)/libusbmuxd"
-+	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd/src install \
-+		DESTDIR="$(BUILD_STAGE)/libusbmuxd"
-+	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd/include install \
-+		DESTDIR="$(BUILD_BASE)"
-+	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd/common install \
- 		DESTDIR="$(BUILD_BASE)"
-+	+$(MAKE) -C $(BUILD_WORK)/libusbmuxd/src install \
-+		DESTDIR="$(BUILD_BASE)"
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
- endif
+ 	$(call AFTER_BUILD,copy)
+@@ -25,31 +25,21 @@ endif
  
  libusbmuxd-package: libusbmuxd-stage
  	# libusbmuxd.mk Package Structure
@@ -1433,16 +1387,16 @@ index c01f651..1558889 100644
 -	mkdir -p $(BUILD_DIST)/libusbmuxd6/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib \
 -		$(BUILD_DIST)/libusbmuxd-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib \
 -		$(BUILD_DIST)/libusbmuxd-tools/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
--
++	rm -rf $(BUILD_DIST)/libusbmuxd-proc
++	mkdir -p $(BUILD_DIST)/libusbmuxd-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libusbmuxd}
+ 
 -	# libusbmuxd.mk Prep libusbmuxd6
 -	cp -a $(BUILD_STAGE)/libusbmuxd/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/libusbmuxd-2.0.6.dylib $(BUILD_DIST)/libusbmuxd6/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/
 -
 -	# libusbmuxd.mk Prep libusbmuxd-dev
 -	cp -a $(BUILD_STAGE)/libusbmuxd/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/{pkgconfig,libusbmuxd-2.0.{a,dylib}} $(BUILD_DIST)/libusbmuxd-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
 -	cp -a $(BUILD_STAGE)/libusbmuxd/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include $(BUILD_DIST)/libusbmuxd-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
-+	rm -rf $(BUILD_DIST)/libusbmuxd-proc
-+	mkdir -p $(BUILD_DIST)/libusbmuxd-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/libusbmuxd}
- 
+-
 -	# libusbmuxd.mk Prep libusbmuxd-tools
 -	cp -a $(BUILD_STAGE)/libusbmuxd/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/{bin,share} $(BUILD_DIST)/libusbmuxd-tools/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
 +	# libusbmuxd.mk Prep libusbmuxd-proc
@@ -1467,10 +1421,10 @@ index c01f651..1558889 100644
  
  .PHONY: libusbmuxd libusbmuxd-package
 diff --git a/makefiles/libzip.mk b/makefiles/libzip.mk
-index fac9f98..1c0eaa9 100644
+index f659969..8aa12ab 100644
 --- a/makefiles/libzip.mk
 +++ b/makefiles/libzip.mk
-@@ -3,69 +3,57 @@ $(error Use the main Makefile)
+@@ -3,67 +3,55 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS    += libzip
@@ -1505,14 +1459,11 @@ index fac9f98..1c0eaa9 100644
  		-DENABLE_OPENSSL=ON
 -	+$(MAKE) -C $(BUILD_WORK)/libzip
 -	+$(MAKE) -C $(BUILD_WORK)/libzip install \
-+	$(SED) -i '77,81d' $(BUILD_WORK)/libzip/cmake_install.cmake
++	sed -i '77,80d' $(BUILD_WORK)/libzip/cmake_install.cmake
 +	+$(MAKE) zip/fast -C $(BUILD_WORK)/libzip
 +	+$(MAKE) -C $(BUILD_WORK)/libzip install/strip/fast \
  		DESTDIR="$(BUILD_STAGE)/libzip"
--	+$(MAKE) -C $(BUILD_WORK)/libzip install \
-+	+$(MAKE) -C $(BUILD_WORK)/libzip install/strip/fast \
- 		DESTDIR="$(BUILD_BASE)"
- 	$(call AFTER_BUILD)
+ 	$(call AFTER_BUILD,copy)
  endif
  
  libzip-package: libzip-stage
@@ -1564,89 +1515,101 @@ index fac9f98..1c0eaa9 100644
  
  .PHONY: libzip libzip-package
 diff --git a/makefiles/openssl.mk b/makefiles/openssl.mk
-index b026285..2e2677b 100644
+index c65be42..462b35d 100644
 --- a/makefiles/openssl.mk
 +++ b/makefiles/openssl.mk
-@@ -11,8 +11,9 @@ endif # ($(SSH_STRAP),1)
- else # ($(MEMO_TARGET),darwin-\*)
- SUBPROJECTS     += openssl
+@@ -2,15 +2,24 @@ ifneq ($(PROCURSUS),1)
+ $(error Use the main Makefile)
  endif
--OPENSSL_VERSION := 1.1.1k
--DEB_OPENSSL_V   ?= $(OPENSSL_VERSION)-1
+ 
++ifneq (,$(findstring aarch64,$(GNU_HOST_TRIPLE)))
++	SSL_SCHEME := darwin64-arm64-cc
++else ifneq (,$(findstring arm,$(GNU_HOST_TRIPLE)))
++	SSL_SCHEME := arm-apple-darwin
++else ifneq (,$(findstring x86_64,$(GNU_HOST_TRIPLE)))
++	SSL_SCHEME := darwin64-x86_64-cc
++else
++	$(error Host triple $(GNU_HOST_TRIPLE) isn't supported)
++endif
++
+ STRAPPROJECTS   += openssl
+-OPENSSL_VERSION := 3.0.0
 +OPENSSL_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.openssl.version2' | tr -d '\n')
 +OPENSSL_COMMIT := $(shell cat build_tools/versions.json | jq -r '.versions.openssl.commit' | tr -d '\n')
-+DEB_OPENSSL_V   ?= $(OPENSSL_VERSION)
- 
- ###
- #
-@@ -31,9 +32,8 @@ else
- endif
+ DEB_OPENSSL_V   ?= $(OPENSSL_VERSION)
  
  openssl-setup: setup
 -	wget -q -nc -P $(BUILD_SOURCE) https://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz{,.asc}
 -	$(call PGP_VERIFY,openssl-$(OPENSSL_VERSION).tar.gz,asc)
 -	$(call EXTRACT_TAR,openssl-$(OPENSSL_VERSION).tar.gz,openssl-$(OPENSSL_VERSION),openssl)
+-	$(call DO_PATCH,openssl,openssl,-p1)
 +	$(call GITHUB_ARCHIVE,openssl,openssl,$(OPENSSL_COMMIT),$(OPENSSL_COMMIT))
 +	$(call EXTRACT_TAR,openssl-$(OPENSSL_COMMIT).tar.gz,openssl-$(OPENSSL_COMMIT),openssl)
- 	touch $(BUILD_WORK)/openssl/Configurations/15-diatrus.conf
- 	@echo -e "my %targets = (\n\
- 		\"aarch64-apple-darwin\" => {\n\
-@@ -63,41 +63,31 @@ openssl: openssl-setup
+ 
+ ifneq ($(wildcard $(BUILD_WORK)/openssl/.build_complete),)
+ openssl:
+@@ -22,44 +31,29 @@ openssl: openssl-setup
  		--openssldir=$(MEMO_PREFIX)/etc/ssl \
  		shared \
- 		$(SSL_SCHEME)
+ 		no-tests \
+-		darwin64-$$(echo $(LLVM_TARGET) | cut -f1 -d-)
 -	+$(MAKE) -C $(BUILD_WORK)/openssl
--	+$(MAKE) -C $(BUILD_WORK)/openssl install_sw install_ssldirs \
+-	+$(MAKE) -C $(BUILD_WORK)/openssl install install_ssldirs \
++		$(SSL_SCHEME)
 +	+$(MAKE) -C $(BUILD_WORK)/openssl install_dev \
  		DESTDIR=$(BUILD_STAGE)/openssl
--	+$(MAKE) -C $(BUILD_WORK)/openssl install_sw \
-+	+$(MAKE) -C $(BUILD_WORK)/openssl install_dev \
- 		DESTDIR=$(BUILD_BASE)
-+	fd -pe dylib -X rm \; '.*' build_*
- 	$(call AFTER_BUILD)
+ 	$(call AFTER_BUILD,copy)
  endif
  
  openssl-package: openssl-stage
  	# openssl.mk Package Structure
--	rm -rf $(BUILD_DIST)/{openssl,libssl{1.1,-dev}}
--	mkdir -p $(BUILD_DIST)/{openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/bin,libssl{1.1,-dev}/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib}
-+	rm -rf $(BUILD_DIST)/libssl-proc
-+	mkdir -p $(BUILD_DIST)/libssl-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/openssl}
- 
--	# openssl.mk Prep libssl1.1
--	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib $(BUILD_DIST)/libssl1.1/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
--	rm -rf $(BUILD_DIST)/libssl1.1/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/{lib{ssl,crypto}.{a,dylib},pkgconfig}
--
+-	rm -rf $(BUILD_DIST)/{openssl,libssl{3,-dev,-doc}}
+-	mkdir -p $(BUILD_DIST)/{openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/bin,libssl{3,-dev}/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib} \
+-		$(BUILD_DIST)/libssl-doc/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/share/
+-	
+-	# openssl.mk Prep libssl3
+-	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/{*.3.dylib,engines-3,ossl-modules} $(BUILD_DIST)/libssl3/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
+-	
 -	# openssl.mk Prep libssl-dev
 -	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/{lib{ssl,crypto}.{a,dylib},pkgconfig} $(BUILD_DIST)/libssl-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib
 -	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include $(BUILD_DIST)/libssl-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
--
+-	
+-	# openssl.mk Prep libssl-doc
+-	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/share/man $(BUILD_DIST)/libssl-doc/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/share/
+-	
 -	# openssl.mk Prep openssl
--	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)/etc $(BUILD_DIST)/openssl/$(MEMO_PREFIX)/etc
+-	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)/etc $(BUILD_DIST)/openssl/$(MEMO_PREFIX)
 -	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/bin/* $(BUILD_DIST)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/bin
+-	
++	rm -rf $(BUILD_DIST)/libssl-proc
++	mkdir -p $(BUILD_DIST)/libssl-proc/{Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX),Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/openssl}
++
 +	# openssl.mk Prep libssl-proc
 +	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib $(BUILD_DIST)/libssl-proc/Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
 +	cp -a $(BUILD_STAGE)/openssl/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include $(BUILD_DIST)/libssl-proc/Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
 +	touch $(BUILD_DIST)/libssl-proc/Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/openssl/.build_complete
- 
++
  	# openssl.mk Sign
--	$(call SIGN,libssl1.1,general.xml)
+-	$(call SIGN,libssl3,general.xml)
 -	$(call SIGN,openssl,general.xml)
+-	
 +	$(call SIGN,libssl-proc,general.xml)
- 
++
  	# openssl.mk Make .debs
--	$(call PACK,libssl1.1,DEB_OPENSSL_V)
+-	$(call PACK,libssl3,DEB_OPENSSL_V)
 -	$(call PACK,libssl-dev,DEB_OPENSSL_V)
+-	$(call PACK,libssl-doc,DEB_OPENSSL_V)
 -	$(call PACK,openssl,DEB_OPENSSL_V)
+-	
 +	$(call PACK,libssl-proc,DEB_OPENSSL_V)
- 
++
  	# openssl.mk Build cleanup
--	rm -rf $(BUILD_DIST)/{openssl,libssl{1.1,-dev}}
+-	rm -rf $(BUILD_DIST)/{openssl,libssl{3,-dev,-doc}}
 +	rm -rf $(BUILD_DIST)/libssl-proc
  
  .PHONY: openssl openssl-package
 diff --git a/makefiles/tsschecker.mk b/makefiles/tsschecker.mk
-index 5b8471e..70d5685 100644
+index e23b84a..4ddbb32 100644
 --- a/makefiles/tsschecker.mk
 +++ b/makefiles/tsschecker.mk
 @@ -3,8 +3,8 @@ $(error Use the main Makefile)
@@ -1668,9 +1631,28 @@ index 5b8471e..70d5685 100644
 +	if [[ ! -d $(BUILD_WORK)/tsschecker/external/jssy/jssy ]]; then rm -rf $(BUILD_WORK)/tsschecker/external/jssy; fi
  	$(call EXTRACT_TAR,jssy-master.tar.gz,jssy-master,tsschecker/external/jssy)
  
- 	$(SED) -i 's/git rev\-list \-\-count HEAD/printf ${TSSCHECKER_VERSION}/g' $(BUILD_WORK)/tsschecker/configure.ac
+ 	sed -i 's/git rev\-list \-\-count HEAD/printf ${TSSCHECKER_VERSION}/g' $(BUILD_WORK)/tsschecker/configure.ac
+@@ -23,10 +23,15 @@ ifneq ($(wildcard $(BUILD_WORK)/tsschecker/.build_complete),)
+ tsschecker:
+ 	@echo "Using previously built tsschecker."
+ else
+-tsschecker: tsschecker-setup libfragmentzip libplist curl libirecovery
++tsschecker: tsschecker-setup libfragmentzip libplist libirecovery
++	fd -pe dylib -X rm \; '.*' build_*
+ 	cd $(BUILD_WORK)/tsschecker && ./autogen.sh \
+-		$(DEFAULT_CONFIGURE_FLAGS)
+-	+$(MAKE) -C $(BUILD_WORK)/tsschecker
++		$(DEFAULT_CONFIGURE_FLAGS) \
++		libfragmentzip_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lcurl" \
++		libfragmentzip_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
++		libcurl_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lcurl" \
++		libcurl_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
++		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -lz -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lfragmentzip -limobiledevice-glue-1.0"
+ 	+$(MAKE) -C $(BUILD_WORK)/tsschecker install \
+ 		DESTDIR="$(BUILD_STAGE)/tsschecker"
+ 	$(call AFTER_BUILD)
 diff --git a/makefiles/xpwn.mk b/makefiles/xpwn.mk
-index 560edec..7a4d239 100644
+index 47e3d37..10b13dc 100644
 --- a/makefiles/xpwn.mk
 +++ b/makefiles/xpwn.mk
 @@ -3,14 +3,13 @@ $(error Use the main Makefile)
@@ -1689,9 +1671,9 @@ index 560edec..7a4d239 100644
  	$(call EXTRACT_TAR,xpwn-$(XPWN_COMMIT).tar.gz,xpwn-$(XPWN_COMMIT),xpwn)
 -	$(call DO_PATCH,xpwn,xpwn,-p1)
  
- 	$(SED) -i 's/powerpc-apple-darwin8-libtool/libtool/' $(BUILD_WORK)/xpwn/ipsw-patch/CMakeLists.txt
+ 	sed -i 's/powerpc-apple-darwin8-libtool/libtool/' $(BUILD_WORK)/xpwn/ipsw-patch/CMakeLists.txt
  
-@@ -21,40 +20,33 @@ else
+@@ -21,36 +20,29 @@ else
  xpwn: xpwn-setup libpng16 openssl
  	cd $(BUILD_WORK)/xpwn && cmake . \
  		$(DEFAULT_CMAKE_FLAGS) \
@@ -1700,18 +1682,13 @@ index 560edec..7a4d239 100644
  		-DZLIB_LIBRARY="-L$(TARGET_SYSROOT)/usr/lib -lz"
 -	+$(MAKE) -C $(BUILD_WORK)/xpwn
 -	+$(MAKE) -C $(BUILD_WORK)/xpwn install \
--		DESTDIR=$(BUILD_BASE)
--	+$(MAKE) -C $(BUILD_WORK)/xpwn install \
 -		DESTDIR=$(BUILD_STAGE)/xpwn
-+	+$(MAKE) common/fast xpwn/fast -C $(BUILD_WORK)/xpwn
++		+$(MAKE) common/fast xpwn/fast -C $(BUILD_WORK)/xpwn
  	mkdir -p {$(BUILD_BASE),$(BUILD_STAGE)/xpwn}/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/{include/xpwn,lib/xpwn}
- 	cp -a $(BUILD_WORK)/xpwn/includes/* $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/xpwn
  	cp -a $(BUILD_WORK)/xpwn/includes/* $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/include/xpwn
--	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,minizip/libminizip,common/libcommon,hfs/libhfs,dmg/libdmg}.a $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
 -	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,minizip/libminizip,common/libcommon,hfs/libhfs,dmg/libdmg}.a $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
-+	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,common/libcommon}.a $(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
 +	cp -a $(BUILD_WORK)/xpwn/{ipsw-patch/libxpwn,common/libcommon}.a $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn
- 	$(call AFTER_BUILD)
+ 	$(call AFTER_BUILD,copy)
  endif
  
  xpwn-package: xpwn-stage
@@ -1726,12 +1703,12 @@ index 560edec..7a4d239 100644
 -
 -	# xpwn.mk Prep libxpwn-dev
 -	cp -a $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/{include,lib} $(BUILD_DIST)/libxpwn-dev/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
+-
+-	# xpwn.mk Sign
+-	$(call SIGN,xpwn,general.xml)
 +	# xpwn.mk Prep libxpwn-proc
 +	cp -a $(BUILD_STAGE)/xpwn/$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/{include,lib} $(BUILD_DIST)/libxpwn-proc/Users/runner/Procursus/build_base/$(MEMO_TARGET)/$(MEMO_CFVER)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)
 +	touch $(BUILD_DIST)/libxpwn-proc/Users/runner/Procursus/build_work/$(MEMO_TARGET)/$(MEMO_CFVER)/xpwn/.build_complete
- 
- 	# xpwn.mk Sign
--	$(call SIGN,xpwn,general.xml)
  
  	# xpwn.mk Make .debs
 -	$(call PACK,xpwn,DEB_XPWN_V)

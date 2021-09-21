@@ -16,7 +16,7 @@ zstd -dk bootstrap_x86_64.tar.zst
 sudo gtar xf ${BASE}/bootstrap_x86_64.tar -C / --warning=none || true || true
 sudo ${PROCURSUS}/bin/apt update -y
 sudo ${PROCURSUS}/bin/apt dist-upgrade -y
-sudo ${PROCURSUS}/bin/apt install autopoint autoconf autoconf-archive automake bash bison cmake coreutils docbook-xml docbook-xsl dpkg fakeroot flex findutils gawk gnupg git grep groff ldid libtool make ncurses-bin openssl patch pkg-config po4a python3 sed tar triehash wget xz-utils zstd fd libgeneral-proc libimg4tool-proc libimobiledevice-proc libinsn-proc libipatcher-proc libirecovery-proc liboffsetfinder64-proc libplist-proc libpng16-proc libssl-proc libusbmuxd-proc libxpwn-proc libzip-proc libfragmentzip-proc -y
+sudo ${PROCURSUS}/bin/apt install autopoint autoconf autoconf-archive automake bash bison cmake coreutils docbook-xml docbook-xsl dpkg fakeroot flex findutils gawk gnupg git grep groff ldid libtool make ncurses-bin openssl patch pkg-config po4a python3 sed tar triehash wget xz-utils zstd fd libgeneral-proc libimg4tool-proc libimobiledevice-glue-proc libimobiledevice-proc libinsn-proc libipatcher-proc libirecovery-proc liboffsetfinder64-proc libplist-proc libpng16-proc libssl-proc libusbmuxd-proc libxpwn-proc libzip-proc libfragmentzip-proc -y
 echo 'step 3:'
 cd ${BASE}/../..
 export FUTURERESTORE_VERSION=$(git rev-list --count HEAD | tr -d '\n')
@@ -33,7 +33,7 @@ touch .keep
 git init
 git remote add origin https://github.com/ProcursusTeam/Procursus.git
 git checkout -b main
-git fetch origin cae80e805324c59e91bf730076f383649997588c
+git fetch origin 50c8311232cadc238a13673f734dcadc1b445537
 git reset --hard FETCH_HEAD
 git apply ${BASE}/proc_ci.diff
 sudo chown -R $(id -u):$(id -g) /Users/runner/Procursus
