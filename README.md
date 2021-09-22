@@ -69,7 +69,7 @@ Usage: `futurerestore [OPTIONS] iPSW`
 |  ` -d `           | ` --debug `                                      | Show all code, use to save a log for debug testing |
 |  ` -e `           | ` --exit-recovery `                       | Exit recovery mode and quit |
 |                       | ` --use-pwndfu `                           | Restoring devices with Odysseus method. Device needs to be in pwned DFU mode already |
-|                       | ` --no-ibss `                           | Restoring devices with Odysseus method. For checkm8 devices general, bootrom needs to be patched already. |
+|                       | ` --no-ibss `                           | Restoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder. |
 |                       | ` --just-boot "-v" `                     | Tethered booting the device from pwned DFU mode. You can optionally set ` boot-args ` |
 |                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one (may cause bad restore) |
 |  ` -s `           | ` --sep PATH `                                 | Manually specify SEP to be flashed |

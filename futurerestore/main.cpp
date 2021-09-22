@@ -80,7 +80,7 @@ void cmd_help(){
     printf("\nOptions for downgrading with Odysseus:\n");
     printf("      --use-pwndfu\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
     printf("      --just-boot=\"-v\"\t\tTethered booting the device from pwned DFU mode. You can optionally set boot-args\n");
-    printf("      --no-ibss\t\t\tRestoring devices with Odysseus method. For checkm8 devices general, bootrom needs to be patched already.\n");
+    printf("      --no-ibss\t\t\tRestoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder.\n");
 #endif
         
     printf("\nOptions for SEP:\n");

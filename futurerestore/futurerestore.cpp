@@ -120,7 +120,7 @@ futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, b
 bool futurerestore::init(){
     if (_didInit) return _didInit;
 //    If device is in an invalid state, don't check if it supports img4
-    if ((_didInit = check_mode(_client) != MODE_UNKNOWN)) {
+    if ((_didInit = check_mode(_client) != _MODE_UNKNOWN)) {
         if (!(_client->image4supported = is_image4_supported(_client))){
             info("[INFO] 32-bit device detected\n");
         }else{
@@ -139,7 +139,7 @@ uint64_t futurerestore::getDeviceEcid(){
 
 int futurerestore::getDeviceMode(bool reRequest){
     retassure(_didInit, "did not init\n");
-    if (!reRequest && _client->mode && _client->mode->index != MODE_UNKNOWN) {
+    if (!reRequest && _client->mode && _client->mode->index != _MODE_UNKNOWN) {
         return _client->mode->index;
     }else{
         dfu_client_free(_client);
@@ -157,7 +157,7 @@ void futurerestore::putDeviceIntoRecovery(){
     
     getDeviceMode(false);
     info("Found device in %s mode\n", _client->mode->string);
-    if (_client->mode->index == MODE_NORMAL){
+    if (_client->mode == MODE_NORMAL){
     irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
     idevice_event_subscribe(idevice_event_cb, _client);
 #ifdef HAVE_LIBIPATCHER
@@ -165,9 +165,9 @@ void futurerestore::putDeviceIntoRecovery(){
 #endif
         info("Entering recovery mode...\n");
         retassure(!normal_enter_recovery(_client),"Unable to place device into recovery mode from %s mode\n", _client->mode->string);
-    }else if (_client->mode->index == MODE_RECOVERY){
+    }else if (_client->mode == MODE_RECOVERY){
         info("Device already in recovery mode\n");
-    }else if (_client->mode->index == MODE_DFU && _isPwnDfu &&
+    }else if (_client->mode == MODE_DFU && _isPwnDfu &&
 #ifdef HAVE_LIBIPATCHER
               true
 #else
@@ -190,7 +190,7 @@ void futurerestore::putDeviceIntoRecovery(){
 void futurerestore::setAutoboot(bool val){
     retassure(_didInit, "did not init\n");
 
-    retassure(getDeviceMode(false) == MODE_RECOVERY, "can't set auto-boot, when device isn't in recovery mode\n");
+    retassure(getDeviceMode(false) == _MODE_RECOVERY, "can't set auto-boot, when device isn't in recovery mode\n");
     if(!_client->recovery){
         retassure(!recovery_client_new(_client),"Could not connect to device in recovery mode.\n");
     }
@@ -206,8 +206,8 @@ void futurerestore::exitRecovery(){
 plist_t futurerestore::nonceMatchesApTickets(){
     retassure(_didInit, "did not init\n");
 
-    if (getDeviceMode(true) != MODE_RECOVERY){
-        if (getDeviceMode(false) != MODE_DFU || *_client->version != '9')
+    if (getDeviceMode(true) != _MODE_RECOVERY){
+        if (getDeviceMode(false) != _MODE_DFU || *_client->version != '9')
             reterror("Device is not in recovery mode, can't check ApNonce\n");
         else
             _rerestoreiOS9 = (info("Detected iOS 9.x 32-bit re-restore, proceeding in DFU mode\n"),true);
@@ -249,8 +249,8 @@ plist_t futurerestore::nonceMatchesApTickets(){
             if (memcmp(realnonce, nonce, ticketNonceSize) == 0 &&
                  (  (ticketNonceSize == realNonceSize && realNonceSize+ticketNonceSize > 0) ||
                         (!ticketNonceSize && *_client->version == '9' &&
-                            (getDeviceMode(false) == MODE_DFU ||
-                                ( getDeviceMode(false) == MODE_RECOVERY && !strncmp(getiBootBuild(), "iBoot-2817", strlen("iBoot-2817")) )
+                            (getDeviceMode(false) == _MODE_DFU ||
+                                ( getDeviceMode(false) == _MODE_RECOVERY && !strncmp(getiBootBuild(), "iBoot-2817", strlen("iBoot-2817")) )
                             )
                          )
                  )
@@ -266,7 +266,7 @@ plist_t futurerestore::nonceMatchesApTickets(){
 std::pair<const char *,size_t> futurerestore::nonceMatchesIM4Ms(){
     retassure(_didInit, "did not init\n");
 
-    retassure(getDeviceMode(true) == MODE_RECOVERY, "Device is not in recovery mode, can't check ApNonce\n");
+    retassure(getDeviceMode(true) == _MODE_RECOVERY, "Device is not in recovery mode, can't check ApNonce\n");
     
     unsigned char* realnonce;
     int realNonceSize = 0;
@@ -320,7 +320,7 @@ void futurerestore::waitForNonce(vector<const char *>nonces, size_t nonceSize){
             recovery_client_free(_client);
             usleep(1*USEC_PER_SEC);
         }
-        while (getDeviceMode(true) != MODE_RECOVERY) usleep(USEC_PER_SEC*0.5);
+        while (getDeviceMode(true) != _MODE_RECOVERY) usleep(USEC_PER_SEC*0.5);
         retassure(!recovery_client_new(_client), "Could not connect to device in recovery mode\n");
         
         recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
@@ -474,7 +474,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     getDeviceMode(false);
     mutex_lock(&_client->device_event_mutex);
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 1000);
-    retassure(((_client->mode->index == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device isn't in DFU mode!");
+    retassure(((_client->mode == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device isn't in DFU mode!");
     retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
     mutex_unlock(&_client->device_event_mutex);
     info("Device found in DFU Mode.\n");
@@ -522,12 +522,12 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
     info("Booting iBSS, waiting for device to disconnect...\n");
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+    retassure(((_client->mode != MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
     info("Booting iBSS, waiting for device to reconnect...\n");
     bool dfu = false;
     if((_client->device->chip_id >= 0x7000 && _client->device->chip_id <= 0x8004) || (_client->device->chip_id >= 0x8900 && _client->device->chip_id <= 0x8965)) {
         cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure(((_client->mode == &idevicerestore_modes[MODE_DFU]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+        retassure(((_client->mode == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
         if (_client->build_major > 8) {
             mutex_unlock(&_client->device_event_mutex);
             getDeviceMode(true);
@@ -541,10 +541,10 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
             info("Booting iBEC, waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+            retassure(((_client->mode == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
             info("Booting iBEC, waiting for device to reconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+            retassure(((_client->mode == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
             mutex_unlock(&_client->device_event_mutex);
             getDeviceMode(true);
             retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
@@ -553,7 +553,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     } else if((_client->device->chip_id >= 0x8006 && _client->device->chip_id <= 0x8030) || (_client->device->chip_id >= 0x8101 && _client->device->chip_id <= 0x8301)) {
         dfu = true;
         cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
+        retassure(((_client->mode == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
     } else {
         mutex_unlock(&_client->device_event_mutex);
         reterror("Device not supported!\n");
@@ -602,10 +602,10 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
             
             info("Booting iBEC, waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+            retassure(((_client->mode == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
             info("Booting iBEC, waiting for device to reconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+            retassure(((_client->mode == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
             mutex_unlock(&_client->device_event_mutex);
             getDeviceMode(true);
             retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode after ApNonce hax!");
@@ -626,10 +626,10 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
             info("Booting iBEC, waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure(((_client->mode == &idevicerestore_modes[MODE_UNKNOWN]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
+            retassure(((MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
             info("Booting iBEC, waiting for device to reconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure(((_client->mode == &idevicerestore_modes[MODE_RECOVERY]) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+            retassure(((MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
             mutex_unlock(&_client->device_event_mutex);
             getDeviceMode(true);
             retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode after ApNonce hax!");
@@ -1128,9 +1128,9 @@ void futurerestore::doRestore(const char *ipsw){
     mutex_lock(&client->device_event_mutex);
     cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
     
-    retassure(client->mode != &idevicerestore_modes[MODE_UNKNOWN],  "Unable to discover device mode. Please make sure a device is attached.\n");
-    if (client->mode != &idevicerestore_modes[MODE_RECOVERY]) {
-        retassure(client->mode == &idevicerestore_modes[MODE_DFU], "Device is in unexpected mode detected!");
+    retassure(client->mode != MODE_UNKNOWN,  "Unable to discover device mode. Please make sure a device is attached.\n");
+    if (client->mode != MODE_RECOVERY) {
+        retassure(client->mode == MODE_DFU, "Device is in unexpected mode detected!");
         retassure(_enterPwnRecoveryRequested, "Device is in DFU mode detected, but we were expecting recovery mode!");
     }else{
         retassure(!_enterPwnRecoveryRequested, "--use-pwndfu was specified, but device found in recovery mode!");
@@ -1329,7 +1329,7 @@ void futurerestore::doRestore(const char *ipsw){
 
     //check for enterpwnrecovery, because we could be in DFU mode
     if (_enterPwnRecoveryRequested){
-        retassure((getDeviceMode(true) == MODE_DFU) || (getDeviceMode(false) == MODE_RECOVERY && _noIBSS), "unexpected device mode\n");
+        retassure((getDeviceMode(true) == _MODE_DFU) || (getDeviceMode(false) == _MODE_RECOVERY && _noIBSS), "unexpected device mode\n");
         enterPwnRecovery(build_identity);
     }
     
@@ -1429,13 +1429,13 @@ void futurerestore::doRestore(const char *ipsw){
         
         info("Booting iBSS, Waiting for device to disconnect...\n");
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        retassure((client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+        retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
 
         info("Booting iBSS, Waiting for device to reconnect...\n");
         mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        retassure((client->mode == &idevicerestore_modes[MODE_DFU] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+        retassure((client->mode == MODE_DFU || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
         
         dfu_client_new(client);
@@ -1452,13 +1452,13 @@ void futurerestore::doRestore(const char *ipsw){
         info("Booting iBEC, Waiting for device to disconnect...\n");
         mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        /* retassure((client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        /* retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
         mutex_unlock(&client->device_event_mutex);
 
         info("Booting iBEC, Waiting for device to reconnect...\n");
         mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        retassure((client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
+        retassure((client->mode == MODE_RECOVERY || (mutex_unlock(&client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
 
     }else{
@@ -1487,24 +1487,24 @@ void futurerestore::doRestore(const char *ipsw){
         debug("Waiting for device to disconnect...\n");
         mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        /* retassure((client->mode == &idevicerestore_modes[MODE_UNKNOWN] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        /* retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
         mutex_unlock(&client->device_event_mutex);
 
         debug("Waiting for device to reconnect...\n");
         mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        /* retassure((client->mode == &idevicerestore_modes[MODE_RECOVERY] || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        /* retassure((client->mode == MODE_RECOVERY || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
         mutex_unlock(&client->device_event_mutex);
     }
 
-    retassure(client->mode == &idevicerestore_modes[MODE_RECOVERY], "failed to reconnect to device in recovery (iBEC) mode\n");
+    retassure(client->mode == MODE_RECOVERY, "failed to reconnect to device in recovery (iBEC) mode\n");
 
     //do magic
     if (_client->image4supported) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
     get_ap_nonce(client, &client->nonce, &client->nonce_size);
     get_ecid(client, &client->ecid);
 
-    if (client->mode->index == MODE_RECOVERY) {
+    if (client->mode == MODE_RECOVERY) {
         retassure(client->srnm,"ERROR: could not retrieve device serial number. Can't continue.\n");
 
         if(client->device->chip_id < 0x8015) {
@@ -1527,7 +1527,7 @@ void futurerestore::doRestore(const char *ipsw){
     mutex_lock(&client->device_event_mutex);
     debug("Waiting for device to enter restore mode...\n");
     cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 180000);
-    retassure((client->mode == &idevicerestore_modes[MODE_RESTORE] || (mutex_unlock(&client->device_event_mutex),0)), "Device can't enter to restore mode");
+    retassure((client->mode == MODE_RESTORE || (mutex_unlock(&client->device_event_mutex),0)), "Device can't enter to restore mode");
     mutex_unlock(&client->device_event_mutex);
 
     info("About to restore device... \n");
@@ -1654,17 +1654,17 @@ const char *futurerestore::getDeviceModelNoCopy(){
     if (!_client->device || !_client->device->product_type){
 
         int mode = getDeviceMode(true);
-        retassure(mode == MODE_NORMAL || mode == MODE_RECOVERY || mode == MODE_DFU, "unexpected device mode=%d\n",mode);
+        retassure(mode == _MODE_NORMAL || mode == _MODE_RECOVERY || mode == _MODE_DFU, "unexpected device mode=%d\n",mode);
         
         switch (mode) {
-        case MODE_RESTORE:
+        case _MODE_RESTORE:
             _client->device = restore_get_irecv_device(_client);
             break;
-        case MODE_NORMAL:
+        case _MODE_NORMAL:
             _client->device = normal_get_irecv_device(_client);
             break;
-        case MODE_DFU:
-        case MODE_RECOVERY:
+        case _MODE_DFU:
+        case _MODE_RECOVERY:
             _client->device = dfu_get_irecv_device(_client);
             break;
         default:
@@ -1679,17 +1679,17 @@ const char *futurerestore::getDeviceBoardNoCopy(){
     if (!_client->device || !_client->device->product_type){
 
         int mode = getDeviceMode(true);
-        retassure(mode == MODE_NORMAL || mode == MODE_RECOVERY || mode == MODE_DFU, "unexpected device mode=%d\n",mode);
+        retassure(mode == _MODE_NORMAL || mode == _MODE_RECOVERY || mode == _MODE_DFU, "unexpected device mode=%d\n",mode);
         
         switch (mode) {
-        case MODE_RESTORE:
+        case _MODE_RESTORE:
             _client->device = restore_get_irecv_device(_client);
             break;
-        case MODE_NORMAL:
+        case _MODE_NORMAL:
             _client->device = normal_get_irecv_device(_client);
             break;
-        case MODE_DFU:
-        case MODE_RECOVERY:
+        case _MODE_DFU:
+        case _MODE_RECOVERY:
             _client->device = dfu_get_irecv_device(_client);
             break;
         default:
