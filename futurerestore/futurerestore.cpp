@@ -483,7 +483,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     try {
         std::string board = getDeviceBoardNoCopy();
         info("Getting firmware keys for: %s\n", board.c_str());
-        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap") {
+        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap" || board == "n66ap" || board == "n66map") {
             iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
             iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
         } else {
@@ -889,7 +889,7 @@ void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
     try {
         const char *board = getDeviceBoardNoCopy();
         info("BOARD: %s\n", board);
-        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap") {
+        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap" || board == "n66ap" || board == "n66map") {
             iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
             iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
         } else {
