@@ -382,33 +382,30 @@ index 0000000..a1ace41
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_tools/versions.json b/build_tools/versions.json
 new file mode 100644
-index 0000000..e00fbb0
+index 0000000..7443654
 --- /dev/null
 +++ b/build_tools/versions.json
-@@ -0,0 +1,150 @@
+@@ -0,0 +1,132 @@
 +{
 +  "versions": {
 +    "futurerestore": {
 +      "version": "239",
 +      "version2": "2.0.0-test+git20210829",
 +      "commit": "93266082f8a3b70df2bd7c0506274da0eec08fc9",
-+      "date": "1630220400",
 +      "url": "https://github.com/m1stadev/futurerestore",
 +      "branch": "test"
 +    },
 +    "idevicerestore_submodule": {
-+      "version": "801",
-+      "version2": "801+git20210812",
-+      "commit": "5d39c3027dc6dfe2e8146f62dab5874ae64ede05",
-+      "date": "1628751600",
++      "version": "816",
++      "version2": "816+git20210922",
++      "commit": "c637acfadff428e1aa445975aec50cfafeccb291",
 +      "url": "https://github.com/m1stadev/idevicerestore",
 +      "branch": "test"
 +    },
 +    "tsschecker": {
-+      "version": "351",
-+      "version2": "351+git20210906",
-+      "commit": "fe082c7e7c6a6fba3bf5181e0ea86557837517ae",
-+      "date": "1630911600",
++      "version": "356",
++      "version2": "356+git20210921",
++      "commit": "b75f31fada62f92a1b01a64c5f79b5270790e2fd",
 +      "url": "https://github.com/1Conan/tsschecker",
 +      "brah": "master"
 +    },
@@ -416,7 +413,6 @@ index 0000000..e00fbb0
 +      "version": "24062",
 +      "version2": "1.1.1l+git20210831",
 +      "commit": "5402f96aba9dd3d0b3006b8b2651bd27d3cbf326",
-+      "date": "1631862000",
 +      "url": "https://github.com/openssl/openssl",
 +      "branch": "OpenSSL_1_1_1-stable"
 +    },
@@ -424,7 +420,6 @@ index 0000000..e00fbb0
 +      "version": "3058",
 +      "version2": "1.8.0+git20210911",
 +      "commit": "e7c81b67ab91d5dc54c2238d9f7d9abab1a0a8c3",
-+      "date": "1631343600",
 +      "url": "https://github.com/nih-at/libzip",
 +      "branch": "master"
 +    },
@@ -432,7 +427,6 @@ index 0000000..e00fbb0
 +      "version": "4098",
 +      "version2": "1.6.37+git20210312",
 +      "commit": "a37d4836519517bdce6cb9d956092321eca3e73b",
-+      "date": "1615536000",
 +      "url": "https://github.com/glennrp/libpng",
 +      "branch": "libpng16"
 +    },
@@ -440,7 +434,6 @@ index 0000000..e00fbb0
 +      "version": "817",
 +      "version2": "2.2.0+git20210916",
 +      "commit": "97d46c92ba1657f6f0287cc83d4ec8ed1a2c6903",
-+      "date": "1631775600",
 +      "url": "https://github.com/libimobiledevice/libplist",
 +      "branch": "master"
 +    },
@@ -448,7 +441,6 @@ index 0000000..e00fbb0
 +      "version": "18",
 +      "version2": "1.0.0+git20210913",
 +      "commit": "9a697354801194d076c23a8c904d3241b4b9deee",
-+      "date": "1631516400",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
 +      "branch": "master"
 +    },
@@ -456,7 +448,6 @@ index 0000000..e00fbb0
 +      "version": "192",
 +      "version2": "2.0.2+git20210913",
 +      "commit": "2ec5354a6ff2ba5e2740eabe7402186f29294f79",
-+      "date": "1631516400",
 +      "url": "https://github.com/libimobiledevice/libusbmuxd",
 +      "branch": "master"
 +    },
@@ -464,15 +455,13 @@ index 0000000..e00fbb0
 +      "version": "1652",
 +      "version2": "1.3.0+git20210913",
 +      "commit": "3a10a315a59ff73fe2edfb3dca897ab688407b71",
-+      "date": "1631516400",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice",
 +      "branch": "master"
 +    },
 +    "libirecovery": {
-+      "version": "315",
-+      "version2": "1.0.0+git20210916",
-+      "commit": "1d90f6accd40e6801559d38386d71d3597f36d3b",
-+      "date": "1631775600",
++      "version": "321",
++      "version2": "1.0.0+git20210923",
++      "commit": "0165076dedcad80c9a6886424cdc0992a88ce2ae",
 +      "url": "https://github.com/libimobiledevice/libirecovery",
 +      "branch": "master"
 +    },
@@ -480,7 +469,6 @@ index 0000000..e00fbb0
 +      "version": "56",
 +      "version2": "56+git20210702",
 +      "commit": "e0d98cbeedece5d62e3e9432c3ed37cd87da5338",
-+      "date": "1625209200",
 +      "url": "https://github.com/tihmstar/libgeneral",
 +      "branch": "master"
 +    },
@@ -488,7 +476,6 @@ index 0000000..e00fbb0
 +      "version": "64",
 +      "version2": "64+git20210209",
 +      "commit": "aaf6fae83a0aa6f7aae1c94721857076d04a14e8",
-+      "date": "1612857600",
 +      "url": "https://github.com/tihmstar/libfragmentzip",
 +      "branch": "master"
 +    },
@@ -496,7 +483,6 @@ index 0000000..e00fbb0
 +      "version": "197",
 +      "version2": "197+git20210129",
 +      "commit": "aca6cf005c94caf135023263cbb5c61a0081804f",
-+      "date": "1611907200",
 +      "url": "https://github.com/tihmstar/img4tool",
 +      "branch": "master"
 +    },
@@ -504,7 +490,6 @@ index 0000000..e00fbb0
 +      "version": "37",
 +      "version2": "37+git20210425",
 +      "commit": "e795956b0c0e0c2fcbb074ee1f1cfd84e98f0918",
-+      "date": "1619334000",
 +      "url": "https://github.com/tihmstar/libinsn",
 +      "branch": "master"
 +    },
@@ -512,7 +497,6 @@ index 0000000..e00fbb0
 +      "version": "403",
 +      "version2": "0.5.8+git20210410",
 +      "commit": "f6baa79ee898657229c71c8fbcc2c7e39f31f35a",
-+      "date": "1618038000",
 +      "url": "https://github.com/nyuszika7h/xpwn",
 +      "branch": "master"
 +    },
@@ -520,7 +504,6 @@ index 0000000..e00fbb0
 +      "version": "141",
 +      "version2": "141+git20210822",
 +      "commit": "df8c85442dd0662d969ee1a8c8d2c9558306f029",
-+      "date": "1629615600",
 +      "url": "https://github.com/Cryptiiiic/liboffsetfinder64",
 +      "branch": "cryptic"
 +    },
@@ -528,12 +511,11 @@ index 0000000..e00fbb0
 +      "version": "86",
 +      "version2": "86+git20210810",
 +      "commit": "6a3b358b673e74c2be9f9b8a74a63b80dd94abf1",
-+      "date": "1628578800",
 +      "url": "https://github.com/Cryptiiiic/libipatcher",
 +      "branch": "main"
 +    }
 +  },
-+  "lastupdate": "1632174340"
++  "lastupdate": "1632771402"
 +}
 +
 diff --git a/makefiles/curl.mk b/makefiles/curl.mk
@@ -593,6 +575,46 @@ index 3a15cdc..42735d8 100644
  		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
  		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
  	+$(MAKE) -C $(BUILD_WORK)/futurerestore
+diff --git a/makefiles/idevicerestore.mk b/makefiles/idevicerestore.mk
+index 526a712..64fe396 100644
+--- a/makefiles/idevicerestore.mk
++++ b/makefiles/idevicerestore.mk
+@@ -3,24 +3,28 @@ $(error Use the main Makefile)
+ endif
+ 
+ SUBPROJECTS            += idevicerestore
+-IDEVICERESTORE_COMMIT  := a2010182daa49f9f3bb63e8993908f8cdbca8b5e
+-IDEVICERESTORE_VERSION := 1.0.0+git20210526.$(shell echo $(IDEVICERESTORE_COMMIT) | cut -c -7)
++#IDEVICERESTORE_COMMIT  := a2010182daa49f9f3bb63e8993908f8cdbca8b5e
++#IDEVICERESTORE_VERSION := 1.0.0+git20210526.$(shell echo $(IDEVICERESTORE_COMMIT) | cut -c -7)
+ DEB_IDEVICERESTORE_V   ?= $(IDEVICERESTORE_VERSION)
+ 
+ idevicerestore-setup: setup
+-	$(call GITHUB_ARCHIVE,libimobiledevice,idevicerestore,$(IDEVICERESTORE_COMMIT),$(IDEVICERESTORE_COMMIT))
+-	$(call EXTRACT_TAR,idevicerestore-$(IDEVICERESTORE_COMMIT).tar.gz,idevicerestore-$(IDEVICERESTORE_COMMIT),idevicerestore)
++	ln -sf ~/source/idevicerestore $(BUILD_WORK)/
++#	$(call GITHUB_ARCHIVE,libimobiledevice,idevicerestore,$(IDEVICERESTORE_COMMIT),$(IDEVICERESTORE_COMMIT))
++#	$(call EXTRACT_TAR,idevicerestore-$(IDEVICERESTORE_COMMIT).tar.gz,idevicerestore-$(IDEVICERESTORE_COMMIT),idevicerestore)
+ 
+ ifneq ($(wildcard $(BUILD_WORK)/idevicerestore/.build_complete),)
+ idevicerestore:
+ 	@echo "Using previously built idevicerestore."
+ else
+-idevicerestore: idevicerestore-setup curl libimobiledevice libirecovery libplist libzip
++idevicerestore: idevicerestore-setup libimobiledevice libirecovery libplist libzip
++	fd -pe dylib -X rm \; '.*' build_*
+ 	cd $(BUILD_WORK)/idevicerestore && ./autogen.sh \
+ 		$(DEFAULT_CONFIGURE_FLAGS) \
++		libcurl_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lcurl" \
++		libcurl_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
+ 		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
+-		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
+-	+$(MAKE) -C $(BUILD_WORK)/idevicerestore
++		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
++		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -limobiledevice-glue-1.0 -lusbmuxd-2.0"
+ 	+$(MAKE) -C $(BUILD_WORK)/idevicerestore install \
+ 		DESTDIR="$(BUILD_STAGE)/idevicerestore"
+ 	$(call AFTER_BUILD)
 diff --git a/makefiles/img4tool.mk b/makefiles/img4tool.mk
 index 7c2ce9d..3103a97 100644
 --- a/makefiles/img4tool.mk
@@ -850,7 +872,7 @@ index 0000000..e41c496
 +
 +.PHONY: libimobiledevice-glue libimobiledevice-glue-package
 diff --git a/makefiles/libimobiledevice.mk b/makefiles/libimobiledevice.mk
-index e05b026..fd399f8 100644
+index e05b026..f59c3c6 100644
 --- a/makefiles/libimobiledevice.mk
 +++ b/makefiles/libimobiledevice.mk
 @@ -3,8 +3,8 @@ $(error Use the main Makefile)
@@ -864,20 +886,22 @@ index e05b026..fd399f8 100644
  DEB_LIBIMOBILEDEVICE_V   ?= $(LIBIMOBILEDEVICE_VERSION)
  
  libimobiledevice-setup: setup
-@@ -15,11 +15,10 @@ ifneq ($(wildcard $(BUILD_WORK)/libimobiledevice/.build_complete),)
+@@ -15,11 +15,12 @@ ifneq ($(wildcard $(BUILD_WORK)/libimobiledevice/.build_complete),)
  libimobiledevice:
  	@echo "Using previously built libimobiledevice."
  else
 -libimobiledevice: libimobiledevice-setup libusbmuxd libplist openssl
 +libimobiledevice: libimobiledevice-setup libusbmuxd libplist openssl libimobiledevice-glue
++	fd -pe dylib -X rm \; '.*' build_*
  	cd $(BUILD_WORK)/libimobiledevice && ./autogen.sh \
  		$(DEFAULT_CONFIGURE_FLAGS) \
++		--disable-shared \
  		--without-cython
 -	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice
  	+$(MAKE) -C $(BUILD_WORK)/libimobiledevice install \
  		DESTDIR="$(BUILD_STAGE)/libimobiledevice"
  	$(call AFTER_BUILD,copy)
-@@ -27,31 +26,21 @@ endif
+@@ -27,31 +28,21 @@ endif
  
  libimobiledevice-package: libimobiledevice-stage
  	# libimobiledevice.mk Package Structure
@@ -1609,30 +1633,33 @@ index c65be42..462b35d 100644
  
  .PHONY: openssl openssl-package
 diff --git a/makefiles/tsschecker.mk b/makefiles/tsschecker.mk
-index e23b84a..4ddbb32 100644
+index e23b84a..83faf47 100644
 --- a/makefiles/tsschecker.mk
 +++ b/makefiles/tsschecker.mk
-@@ -3,8 +3,8 @@ $(error Use the main Makefile)
+@@ -3,30 +3,27 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS        += tsschecker
 -TSSCHECKER_VERSION := 334
 -TSSCHECKER_COMMIT  := 1b5e82e3c8275874a3595c2c57cd5ea9921dc2e2
-+TSSCHECKER_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.tsschecker.version' | tr -d '\n')
-+TSSCHECKER_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.tsschecker.commit' | tr -d '\n')
++#TSSCHECKER_VERSION := $(shell cat build_tools/versions.json | jq -r '.versions.tsschecker.version' | tr -d '\n')
++#TSSCHECKER_COMMIT  := $(shell cat build_tools/versions.json | jq -r '.versions.tsschecker.commit' | tr -d '\n')
  DEB_TSSCHECKER_V   ?= $(TSSCHECKER_VERSION)
  
  tsschecker-setup: setup
-@@ -12,7 +12,7 @@ tsschecker-setup: setup
- 	$(call GITHUB_ARCHIVE,tihmstar,jssy,master,master)
- 	$(call EXTRACT_TAR,tsschecker-$(TSSCHECKER_COMMIT).tar.gz,tsschecker-$(TSSCHECKER_COMMIT),tsschecker)
- 	# so EXTRACT_TAR wont fail
+-	$(call GITHUB_ARCHIVE,1Conan,tsschecker,$(TSSCHECKER_COMMIT),$(TSSCHECKER_COMMIT))
+-	$(call GITHUB_ARCHIVE,tihmstar,jssy,master,master)
+-	$(call EXTRACT_TAR,tsschecker-$(TSSCHECKER_COMMIT).tar.gz,tsschecker-$(TSSCHECKER_COMMIT),tsschecker)
+-	# so EXTRACT_TAR wont fail
 -	-rmdir $(BUILD_WORK)/tsschecker/external/jssy
-+	if [[ ! -d $(BUILD_WORK)/tsschecker/external/jssy/jssy ]]; then rm -rf $(BUILD_WORK)/tsschecker/external/jssy; fi
- 	$(call EXTRACT_TAR,jssy-master.tar.gz,jssy-master,tsschecker/external/jssy)
+-	$(call EXTRACT_TAR,jssy-master.tar.gz,jssy-master,tsschecker/external/jssy)
+-
+-	sed -i 's/git rev\-list \-\-count HEAD/printf ${TSSCHECKER_VERSION}/g' $(BUILD_WORK)/tsschecker/configure.ac
+-	sed -i 's/git rev\-parse HEAD/printf ${TSSCHECKER_COMMIT}/g' $(BUILD_WORK)/tsschecker/configure.ac
++	ln -sf ~/source/tsschecker $(BUILD_WORK)/
  
- 	sed -i 's/git rev\-list \-\-count HEAD/printf ${TSSCHECKER_VERSION}/g' $(BUILD_WORK)/tsschecker/configure.ac
-@@ -23,10 +23,15 @@ ifneq ($(wildcard $(BUILD_WORK)/tsschecker/.build_complete),)
+ 
+ ifneq ($(wildcard $(BUILD_WORK)/tsschecker/.build_complete),)
  tsschecker:
  	@echo "Using previously built tsschecker."
  else

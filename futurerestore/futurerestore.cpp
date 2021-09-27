@@ -158,6 +158,9 @@ void futurerestore::putDeviceIntoRecovery(){
     getDeviceMode(false);
     info("Found device in %s mode\n", _client->mode->string);
     if (_client->mode == MODE_NORMAL){
+        irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
+        idevice_event_subscribe(idevice_event_cb, _client);
+        _client->idevice_e_ctx = (void *)idevice_event_cb;
 #ifdef HAVE_LIBIPATCHER
         retassure(!_isPwnDfu, "isPwnDfu enabled, but device was found in normal mode\n");
 #endif
@@ -1119,9 +1122,9 @@ void futurerestore::doRestore(const char *ipsw){
     if (_noRestore) client->flags |= FLAG_NO_RESTORE;
     if (!_isUpdateInstall) client->flags |= FLAG_ERASE;
     
-    irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, client);
-    idevice_event_subscribe(idevice_event_cb, client);
-    client->idevice_e_ctx = (void*)idevice_event_cb;
+//    irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, client);
+//    idevice_event_subscribe(idevice_event_cb, client);
+//    client->idevice_e_ctx = (void*)idevice_event_cb;
 
     mutex_lock(&client->device_event_mutex);
     cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
@@ -1165,9 +1168,9 @@ void futurerestore::doRestore(const char *ipsw){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
 
-    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
-    idevice_event_subscribe(idevice_event_cb, _client);
-    _client->idevice_e_ctx = (void *)idevice_event_cb;
+//    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
+//    idevice_event_subscribe(idevice_event_cb, _client);
+//    _client->idevice_e_ctx = (void *)idevice_event_cb;
 
     if (_enterPwnRecoveryRequested && _client->image4supported) {
         retassure(plist_dict_get_item(_client->tss, "generator"), "signing ticket file does not contain generator. But a generator is required for 64-bit pwnDFU restore");
@@ -1445,7 +1448,7 @@ void futurerestore::doRestore(const char *ipsw){
         info("Booting iBEC, Waiting for device to disconnect...\n");
         mutex_lock(&_client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        /* retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
 
         info("Booting iBEC, Waiting for device to reconnect...\n");
@@ -1480,13 +1483,13 @@ void futurerestore::doRestore(const char *ipsw){
         debug("Waiting for device to disconnect...\n");
         mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        /* retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
 
         debug("Waiting for device to reconnect...\n");
         mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-        /* retassure((client->mode == MODE_RECOVERY || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again"); */
+        retassure((client->mode == MODE_RECOVERY || (mutex_unlock(&client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
         mutex_unlock(&client->device_event_mutex);
     }
 
@@ -1648,7 +1651,7 @@ const char *futurerestore::getDeviceModelNoCopy(){
 
         int mode = getDeviceMode(true);
         retassure(mode == _MODE_NORMAL || mode == _MODE_RECOVERY || mode == _MODE_DFU, "unexpected device mode=%d\n",mode);
-        
+
         switch (mode) {
         case _MODE_RESTORE:
             _client->device = restore_get_irecv_device(_client);
