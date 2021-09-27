@@ -472,6 +472,9 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     libipatcher::fw_key iBECKeys;
 
     /* Assure device is in dfu */
+    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
+    idevice_event_subscribe(idevice_event_cb, _client);
+    _client->idevice_e_ctx = (void *)idevice_event_cb;
     getDeviceMode(true);
     mutex_lock(&_client->device_event_mutex);
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 1000);
