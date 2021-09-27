@@ -103,7 +103,7 @@ extern "C"{
     irecv_error_t irecv_send_command(irecv_client_t client, const char* command);
     int recovery_send_component_and_command(struct idevicerestore_client_t* client, plist_t build_identity, const char* component, const char* command);
     int recovery_send_component(struct idevicerestore_client_t* client, plist_t build_identity, const char* component);
-};
+}
 
 #pragma mark futurerestore
 futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, bool noRestore) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS), _noRestore(noRestore){
@@ -158,8 +158,6 @@ void futurerestore::putDeviceIntoRecovery(){
     getDeviceMode(false);
     info("Found device in %s mode\n", _client->mode->string);
     if (_client->mode == MODE_NORMAL){
-    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
-    idevice_event_subscribe(idevice_event_cb, _client);
 #ifdef HAVE_LIBIPATCHER
         retassure(!_isPwnDfu, "isPwnDfu enabled, but device was found in normal mode\n");
 #endif
@@ -471,7 +469,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     libipatcher::fw_key iBECKeys;
 
     /* Assure device is in dfu */
-    getDeviceMode(false);
+    getDeviceMode(true);
     mutex_lock(&_client->device_event_mutex);
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 1000);
     retassure(((_client->mode == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device isn't in DFU mode!");
@@ -522,7 +520,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
     info("Booting iBSS, waiting for device to disconnect...\n");
     cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode != MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
+    retassure(((_client->mode == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
     info("Booting iBSS, waiting for device to reconnect...\n");
     bool dfu = false;
     if((_client->device->chip_id >= 0x7000 && _client->device->chip_id <= 0x8004) || (_client->device->chip_id >= 0x8900 && _client->device->chip_id <= 0x8965)) {
@@ -582,10 +580,10 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
         if(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
             info("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
-            
+
             assure(_client->tss);
             info("Writing generator=%s to nvram!\n", generator.c_str());
-            
+
             retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "Failed to write generator to nvram!");
             retassure(!irecv_saveenv(_client->recovery->client), "Failed to save nvram!");
 
@@ -599,7 +597,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
             err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
             retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
             retassure(((irecv_send_command(_client->dfu->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
-            
+
             info("Booting iBEC, waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
             retassure(((_client->mode == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
@@ -638,7 +636,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         }
         retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "failed to write generator to nvram");
         retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
-        
+
         sleep(2);
     }
 #endif //HAVE_LIBIPATCHER
@@ -1167,12 +1165,7 @@ void futurerestore::doRestore(const char *ipsw){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
 
-    irecv_device_event_unsubscribe(client->irecv_e_ctx);
-    idevice_event_unsubscribe();
-    client->idevice_e_ctx = NULL;
-
     irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
-
     idevice_event_subscribe(idevice_event_cb, _client);
     _client->idevice_e_ctx = (void *)idevice_event_cb;
 
