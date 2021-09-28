@@ -1125,9 +1125,9 @@ void futurerestore::doRestore(const char *ipsw){
     if (_noRestore) client->flags |= FLAG_NO_RESTORE;
     if (!_isUpdateInstall) client->flags |= FLAG_ERASE;
     
-//    irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, client);
-//    idevice_event_subscribe(idevice_event_cb, client);
-//    client->idevice_e_ctx = (void*)idevice_event_cb;
+    irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, client);
+    idevice_event_subscribe(idevice_event_cb, client);
+    client->idevice_e_ctx = (void*)idevice_event_cb;
 
     mutex_lock(&client->device_event_mutex);
     cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
@@ -1171,9 +1171,6 @@ void futurerestore::doRestore(const char *ipsw){
     plist_dict_remove_item(client->tss, "BBTicket");
     plist_dict_remove_item(client->tss, "BasebandFirmware");
 
-//    irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
-//    idevice_event_subscribe(idevice_event_cb, _client);
-//    _client->idevice_e_ctx = (void *)idevice_event_cb;
 
     if (_enterPwnRecoveryRequested && _client->image4supported) {
         retassure(plist_dict_get_item(_client->tss, "generator"), "signing ticket file does not contain generator. But a generator is required for 64-bit pwnDFU restore");
@@ -1329,7 +1326,14 @@ void futurerestore::doRestore(const char *ipsw){
     //check for enterpwnrecovery, because we could be in DFU mode
     if (_enterPwnRecoveryRequested){
         retassure((getDeviceMode(true) == _MODE_DFU) || (getDeviceMode(false) == _MODE_RECOVERY && _noIBSS), "unexpected device mode\n");
+        irecv_device_event_unsubscribe(client->irecv_e_ctx);
+        client->idevice_e_ctx = NULL;
         enterPwnRecovery(build_identity);
+        irecv_device_event_unsubscribe(_client->irecv_e_ctx);
+        _client->idevice_e_ctx = NULL;
+        irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, _client);
+        idevice_event_subscribe(idevice_event_cb, client);
+        client->idevice_e_ctx = (void *)idevice_event_cb;
     }
     
     // Get filesystem name from build identity
@@ -1477,6 +1481,7 @@ void futurerestore::doRestore(const char *ipsw){
                 client->recovery_custom_component_function = get_custom_component;
         }
     }else if (!_rerestoreiOS9){
+
         /* now we load the iBEC */
         retassure(!recovery_send_ibec(client, build_identity),"ERROR: Unable to send iBEC\n");
 
