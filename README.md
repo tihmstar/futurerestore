@@ -70,7 +70,10 @@ Usage: `futurerestore [OPTIONS] iPSW`
 |  ` -e `           | ` --exit-recovery `                       | Exit recovery mode and quit |
 |                       | ` --use-pwndfu `                           | Restoring devices with Odysseus method. Device needs to be in pwned DFU mode already |
 |                       | ` --no-ibss `                           | Restoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder. |
-|                       | ` --just-boot "-v" `                     | Tethered booting the device from pwned DFU mode. You can optionally set ` boot-args ` |
+|                       | ` --rdsk PATH `                           | Set custom restore ramdisk for entering restoremode(requires use-pwndfu) |
+|                       | ` --rkrn PATH `                           | Set custom restore kernelcache for entering restoremode(requires use-pwndfu) |
+|                       | ` --set-nonce `                           | Set custom nonce from your blob then exit recovery(requires use-pwndfu) |
+|                       | ` --set-nonce=0xNONCE `                           | Set custom nonce then exit recovery(requires use-pwndfu) |
 |                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one (may cause bad restore) |
 |  ` -s `           | ` --sep PATH `                                 | Manually specify SEP to be flashed |
 |  ` -m `           | ` --sep-manifest PATH `              | BuildManifest for requesting SEP ticket |
