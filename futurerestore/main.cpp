@@ -49,8 +49,10 @@ static struct option longopts[] = {
     { "no-baseband",        no_argument,            NULL, '2' },
 #ifdef HAVE_LIBIPATCHER
     { "use-pwndfu",         no_argument,            NULL, '3' },
-    { "just-boot",          optional_argument,      NULL, '4' },
-    { "no-ibss",            no_argument,            NULL, '5' },
+    { "no-ibss",            no_argument,            NULL, '4' },
+    { "rdsk",               required_argument,      NULL, '5' },
+    { "rkrn",               required_argument,      NULL, '6' },
+    { "set-nonce",          optional_argument,      NULL, '7' },
 #endif
     { NULL, 0, NULL, 0 }
 };
@@ -62,8 +64,10 @@ static struct option longopts[] = {
 #define FLAG_NO_BASEBAND        1 << 4
 #define FLAG_IS_PWN_DFU         1 << 5
 #define FLAG_NO_IBSS            1 << 6
-#define FLAG_NO_RESTORE_FR      1 << 7
-
+#define FLAG_RESTORE_RAMDISK    1 << 7
+#define FLAG_RESTORE_KERNEL     1 << 8
+#define FLAG_SET_NONCE          1 << 9
+#define FLAG_NO_RESTORE_FR      1 << 10
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] iPSW\n");
     printf("Allows restoring to non-matching firmware with custom SEP+baseband\n");
@@ -79,8 +83,10 @@ void cmd_help(){
 #ifdef HAVE_LIBIPATCHER
     printf("\nOptions for downgrading with Odysseus:\n");
     printf("      --use-pwndfu\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
-    printf("      --just-boot=\"-v\"\t\tTethered booting the device from pwned DFU mode. You can optionally set boot-args\n");
     printf("      --no-ibss\t\t\tRestoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder.\n");
+    printf("      --rdsk PATH\t\tSet custom restore ramdisk for entering restoremode(requires use-pwndfu)\n");
+    printf("      --rkrn PATH\t\tSet custom restore kernelcache for entering restoremode(requires use-pwndfu)\n");
+    printf("      --set-nonce NONCE\t\tSet custom nonce then exit recovery(requires use-pwndfu)\n");
 #endif
         
     printf("\nOptions for SEP:\n");
@@ -131,7 +137,10 @@ int main_r(int argc, const char * argv[]) {
     const char *sepPath = NULL;
     const char *sepManifestPath = NULL;
     const char *bootargs = NULL;
-    
+    const char *ramdiskPath = NULL;
+    const char *kernelPath = NULL;
+    const char *custom_nonce = NULL;
+
     vector<const char*> apticketPaths;
     
     t_devicevals devVals = {0};
@@ -142,7 +151,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wudez0123", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wudez01234567", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPaths.push_back(optarg);
@@ -178,13 +187,27 @@ int main_r(int argc, const char * argv[]) {
             case '3': // long option: "use-pwndfu";
                 flags |= FLAG_IS_PWN_DFU;
                 break;
-            case '4': // long option: "just-boot";
-                bootargs = (optarg) ? optarg : "";
-                break;
-            case '5': // long option: "no-ibss";
+            case '4': // long option: "no-ibss";
                 flags |= FLAG_NO_IBSS;
                 break;
-            break;
+            case '5': // long option: "rdsk";
+                flags |= FLAG_RESTORE_RAMDISK;
+                ramdiskPath = optarg;
+                break;
+            case '6': // long option: "rkrn";
+                flags |= FLAG_RESTORE_KERNEL;
+                kernelPath = optarg;
+                break;
+            case '7': // long option: "set-nonce";
+                flags |= FLAG_SET_NONCE;
+                custom_nonce = (optarg) ? optarg : NULL;
+                if(custom_nonce != NULL) {
+                    uint64_t gen;
+                    retassure(strlen(custom_nonce) == 16 || strlen(custom_nonce) == 18,"Incorrect nonce length!\n");
+                    sscanf(custom_nonce, "0x%16llx",&gen);
+                    retassure(gen, "failed to parse generator. Make sure it is in format 0x%16llx");
+                }
+                break;
 #endif
             case 'e': // long option: "exit-recovery"; can be called as short option
                 exitRecovery = true;
@@ -220,14 +243,22 @@ int main_r(int argc, const char * argv[]) {
         return -5;
     }
     
-    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS, flags & FLAG_NO_RESTORE_FR);
+    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS, flags & FLAG_RESTORE_RAMDISK, flags & FLAG_RESTORE_KERNEL, flags & FLAG_SET_NONCE, flags & FLAG_NO_RESTORE_FR);
     retassure(client.init(),"can't init, no device found\n");
     
     printf("futurerestore init done\n");
     retassure(!bootargs || (flags & FLAG_IS_PWN_DFU),"--just-boot requires --use-pwndfu\n");
     if(flags & FLAG_NO_IBSS)
         retassure((flags & FLAG_IS_PWN_DFU),"--no-ibss requires --use-pwndfu\n");
-    
+    if(flags & FLAG_RESTORE_RAMDISK)
+        retassure((flags & FLAG_IS_PWN_DFU),"--rdsk requires --use-pwndfu\n");
+    if(flags & FLAG_RESTORE_KERNEL)
+        retassure((flags & FLAG_IS_PWN_DFU),"--rkrn requires --use-pwndfu\n");
+    if(flags & FLAG_SET_NONCE)
+        retassure((flags & FLAG_IS_PWN_DFU),"--set-nonce requires --use-pwndfu\n");
+    if(flags & FLAG_RESTORE_RAMDISK)
+        retassure((flags & FLAG_RESTORE_KERNEL),"--rdsk requires --rkrn\n");
+
     if (exitRecovery) {
         client.exitRecovery();
         info("Done\n");
@@ -260,7 +291,21 @@ int main_r(int argc, const char * argv[]) {
         }else{
             devVals.deviceModel = (char*)client.getDeviceModelNoCopy();
             devVals.deviceBoard = (char*)client.getDeviceBoardNoCopy();
-            
+
+            if(flags & FLAG_SET_NONCE) {
+                client.setNonce(custom_nonce);
+            }
+
+            if(flags & FLAG_RESTORE_RAMDISK) {
+                client.setRamdiskPath(ramdiskPath);
+                client.loadRamdisk(ramdiskPath);
+            }
+
+            if(flags & FLAG_RESTORE_KERNEL) {
+                client.setKernelPath(kernelPath);
+                client.loadKernel(kernelPath);
+            }
+
             if (flags & FLAG_LATEST_SEP){
                 info("user specified to use latest signed SEP\n");
                 client.loadLatestSep();
@@ -316,10 +361,7 @@ int main_r(int argc, const char * argv[]) {
     }
     
     try {
-        if (bootargs)
-            client.doJustBoot(ipsw,bootargs);
-        else
-            client.doRestore(ipsw);
+        client.doRestore(ipsw);
         printf("Done: restoring succeeded!\n");
     } catch (tihmstar::exception &e) {
         e.dump();

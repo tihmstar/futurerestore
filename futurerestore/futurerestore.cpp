@@ -106,7 +106,7 @@ extern "C"{
 }
 
 #pragma mark futurerestore
-futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, bool noRestore) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS), _noRestore(noRestore){
+futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, bool cfwRamdisk, bool cfwKernel, bool setNonce, bool noRestore) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS), _cfwRamdisk(cfwRamdisk), _cfwKernel(cfwKernel), _setNonce(setNonce), _noRestore(noRestore){
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
@@ -582,7 +582,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
 
         info("ApNonce pre-hax:\n");
         get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
-        std::string generator = getGeneratorFromSHSH2(_client->tss);
+
+        std::string generator = (_setNonce && _custom_nonce != NULL) ? _custom_nonce : getGeneratorFromSHSH2(_client->tss);
 
         if(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
             info("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
@@ -616,7 +617,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
             printf("APnonce post-hax:\n");
             get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
             assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
-            retassure(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
+            retassure(_setNonce || memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
         } else {
             getDeviceMode(true);
             retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
@@ -642,6 +643,12 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         }
         retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "failed to write generator to nvram");
         retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
+
+        if(_setNonce) {
+            info("Successfully set nonce generator: %s, exiting recovery mode...\n", generator.c_str());
+            exitRecovery();
+            exit(0);
+        }
 
         sleep(2);
     }
@@ -1947,6 +1954,40 @@ void futurerestore::loadVeridian(const char *veridianDGMPath, const char *veridi
     fclose(fveridianfwm);
 }
 
+void futurerestore::loadRamdisk(const char *ramdiskPath){
+    FILE *framdisk = NULL;
+    retassure(framdisk = fopen(ramdiskPath, "rb"), "failed to read Ramdisk\n");
+
+    fseek(framdisk, 0, SEEK_END);
+    _client->ramdiskdatasize = ftell(framdisk);
+    fseek(framdisk, 0, SEEK_SET);
+
+    retassure(_client->ramdiskdata = (char*)malloc(_client->ramdiskdatasize), "failed to malloc memory for Ramdisk\n");
+
+    size_t freadRet=0;
+    retassure((freadRet = fread(_client->ramdiskdata, 1, _client->ramdiskdatasize, framdisk)) == _client->ramdiskdatasize,
+              "failed to load Ramdisk. size=%zu but fread returned %zu\n",_client->ramdiskdatasize,freadRet);
+
+    fclose(framdisk);
+}
+
+void futurerestore::loadKernel(const char *loadKernel){
+    FILE *fkernel = NULL;
+    retassure(fkernel = fopen(loadKernel, "rb"), "failed to read Kernel\n");
+
+    fseek(fkernel, 0, SEEK_END);
+    _client->kerneldatasize = ftell(fkernel);
+    fseek(fkernel, 0, SEEK_SET);
+
+    retassure(_client->kerneldata = (char*)malloc(_client->kerneldatasize), "failed to malloc memory for Kernel\n");
+
+    size_t freadRet=0;
+    retassure((freadRet = fread(_client->kerneldata, 1, _client->kerneldatasize, fkernel)) == _client->kerneldatasize,
+              "failed to load Kernel. size=%zu but fread returned %zu\n",_client->kerneldatasize,freadRet);
+
+    fclose(fkernel);
+}
+
 void futurerestore::loadSep(const char *sepPath){
     FILE *fsep = NULL;
     retassure(fsep = fopen(sepPath, "rb"), "failed to read SEP\n");
@@ -1969,6 +2010,21 @@ void futurerestore::setBasebandPath(const char *basebandPath){
 
     retassure(fbb = fopen(basebandPath, "rb"), "failed to read Baseband");
     _basebandPath = basebandPath;
+    fclose(fbb);
+}
+
+void futurerestore::setRamdiskPath(const char *ramdiskPath) {
+    FILE *fbb = NULL;
+
+    retassure(fbb = fopen(ramdiskPath, "rb"), "failed to read ramdisk");
+    _ramdiskPath = ramdiskPath;
+    fclose(fbb);
+}
+void futurerestore::setKernelPath(const char *kernelPath) {
+    FILE *fbb = NULL;
+
+    retassure(fbb = fopen(kernelPath, "rb"), "failed to read kernel");
+    _kernelPath = kernelPath;
     fclose(fbb);
 }
 

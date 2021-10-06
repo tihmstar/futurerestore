@@ -58,6 +58,9 @@ class futurerestore {
     bool _isUpdateInstall = false;
     bool _isPwnDfu = false;
     bool _noIBSS = false;
+    bool _cfwRamdisk = false;
+    bool _cfwKernel = false;
+    bool _setNonce = false;
     bool _noRestore = false;
     
     char *_firmwareJson = NULL;
@@ -77,6 +80,10 @@ class futurerestore {
     const char *_basebandPath = NULL;
     const char *_sepbuildmanifestPath = NULL;
     const char *_basebandbuildmanifestPath = NULL;
+    const char *_ramdiskPath = NULL;
+    const char *_kernelPath = NULL;
+
+    const char *_custom_nonce = NULL;
     
     bool _enterPwnRecoveryRequested = false;
     bool _rerestoreiOS9 = false;
@@ -85,7 +92,7 @@ class futurerestore {
     void enterPwnRecovery2(plist_t build_identity, std::string bootargs = "");
     
 public:
-    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false, bool noRestore = false);
+    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false, bool cfwRamdisk = false, bool cfwKernel = false, bool setNonce = false, bool noRestore = false);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();
@@ -119,8 +126,13 @@ public:
     void loadSE(const char *sePath);
     void loadSavage(const char *savagePath[6]);
     void loadVeridian(const char *veridianDGMPath, const char *veridianFWMPath);
+    void loadRamdisk(const char *ramdiskPath);
+    void loadKernel(const char *kernelPath);
     void loadSep(const char *sepPath);
     void setBasebandPath(const char *basebandPath);
+    void setRamdiskPath(const char *ramdiskPath);
+    void setKernelPath(const char *kernelPath);
+    void setNonce(const char *custom_nonce){_custom_nonce = custom_nonce;};
     bool isUpdateInstall(){return _isUpdateInstall;};
     
     plist_t sepManifest(){return _sepbuildmanifest;};
