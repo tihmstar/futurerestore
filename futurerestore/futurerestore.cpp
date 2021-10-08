@@ -514,6 +514,18 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
     }
 
+    FILE *ibss = NULL;
+    FILE *ibec = NULL;
+    int rv;
+    retassure(ibss = fopen(FUTURERESTORE_TMP_PATH"/ibss.patched.img4", "wb"), "can't save patched ibss at %s\n", FUTURERESTORE_TMP_PATH"/ibss.patched.img4");
+    retassure(rv = fwrite(iBSS.first, iBSS.second, 1, ibss), "can't save patched ibss at %s\n", FUTURERESTORE_TMP_PATH"/ibss.patched.img4");
+    retassure(ibec = fopen(FUTURERESTORE_TMP_PATH"/ibec.patched.img4", "wb"), "can't save patched ibec at %s\n", FUTURERESTORE_TMP_PATH"/ibec.patched.img4");
+    retassure(rv = fwrite(iBEC.first, iBEC.second, 1, ibec), "can't save patched ibec at %s\n", FUTURERESTORE_TMP_PATH"/ibec.patched.img4");
+    fflush(ibss);
+    fclose(ibss);
+    fflush(ibec);
+    fclose(ibec);
+
     /* Send and boot bootloaders */
 
     // if(_noIBSS) goto label;

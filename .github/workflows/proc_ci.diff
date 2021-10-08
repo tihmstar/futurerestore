@@ -382,44 +382,44 @@ index 0000000..a1ace41
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_tools/versions.json b/build_tools/versions.json
 new file mode 100644
-index 0000000..7443654
+index 0000000..8560609
 --- /dev/null
 +++ b/build_tools/versions.json
 @@ -0,0 +1,132 @@
 +{
 +  "versions": {
 +    "futurerestore": {
-+      "version": "239",
-+      "version2": "2.0.0-test+git20210829",
-+      "commit": "93266082f8a3b70df2bd7c0506274da0eec08fc9",
++      "version": "253",
++      "version2": "2.0.0-test+git20211006",
++      "commit": "b49aad07f19b0b17d4ae97ab89675c971747b989",
 +      "url": "https://github.com/m1stadev/futurerestore",
 +      "branch": "test"
 +    },
 +    "idevicerestore_submodule": {
-+      "version": "816",
-+      "version2": "816+git20210922",
-+      "commit": "c637acfadff428e1aa445975aec50cfafeccb291",
++      "version": "826",
++      "version2": "826+git20211006",
++      "commit": "988bd03b5acd8692b23969a7e24b290abed75b5a",
 +      "url": "https://github.com/m1stadev/idevicerestore",
 +      "branch": "test"
 +    },
 +    "tsschecker": {
-+      "version": "356",
-+      "version2": "356+git20210921",
-+      "commit": "b75f31fada62f92a1b01a64c5f79b5270790e2fd",
++      "version": "357",
++      "version2": "357+git20210927",
++      "commit": "8c5122131cf7b7a2493a82674551787e7a4285f4",
 +      "url": "https://github.com/1Conan/tsschecker",
 +      "brah": "master"
 +    },
 +    "openssl": {
-+      "version": "24062",
-+      "version2": "1.1.1l+git20210831",
-+      "commit": "5402f96aba9dd3d0b3006b8b2651bd27d3cbf326",
++      "version": "24070",
++      "version2": "1.1.1l+git20211009",
++      "commit": "a653e037ef0236ea9cd84ec4c94f0bb94aca56ab",
 +      "url": "https://github.com/openssl/openssl",
 +      "branch": "OpenSSL_1_1_1-stable"
 +    },
 +    "libzip": {
-+      "version": "3058",
-+      "version2": "1.8.0+git20210911",
-+      "commit": "e7c81b67ab91d5dc54c2238d9f7d9abab1a0a8c3",
++      "version": "3062",
++      "version2": "1.8.0+git20210928",
++      "commit": "76df02f86b9746e139fd9fc934a70e3a21bbc557",
 +      "url": "https://github.com/nih-at/libzip",
 +      "branch": "master"
 +    },
@@ -431,16 +431,16 @@ index 0000000..7443654
 +      "branch": "libpng16"
 +    },
 +    "libplist": {
-+      "version": "817",
-+      "version2": "2.2.0+git20210916",
-+      "commit": "97d46c92ba1657f6f0287cc83d4ec8ed1a2c6903",
++      "version": "818",
++      "version2": "2.2.0+git20210921",
++      "commit": "cf7a3f3d7c06b197ee71c9f97eb9aa05f26d63b5",
 +      "url": "https://github.com/libimobiledevice/libplist",
 +      "branch": "master"
 +    },
 +    "libimobiledevice_glue": {
-+      "version": "18",
-+      "version2": "1.0.0+git20210913",
-+      "commit": "9a697354801194d076c23a8c904d3241b4b9deee",
++      "version": "19",
++      "version2": "1.0.0+git20210925",
++      "commit": "499a5578b15235d00bc492068635de45bec1807d",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
 +      "branch": "master"
 +    },
@@ -452,9 +452,9 @@ index 0000000..7443654
 +      "branch": "master"
 +    },
 +    "libimobiledevice": {
-+      "version": "1652",
-+      "version2": "1.3.0+git20210913",
-+      "commit": "3a10a315a59ff73fe2edfb3dca897ab688407b71",
++      "version": "1654",
++      "version2": "1.3.0+git20210921",
++      "commit": "b3d35fbcf7a1ac669c2e80fbd58920941a5d4c0c",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice",
 +      "branch": "master"
 +    },
@@ -501,9 +501,9 @@ index 0000000..7443654
 +      "branch": "master"
 +    },
 +    "liboffsetfinder64": {
-+      "version": "141",
-+      "version2": "141+git20210822",
-+      "commit": "df8c85442dd0662d969ee1a8c8d2c9558306f029",
++      "version": "142",
++      "version2": "142+git20211011",
++      "commit": "b6660b8e4e9df1e0e13f3dad870d764f71994a6c",
 +      "url": "https://github.com/Cryptiiiic/liboffsetfinder64",
 +      "branch": "cryptic"
 +    },
@@ -515,7 +515,7 @@ index 0000000..7443654
 +      "branch": "main"
 +    }
 +  },
-+  "lastupdate": "1632771402"
++  "lastupdate": "1633942188"
 +}
 +
 diff --git a/makefiles/curl.mk b/makefiles/curl.mk
