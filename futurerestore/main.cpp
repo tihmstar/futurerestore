@@ -91,12 +91,12 @@ void cmd_help(){
 #endif
         
     printf("\nOptions for SEP:\n");
-    printf("      --latest-sep\t\tUse latest signed SEP instead of manually specifying one (may cause bad restore)\n");
+    printf("      --latest-sep\t\tUse latest signed SEP instead of manually specifying one\n");
     printf("  -s, --sep PATH\t\tSEP to be flashed\n");
     printf("  -m, --sep-manifest PATH\tBuildManifest for requesting SEP ticket\n");
         
     printf("\nOptions for baseband:\n");
-    printf("      --latest-baseband\t\tUse latest signed baseband instead of manually specifying one (may cause bad restore)\n");
+    printf("      --latest-baseband\t\tUse latest signed baseband instead of manually specifying one\n");
     printf("  -b, --baseband PATH\t\tBaseband to be flashed\n");
     printf("  -p, --baseband-manifest PATH\tBuildManifest for requesting baseband ticket\n");
     printf("      --no-baseband\t\tSkip checks and don't flash baseband\n");

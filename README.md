@@ -74,7 +74,7 @@ Usage: `futurerestore [OPTIONS] iPSW`
 |                       | ` --rkrn PATH `                           | Set custom restore kernelcache for entering restoremode(requires use-pwndfu) |
 |                       | ` --set-nonce `                           | Set custom nonce from your blob then exit recovery(requires use-pwndfu) |
 |                       | ` --set-nonce=0xNONCE `                           | Set custom nonce then exit recovery(requires use-pwndfu) |
-|                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one (may cause bad restore) |
+|                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one |
 |  ` -s `           | ` --sep PATH `                                 | Manually specify SEP to be flashed |
 |  ` -m `           | ` --sep-manifest PATH `              | BuildManifest for requesting SEP ticket |
 |                       | ` --latest-baseband `                | Use latest signed baseband instead of manually specifying one |
