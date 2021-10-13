@@ -106,7 +106,7 @@ extern "C"{
 }
 
 #pragma mark futurerestore
-futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, bool cfwRamdisk, bool cfwKernel, bool setNonce, bool noRestore) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS), _cfwRamdisk(cfwRamdisk), _cfwKernel(cfwKernel), _setNonce(setNonce), _noRestore(noRestore){
+futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, bool setNonce, bool serial, bool noRestore) : _isUpdateInstall(isUpdateInstall), _isPwnDfu(isPwnDfu), _noIBSS(noIBSS), _setNonce(setNonce), _serial(serial), _noRestore(noRestore){
     _client = idevicerestore_client_new();
     if (_client == NULL) throw std::string("could not create idevicerestore client\n");
     
@@ -462,14 +462,24 @@ pair<ptr_smart<char*>, size_t> getIPSWComponent(struct idevicerestore_client_t* 
     return {(char*)component_data,component_size};
 }
 
-void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
+void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootargs){
 #ifndef HAVE_LIBIPATCHER
     reterror("compiled without libipatcher");
 #else
-    bootargs = "rd=md0 -restore -progress nand-enable-reformat=0x1 -v serial=0x3 debug=0x14e keepsyms=0x1 amfi=0xff amfi_unrestrict_task_for_pid=0x0 amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1";
     idevicerestore_mode_t *mode = 0;
     libipatcher::fw_key iBSSKeys;
     libipatcher::fw_key iBECKeys;
+    pair<ptr_smart<char*>, size_t> iBSS;
+    pair<ptr_smart<char*>, size_t> iBEC;
+    FILE *ibss = NULL;
+    FILE *ibec = NULL;
+    int rv;
+    bool cache1 = false;
+    bool cache2 = false;
+    std::string img3_end = ".patched.img3";
+    std::string img4_end = ".patched.img4";
+    std::string ibss_name = FUTURERESTORE_TMP_PATH"/ibss.";
+    std::string ibec_name = FUTURERESTORE_TMP_PATH"/ibec.";
 
     /* Assure device is in dfu */
     irecv_device_event_subscribe(&_client->irecv_e_ctx, irecv_event_cb, _client);
@@ -482,6 +492,43 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
     retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
     mutex_unlock(&_client->device_event_mutex);
     info("Device found in DFU Mode.\n");
+
+    ibss_name.append(getDeviceBoardNoCopy());
+    ibec_name.append(getDeviceBoardNoCopy());
+    ibss_name.append(".");
+    ibec_name.append(".");
+    ibss_name.append(_client->build);
+    ibec_name.append(_client->build);
+    if(_client->image4supported) {
+        ibss_name.append(img4_end);
+        ibec_name.append(img4_end);
+    } else {
+        ibss_name.append(img3_end);
+        ibec_name.append(img3_end);
+    }
+
+    ibss = fopen(ibss_name.c_str(), "rb");
+    if(ibss) {
+        fseek(ibss, 0, SEEK_END);
+        iBSS.second = ftell(ibss);
+        fseek(ibss, 0, SEEK_SET);
+        retassure(iBSS.first = (char*)malloc(iBSS.second), "failed to malloc memory for Rose\n");
+        size_t freadRet=0;
+        retassure((freadRet = fread((char*)iBSS.first, 1, iBSS.second, ibss)) == iBSS.second, "failed to load iBSS. size=%zu but fread returned %zu\n",iBSS.second,freadRet);
+        fclose(ibss);
+        cache1 = true;
+    }
+    ibec = fopen(ibec_name.c_str(), "rb");
+    if(ibec) {
+        fseek(ibec, 0, SEEK_END);
+        iBEC.second = ftell(ibec);
+        fseek(ibec, 0, SEEK_SET);
+        retassure(iBEC.first = (char*)malloc(iBEC.second), "failed to malloc memory for Rose\n");
+        size_t freadRet=0;
+        retassure((freadRet = fread((char*)iBEC.first, 1, iBEC.second, ibec)) == iBEC.second, "failed to load iBEC. size=%zu but fread returned %zu\n",iBEC.second,freadRet);
+        fclose(ibec);
+        cache2 = true;
+    }
 
     /* Patch bootloaders */
     try {
@@ -498,48 +545,52 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
         reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
     }
 
-    info("Patching iBSS\n");
-    auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
-    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
-
-    info("Patching iBEC\n");
-    auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
-    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
+    if(!iBSS.first){
+        info("Patching iBSS\n");
+        iBSS = getIPSWComponent(_client, build_identity, "iBSS");
+        iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
+    }
+    if(!iBEC.first) {
+        info("Patching iBEC\n");
+        iBEC = getIPSWComponent(_client, build_identity, "iBEC");
+        iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
+    }
 
     if (_client->image4supported) {
         /* if this is 64-bit, we need to back IM4P to IMG4
            also due to the nature of iBoot64Patchers sigpatches we need to stich a valid signed im4m to it (but nonce is ignored) */
         info("Repacking patched bootloaders as IMG4\n");
-        iBSS = move(libipatcher::packIM4PToIMG4(iBSS.first, iBSS.second, _im4ms[0].first, _im4ms[0].second));
-        iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
+        if(!cache1)
+            iBSS = move(libipatcher::packIM4PToIMG4(iBSS.first, iBSS.second, _im4ms[0].first, _im4ms[0].second));
+        if(!cache2)
+            iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
     }
 
-    FILE *ibss = NULL;
-    FILE *ibec = NULL;
-    int rv;
-    retassure(ibss = fopen(FUTURERESTORE_TMP_PATH"/ibss.patched.img4", "wb"), "can't save patched ibss at %s\n", FUTURERESTORE_TMP_PATH"/ibss.patched.img4");
-    retassure(rv = fwrite(iBSS.first, iBSS.second, 1, ibss), "can't save patched ibss at %s\n", FUTURERESTORE_TMP_PATH"/ibss.patched.img4");
-    retassure(ibec = fopen(FUTURERESTORE_TMP_PATH"/ibec.patched.img4", "wb"), "can't save patched ibec at %s\n", FUTURERESTORE_TMP_PATH"/ibec.patched.img4");
-    retassure(rv = fwrite(iBEC.first, iBEC.second, 1, ibec), "can't save patched ibec at %s\n", FUTURERESTORE_TMP_PATH"/ibec.patched.img4");
+    retassure(ibss = fopen(ibss_name.c_str(), "wb"), "can't save patched ibss at %s\n", ibss_name.c_str());
+    retassure(rv = fwrite(iBSS.first, iBSS.second, 1, ibss), "can't save patched ibss at %s\n", ibss_name.c_str());
+    retassure(ibec = fopen(ibec_name.c_str(), "wb"), "can't save patched ibec at %s\n", ibec_name.c_str());
+    retassure(rv = fwrite(iBEC.first, iBEC.second, 1, ibec), "can't save patched ibec at %s\n", ibec_name.c_str());
     fflush(ibss);
     fclose(ibss);
     fflush(ibec);
     fclose(ibec);
 
     /* Send and boot bootloaders */
+    irecv_error_t err = IRECV_E_UNKNOWN_ERROR;
+    if(!_noIBSS) {
+        /* send iBSS */
+        info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
+        mutex_lock(&_client->device_event_mutex);
+        err = irecv_send_buffer(_client->dfu->client, (unsigned char *) (char *) iBSS.first,
+                                (unsigned long) iBSS.second, 1);
+        retassure(err == IRECV_E_SUCCESS, "ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
 
-    // if(_noIBSS) goto label;
-
-    /* send iBSS */
-    info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
-    mutex_lock(&_client->device_event_mutex);
-    irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
-    retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
-
-    info("Booting iBSS, waiting for device to disconnect...\n");
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+        info("Booting iBSS, waiting for device to disconnect...\n");
+        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
+    
     retassure(((_client->mode == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
     info("Booting iBSS, waiting for device to reconnect...\n");
+    }
     bool dfu = false;
     if((_client->device->chip_id >= 0x7000 && _client->device->chip_id <= 0x8004) || (_client->device->chip_id >= 0x8900 && _client->device->chip_id <= 0x8965)) {
         cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
@@ -564,7 +615,6 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
             mutex_unlock(&_client->device_event_mutex);
             getDeviceMode(true);
             retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
-            mutex_lock(&_client->device_event_mutex);
         }
     } else if((_client->device->chip_id >= 0x8006 && _client->device->chip_id <= 0x8030) || (_client->device->chip_id >= 0x8101 && _client->device->chip_id <= 0x8301)) {
         dfu = true;
@@ -1347,7 +1397,16 @@ void futurerestore::doRestore(const char *ipsw){
         retassure((getDeviceMode(true) == _MODE_DFU) || (getDeviceMode(false) == _MODE_RECOVERY && _noIBSS), "unexpected device mode\n");
         irecv_device_event_unsubscribe(client->irecv_e_ctx);
         client->idevice_e_ctx = NULL;
-        enterPwnRecovery(build_identity);
+        std::string bootargs = "";
+        if(_boot_args != NULL) {
+            bootargs = _boot_args;
+        } else {
+            if (_serial) {
+                bootargs.append("serial=0x3 ");
+            }
+            bootargs.append("rd=md0 -restore -progress nand-enable-reformat=0x1 -v debug=0x14e keepsyms=0x1 amfi=0xff amfi_unrestrict_task_for_pid=0x0 amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1");
+        }
+        enterPwnRecovery(build_identity, bootargs);
         irecv_device_event_unsubscribe(_client->irecv_e_ctx);
         _client->idevice_e_ctx = NULL;
         irecv_device_event_subscribe(&client->irecv_e_ctx, irecv_event_cb, _client);
