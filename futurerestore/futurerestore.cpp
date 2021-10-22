@@ -20,6 +20,7 @@
 #endif
 
 #include <img4tool/img4tool.hpp>
+#include <utility>
 
 extern "C"{
 #include "common.h"
@@ -553,7 +554,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
     if(!iBEC.first) {
         info("Patching iBEC\n");
         iBEC = getIPSWComponent(_client, build_identity, "iBEC");
-        iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
+        iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, std::move(bootargs)));
     }
 
     if (_client->image4supported) {
