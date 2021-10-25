@@ -648,8 +648,9 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
 
         std::string generator = (_setNonce && _custom_nonce != NULL) ? _custom_nonce : getGeneratorFromSHSH2(_client->tss);
 
-        if(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
-            info("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
+        if((_setNonce && _custom_nonce != NULL) || memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
+            if(!_setNonce)
+                info("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
 
             assure(_client->tss);
             info("Writing generator=%s to nvram!\n", generator.c_str());
@@ -1405,7 +1406,7 @@ void futurerestore::doRestore(const char *ipsw){
             if (_serial) {
                 bootargs.append("serial=0x3 ");
             }
-            bootargs.append("rd=md0 -restore -progress nand-enable-reformat=0x1 -v debug=0x14e keepsyms=0x1 amfi=0xff amfi_unrestrict_task_for_pid=0x0 amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1");
+            bootargs.append("rd=md0 -restore -progress nand-enable-reformat=0x1 -v debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1");
         }
         enterPwnRecovery(build_identity, bootargs);
         irecv_device_event_unsubscribe(_client->irecv_e_ctx);
