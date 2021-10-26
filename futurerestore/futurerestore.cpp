@@ -625,7 +625,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         mutex_unlock(&_client->device_event_mutex);
         reterror("Device not supported!\n");
     }
-// label:
+
     /* Verify correct nonce/set nonce */
     if(_client->image4supported) {
         char *deviceGen = NULL;

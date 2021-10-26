@@ -382,23 +382,23 @@ index 0000000..a1ace41
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_tools/versions.json b/build_tools/versions.json
 new file mode 100644
-index 0000000..8560609
+index 0000000..729199a
 --- /dev/null
 +++ b/build_tools/versions.json
 @@ -0,0 +1,132 @@
 +{
 +  "versions": {
 +    "futurerestore": {
-+      "version": "253",
-+      "version2": "2.0.0-test+git20211006",
-+      "commit": "b49aad07f19b0b17d4ae97ab89675c971747b989",
++      "version": "259",
++      "version2": "2.0.0-test+git20211025",
++      "commit": "a58821b95f6417ad649ed7a5460337dcd82e200e",
 +      "url": "https://github.com/m1stadev/futurerestore",
 +      "branch": "test"
 +    },
 +    "idevicerestore_submodule": {
-+      "version": "826",
-+      "version2": "826+git20211006",
-+      "commit": "988bd03b5acd8692b23969a7e24b290abed75b5a",
++      "version": "831",
++      "version2": "831+git20211025",
++      "commit": "febc22e0b81d2dc33dc46b20cefb6453b08c05b5",
 +      "url": "https://github.com/m1stadev/idevicerestore",
 +      "branch": "test"
 +    },
@@ -410,16 +410,16 @@ index 0000000..8560609
 +      "brah": "master"
 +    },
 +    "openssl": {
-+      "version": "24070",
-+      "version2": "1.1.1l+git20211009",
-+      "commit": "a653e037ef0236ea9cd84ec4c94f0bb94aca56ab",
++      "version": "24081",
++      "version2": "1.1.1l+git20211024",
++      "commit": "95fd012db5827d4e29f33213b0ba178a4628c40d",
 +      "url": "https://github.com/openssl/openssl",
 +      "branch": "OpenSSL_1_1_1-stable"
 +    },
 +    "libzip": {
-+      "version": "3062",
-+      "version2": "1.8.0+git20210928",
-+      "commit": "76df02f86b9746e139fd9fc934a70e3a21bbc557",
++      "version": "3063",
++      "version2": "1.8.0+git20211015",
++      "commit": "547d98ce0810f6529716b1810a003fab9f9189b4",
 +      "url": "https://github.com/nih-at/libzip",
 +      "branch": "master"
 +    },
@@ -438,9 +438,9 @@ index 0000000..8560609
 +      "branch": "master"
 +    },
 +    "libimobiledevice_glue": {
-+      "version": "19",
-+      "version2": "1.0.0+git20210925",
-+      "commit": "499a5578b15235d00bc492068635de45bec1807d",
++      "version": "20",
++      "version2": "1.0.0+git20211018",
++      "commit": "7c37434360f1c49975c286566efc3f0c935a84ef",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
 +      "branch": "master"
 +    },
@@ -452,16 +452,16 @@ index 0000000..8560609
 +      "branch": "master"
 +    },
 +    "libimobiledevice": {
-+      "version": "1654",
-+      "version2": "1.3.0+git20210921",
-+      "commit": "b3d35fbcf7a1ac669c2e80fbd58920941a5d4c0c",
++      "version": "1655",
++      "version2": "1.3.0+git20211011",
++      "commit": "fa8bfb65c70edd4d2617fbbf970302beb9a4ced2",
 +      "url": "https://github.com/libimobiledevice/libimobiledevice",
 +      "branch": "master"
 +    },
 +    "libirecovery": {
-+      "version": "321",
-+      "version2": "1.0.0+git20210923",
-+      "commit": "0165076dedcad80c9a6886424cdc0992a88ce2ae",
++      "version": "324",
++      "version2": "1.0.0+git20211023",
++      "commit": "08a7c94569160eeb6f8e757c361d5e04a6492700",
 +      "url": "https://github.com/libimobiledevice/libirecovery",
 +      "branch": "master"
 +    },
@@ -501,21 +501,21 @@ index 0000000..8560609
 +      "branch": "master"
 +    },
 +    "liboffsetfinder64": {
-+      "version": "142",
-+      "version2": "142+git20211011",
-+      "commit": "b6660b8e4e9df1e0e13f3dad870d764f71994a6c",
++      "version": "143",
++      "version2": "143+git20211025",
++      "commit": "8548e5dd312829fc5be43dbf3bbed03be5cca967",
 +      "url": "https://github.com/Cryptiiiic/liboffsetfinder64",
 +      "branch": "cryptic"
 +    },
 +    "libipatcher": {
-+      "version": "86",
-+      "version2": "86+git20210810",
-+      "commit": "6a3b358b673e74c2be9f9b8a74a63b80dd94abf1",
++      "version": "88",
++      "version2": "88+git20210810",
++      "commit": "1e855d70c84419014e363bdbcaead7b145fe3e1f",
 +      "url": "https://github.com/Cryptiiiic/libipatcher",
 +      "branch": "main"
 +    }
 +  },
-+  "lastupdate": "1633942188"
++  "lastupdate": "1635212273"
 +}
 +
 diff --git a/makefiles/curl.mk b/makefiles/curl.mk
