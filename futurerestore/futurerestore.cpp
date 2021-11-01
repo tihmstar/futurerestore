@@ -32,12 +32,7 @@ extern "C"{
 #include "restore.h"
 #include "tsschecker.h"
 #include <libirecovery.h>
-#if defined(__APPLE__)
-#include <libkern/OSByteOrder.h>
-#define __bswap_64(x) OSSwapInt64(x)
-#else
-#include <byteswap.h>
-#endif
+#include "../external/idevicerestore/src/endianness.h"
 }
 
 //(re)define __mkdir
