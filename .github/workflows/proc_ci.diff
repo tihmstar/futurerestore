@@ -1,5 +1,5 @@
 diff --git a/.gitignore b/.gitignore
-index d08ff9f..8af2a99 100644
+index d08ff9f5..8af2a990 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -8,3 +8,4 @@ build_strap/
@@ -8,7 +8,7 @@ index d08ff9f..8af2a99 100644
  *.p12
 +.idea
 diff --git a/Makefile b/Makefile
-index f2d34bc..2224eae 100644
+index f2d34bc0..fa3a4bc7 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -65,6 +65,15 @@ WATCHOS_DEPLOYMENT_TARGET   := 5.0
@@ -27,15 +27,6 @@ index f2d34bc..2224eae 100644
  else
  $(error Unsupported CoreFoundation version)
  endif
-@@ -351,7 +360,7 @@ CXXFLAGS_FOR_BUILD :=
- LDFLAGS_FOR_BUILD  :=
- 
- else ifeq ($(UNAME),Darwin)
--ifeq ($(shell sw_vers -productName),macOS)
-+ifeq ($(shell echo 1),1)
- ifneq ($(MEMO_QUIET),1)
- $(warning Building on MacOS)
- endif # ($(MEMO_QUIET),1)
 @@ -435,25 +444,27 @@ BUILD_STRAP    := $(BUILD_ROOT)/build_strap/$(MEMO_TARGET)/$(MEMO_CFVER)
  # Extra scripts for the buildsystem
  BUILD_TOOLS    := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/build_tools
@@ -148,7 +139,7 @@ index f2d34bc..2224eae 100644
  
 diff --git a/build_info/libfragmentzip-proc.control b/build_info/libfragmentzip-proc.control
 new file mode 100644
-index 0000000..29c9b27
+index 00000000..29c9b274
 --- /dev/null
 +++ b/build_info/libfragmentzip-proc.control
 @@ -0,0 +1,8 @@
@@ -162,7 +153,7 @@ index 0000000..29c9b27
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libgeneral-proc.control b/build_info/libgeneral-proc.control
 new file mode 100644
-index 0000000..c1180ba
+index 00000000..c1180ba7
 --- /dev/null
 +++ b/build_info/libgeneral-proc.control
 @@ -0,0 +1,7 @@
@@ -175,7 +166,7 @@ index 0000000..c1180ba
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libimg4tool-proc.control b/build_info/libimg4tool-proc.control
 new file mode 100644
-index 0000000..8487d7f
+index 00000000..8487d7f2
 --- /dev/null
 +++ b/build_info/libimg4tool-proc.control
 @@ -0,0 +1,8 @@
@@ -189,7 +180,7 @@ index 0000000..8487d7f
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libimobiledevice-glue-dev.control b/build_info/libimobiledevice-glue-dev.control
 new file mode 100644
-index 0000000..c8f0d12
+index 00000000..c8f0d120
 --- /dev/null
 +++ b/build_info/libimobiledevice-glue-dev.control
 @@ -0,0 +1,8 @@
@@ -203,7 +194,7 @@ index 0000000..c8f0d12
 +Description: Library with common code used by the libraries and tools around the libimobiledevice project - devel
 diff --git a/build_info/libimobiledevice-glue-proc.control b/build_info/libimobiledevice-glue-proc.control
 new file mode 100644
-index 0000000..249ca79
+index 00000000..249ca79f
 --- /dev/null
 +++ b/build_info/libimobiledevice-glue-proc.control
 @@ -0,0 +1,8 @@
@@ -217,7 +208,7 @@ index 0000000..249ca79
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libimobiledevice-glue.control b/build_info/libimobiledevice-glue.control
 new file mode 100644
-index 0000000..0194648
+index 00000000..0194648c
 --- /dev/null
 +++ b/build_info/libimobiledevice-glue.control
 @@ -0,0 +1,8 @@
@@ -231,7 +222,7 @@ index 0000000..0194648
 +Description: Library with common code used by the libraries and tools around the libimobiledevice project
 diff --git a/build_info/libimobiledevice-proc.control b/build_info/libimobiledevice-proc.control
 new file mode 100644
-index 0000000..dcb9cbb
+index 00000000..dcb9cbb5
 --- /dev/null
 +++ b/build_info/libimobiledevice-proc.control
 @@ -0,0 +1,8 @@
@@ -245,7 +236,7 @@ index 0000000..dcb9cbb
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libinsn-proc.control b/build_info/libinsn-proc.control
 new file mode 100644
-index 0000000..961f422
+index 00000000..961f422f
 --- /dev/null
 +++ b/build_info/libinsn-proc.control
 @@ -0,0 +1,8 @@
@@ -259,7 +250,7 @@ index 0000000..961f422
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libipatcher-proc.control b/build_info/libipatcher-proc.control
 new file mode 100644
-index 0000000..73be3e8
+index 00000000..73be3e86
 --- /dev/null
 +++ b/build_info/libipatcher-proc.control
 @@ -0,0 +1,8 @@
@@ -273,7 +264,7 @@ index 0000000..73be3e8
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libirecovery-proc.control b/build_info/libirecovery-proc.control
 new file mode 100644
-index 0000000..2ca37c2
+index 00000000..2ca37c2c
 --- /dev/null
 +++ b/build_info/libirecovery-proc.control
 @@ -0,0 +1,8 @@
@@ -287,7 +278,7 @@ index 0000000..2ca37c2
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/liboffsetfinder64-proc.control b/build_info/liboffsetfinder64-proc.control
 new file mode 100644
-index 0000000..ac88d9e
+index 00000000..ac88d9e3
 --- /dev/null
 +++ b/build_info/liboffsetfinder64-proc.control
 @@ -0,0 +1,8 @@
@@ -301,7 +292,7 @@ index 0000000..ac88d9e
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libplist-proc.control b/build_info/libplist-proc.control
 new file mode 100644
-index 0000000..9cd4b3e
+index 00000000..9cd4b3e6
 --- /dev/null
 +++ b/build_info/libplist-proc.control
 @@ -0,0 +1,7 @@
@@ -314,7 +305,7 @@ index 0000000..9cd4b3e
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libpng16-proc.control b/build_info/libpng16-proc.control
 new file mode 100644
-index 0000000..1eba86b
+index 00000000..1eba86b2
 --- /dev/null
 +++ b/build_info/libpng16-proc.control
 @@ -0,0 +1,7 @@
@@ -327,7 +318,7 @@ index 0000000..1eba86b
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libssl-proc.control b/build_info/libssl-proc.control
 new file mode 100644
-index 0000000..ee3059f
+index 00000000..ee3059fa
 --- /dev/null
 +++ b/build_info/libssl-proc.control
 @@ -0,0 +1,7 @@
@@ -340,7 +331,7 @@ index 0000000..ee3059f
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libusbmuxd-proc.control b/build_info/libusbmuxd-proc.control
 new file mode 100644
-index 0000000..1e05603
+index 00000000..1e056036
 --- /dev/null
 +++ b/build_info/libusbmuxd-proc.control
 @@ -0,0 +1,8 @@
@@ -354,7 +345,7 @@ index 0000000..1e05603
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libxpwn-proc.control b/build_info/libxpwn-proc.control
 new file mode 100644
-index 0000000..9c399ed
+index 00000000..9c399eda
 --- /dev/null
 +++ b/build_info/libxpwn-proc.control
 @@ -0,0 +1,8 @@
@@ -368,7 +359,7 @@ index 0000000..9c399ed
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_info/libzip-proc.control b/build_info/libzip-proc.control
 new file mode 100644
-index 0000000..a1ace41
+index 00000000..a1ace41d
 --- /dev/null
 +++ b/build_info/libzip-proc.control
 @@ -0,0 +1,8 @@
@@ -382,7 +373,7 @@ index 0000000..a1ace41
 +Description: For use in Github Actions macOS CI, installs to /Users/runner/Procursus/build_base
 diff --git a/build_tools/versions.json b/build_tools/versions.json
 new file mode 100644
-index 0000000..729199a
+index 00000000..729199aa
 --- /dev/null
 +++ b/build_tools/versions.json
 @@ -0,0 +1,132 @@
@@ -519,7 +510,7 @@ index 0000000..729199a
 +}
 +
 diff --git a/makefiles/curl.mk b/makefiles/curl.mk
-index 84ab908..4c9282c 100644
+index 84ab9086..4c9282ca 100644
 --- a/makefiles/curl.mk
 +++ b/makefiles/curl.mk
 @@ -3,7 +3,7 @@ $(error Use the main Makefile)
@@ -532,10 +523,10 @@ index 84ab908..4c9282c 100644
  
  curl-setup: setup
 diff --git a/makefiles/futurerestore.mk b/makefiles/futurerestore.mk
-index 3a15cdc..42735d8 100644
+index 3a15cdc5..723fbedb 100644
 --- a/makefiles/futurerestore.mk
 +++ b/makefiles/futurerestore.mk
-@@ -3,31 +3,25 @@ $(error Use the main Makefile)
+@@ -3,33 +3,28 @@ $(error Use the main Makefile)
  endif
  
  SUBPROJECTS                         += futurerestore
@@ -573,10 +564,14 @@ index 3a15cdc..42735d8 100644
 +		libcurl_CFLAGS="-I$(TARGET_SYSROOT)/usr/include" \
 +		LDFLAGS="$(LDFLAGS) -L$(TARGET_SYSROOT)/usr/lib -lcompression -framework CoreFoundation -framework IOKit -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib -lfragmentzip -lusbmuxd-2.0 -limobiledevice-glue-1.0 -limobiledevice-1.0 -L$(BUILD_BASE)$(MEMO_PREFIX)$(MEMO_SUB_PREFIX)/lib/xpwn -lcommon -lxpwn" \
  		zlib_LIBS="-L$(TARGET_SYSROOT)/usr/lib -lz" \
- 		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
+-		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"
++		zlib_CFLAGS="-I$(TARGET_SYSROOT)/usr/include"; \
++		cat config.log
  	+$(MAKE) -C $(BUILD_WORK)/futurerestore
+ 	+$(MAKE) -C $(BUILD_WORK)/futurerestore install \
+ 		DESTDIR="$(BUILD_STAGE)/futurerestore"
 diff --git a/makefiles/idevicerestore.mk b/makefiles/idevicerestore.mk
-index 526a712..64fe396 100644
+index 526a7123..64fe3961 100644
 --- a/makefiles/idevicerestore.mk
 +++ b/makefiles/idevicerestore.mk
 @@ -3,24 +3,28 @@ $(error Use the main Makefile)
@@ -616,7 +611,7 @@ index 526a712..64fe396 100644
  		DESTDIR="$(BUILD_STAGE)/idevicerestore"
  	$(call AFTER_BUILD)
 diff --git a/makefiles/img4tool.mk b/makefiles/img4tool.mk
-index 7c2ce9d..3103a97 100644
+index 7c2ce9d9..3103a97e 100644
 --- a/makefiles/img4tool.mk
 +++ b/makefiles/img4tool.mk
 @@ -3,13 +3,13 @@ $(error Use the main Makefile)
@@ -681,7 +676,7 @@ index 7c2ce9d..3103a97 100644
  	# img4tool.mk Build cleanup
  	rm -rf $(BUILD_DIST)/*img4tool*/
 diff --git a/makefiles/libfragmentzip.mk b/makefiles/libfragmentzip.mk
-index 28a5846..fef6b1d 100644
+index 28a5846e..fef6b1df 100644
 --- a/makefiles/libfragmentzip.mk
 +++ b/makefiles/libfragmentzip.mk
 @@ -3,14 +3,13 @@ $(error Use the main Makefile)
@@ -755,7 +750,7 @@ index 28a5846..fef6b1d 100644
  
  .PHONY: libfragmentzip libfragmentzip-package
 diff --git a/makefiles/libgeneral.mk b/makefiles/libgeneral.mk
-index 48a1891..6caee9b 100644
+index 48a1891f..6caee9bf 100644
 --- a/makefiles/libgeneral.mk
 +++ b/makefiles/libgeneral.mk
 @@ -3,13 +3,13 @@ $(error Use the main Makefile)
@@ -821,7 +816,7 @@ index 48a1891..6caee9b 100644
  .PHONY: libgeneral libgeneral-package
 diff --git a/makefiles/libimobiledevice-glue.mk b/makefiles/libimobiledevice-glue.mk
 new file mode 100644
-index 0000000..e41c496
+index 00000000..e41c4966
 --- /dev/null
 +++ b/makefiles/libimobiledevice-glue.mk
 @@ -0,0 +1,46 @@
@@ -872,7 +867,7 @@ index 0000000..e41c496
 +
 +.PHONY: libimobiledevice-glue libimobiledevice-glue-package
 diff --git a/makefiles/libimobiledevice.mk b/makefiles/libimobiledevice.mk
-index e05b026..f59c3c6 100644
+index e05b0269..f59c3c66 100644
 --- a/makefiles/libimobiledevice.mk
 +++ b/makefiles/libimobiledevice.mk
 @@ -3,8 +3,8 @@ $(error Use the main Makefile)
@@ -943,7 +938,7 @@ index e05b026..f59c3c6 100644
  
  .PHONY: libimobiledevice libimobiledevice-package
 diff --git a/makefiles/libinsn.mk b/makefiles/libinsn.mk
-index c1f5f54..c7d587e 100644
+index c1f5f546..c7d587e9 100644
 --- a/makefiles/libinsn.mk
 +++ b/makefiles/libinsn.mk
 @@ -3,9 +3,9 @@ $(error Use the main Makefile)
@@ -1002,7 +997,7 @@ index c1f5f54..c7d587e 100644
  
  .PHONY: libinsn libinsn-package
 diff --git a/makefiles/libipatcher.mk b/makefiles/libipatcher.mk
-index f077742..9255e15 100644
+index f0777429..9255e151 100644
 --- a/makefiles/libipatcher.mk
 +++ b/makefiles/libipatcher.mk
 @@ -3,17 +3,17 @@ $(error Use the main Makefile)
@@ -1081,7 +1076,7 @@ index f077742..9255e15 100644
  
  .PHONY: libipatcher libipatcher-package
 diff --git a/makefiles/libirecovery.mk b/makefiles/libirecovery.mk
-index ff54eb1..592fae0 100644
+index ff54eb16..592fae0a 100644
 --- a/makefiles/libirecovery.mk
 +++ b/makefiles/libirecovery.mk
 @@ -3,8 +3,8 @@ $(error Use the main Makefile)
@@ -1152,7 +1147,7 @@ index ff54eb1..592fae0 100644
  
  .PHONY: libirecovery libirecovery-package
 diff --git a/makefiles/liboffsetfinder64.mk b/makefiles/liboffsetfinder64.mk
-index 8a69708..67d21ee 100644
+index 8a697085..67d21eea 100644
 --- a/makefiles/liboffsetfinder64.mk
 +++ b/makefiles/liboffsetfinder64.mk
 @@ -3,12 +3,12 @@ $(error Use the main Makefile)
@@ -1215,7 +1210,7 @@ index 8a69708..67d21ee 100644
  
  .PHONY: liboffsetfinder64 liboffsetfinder64-package
 diff --git a/makefiles/libplist.mk b/makefiles/libplist.mk
-index 13c07db..01ae375 100644
+index 13c07db8..01ae375c 100644
 --- a/makefiles/libplist.mk
 +++ b/makefiles/libplist.mk
 @@ -3,12 +3,13 @@ $(error Use the main Makefile)
@@ -1300,7 +1295,7 @@ index 13c07db..01ae375 100644
  
  .PHONY: libplist libplist-package
 diff --git a/makefiles/libpng16.mk b/makefiles/libpng16.mk
-index 6a85159..eea4258 100644
+index 6a851596..eea42582 100644
 --- a/makefiles/libpng16.mk
 +++ b/makefiles/libpng16.mk
 @@ -3,12 +3,13 @@ $(error Use the main Makefile)
@@ -1373,7 +1368,7 @@ index 6a85159..eea4258 100644
  
  .PHONY: libpng16 libpng16-package
 diff --git a/makefiles/libusbmuxd.mk b/makefiles/libusbmuxd.mk
-index 80d1dfd..9b2959f 100644
+index 80d1dfd0..9b2959f0 100644
 --- a/makefiles/libusbmuxd.mk
 +++ b/makefiles/libusbmuxd.mk
 @@ -3,21 +3,21 @@ $(error Use the main Makefile)
@@ -1445,7 +1440,7 @@ index 80d1dfd..9b2959f 100644
  
  .PHONY: libusbmuxd libusbmuxd-package
 diff --git a/makefiles/libzip.mk b/makefiles/libzip.mk
-index f659969..8aa12ab 100644
+index f6599696..8aa12ab6 100644
 --- a/makefiles/libzip.mk
 +++ b/makefiles/libzip.mk
 @@ -3,67 +3,55 @@ $(error Use the main Makefile)
@@ -1539,7 +1534,7 @@ index f659969..8aa12ab 100644
  
  .PHONY: libzip libzip-package
 diff --git a/makefiles/openssl.mk b/makefiles/openssl.mk
-index c65be42..462b35d 100644
+index c65be423..462b35d0 100644
 --- a/makefiles/openssl.mk
 +++ b/makefiles/openssl.mk
 @@ -2,15 +2,24 @@ ifneq ($(PROCURSUS),1)
@@ -1633,7 +1628,7 @@ index c65be42..462b35d 100644
  
  .PHONY: openssl openssl-package
 diff --git a/makefiles/tsschecker.mk b/makefiles/tsschecker.mk
-index e23b84a..83faf47 100644
+index e23b84a0..83faf477 100644
 --- a/makefiles/tsschecker.mk
 +++ b/makefiles/tsschecker.mk
 @@ -3,30 +3,27 @@ $(error Use the main Makefile)
@@ -1679,7 +1674,7 @@ index e23b84a..83faf47 100644
  		DESTDIR="$(BUILD_STAGE)/tsschecker"
  	$(call AFTER_BUILD)
 diff --git a/makefiles/xpwn.mk b/makefiles/xpwn.mk
-index 47e3d37..10b13dc 100644
+index 47e3d374..10b13dc5 100644
 --- a/makefiles/xpwn.mk
 +++ b/makefiles/xpwn.mk
 @@ -3,14 +3,13 @@ $(error Use the main Makefile)

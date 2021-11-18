@@ -7,7 +7,7 @@ on:
 
 jobs:
   mac-x86_64:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -29,7 +29,7 @@ jobs:
         path: |
           /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
   mac-arm64:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout
       uses: actions/checkout@v2

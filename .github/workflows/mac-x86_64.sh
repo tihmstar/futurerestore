@@ -14,9 +14,9 @@ echo 'step 2:'
 curl -sO https://mac.cryptiiiic.com/CI-Scripts/bootstrap_x86_64.tar.zst
 zstd -dk bootstrap_x86_64.tar.zst
 sudo gtar xf ${BASE}/bootstrap_x86_64.tar -C / --warning=none || true || true
-sudo ${PROCURSUS}/bin/apt update -y
-sudo ${PROCURSUS}/bin/apt dist-upgrade -y
-sudo ${PROCURSUS}/bin/apt install autopoint autoconf autoconf-archive automake bash bison cmake coreutils docbook-xml docbook-xsl dpkg fakeroot flex findutils gawk gnupg git grep groff ldid libtool make ncurses-bin openssl patch pkg-config po4a python3 sed tar triehash wget xz-utils zstd fd libgeneral-proc libimg4tool-proc libimobiledevice-glue-proc libimobiledevice-proc libinsn-proc libipatcher-proc libirecovery-proc liboffsetfinder64-proc libplist-proc libpng16-proc libssl-proc libusbmuxd-proc libxpwn-proc libzip-proc libfragmentzip-proc -y
+sudo ${PROCURSUS}/bin/apt-get update -qq
+sudo ${PROCURSUS}/bin/apt-get dist-upgrade -yqq
+#sudo ${PROCURSUS}/bin/apt-get -yqq reinstall autopoint autoconf autoconf-archive automake bash bison cmake coreutils docbook-xml docbook-xsl dpkg fakeroot flex findutils gawk gnupg git grep groff ldid libtool make ncurses-bin openssl patch pkg-config po4a python3 sed tar triehash wget xz-utils zstd fd libgeneral-proc libimg4tool-proc libimobiledevice-glue-proc libimobiledevice-proc libinsn-proc libipatcher-proc libirecovery-proc liboffsetfinder64-proc libplist-proc libpng16-proc libssl-proc libusbmuxd-proc libxpwn-proc libzip-proc libfragmentzip-proc
 echo 'step 3:'
 cd ${BASE}/../..
 export FUTURERESTORE_VERSION=$(git rev-list --count HEAD | tr -d '\n')

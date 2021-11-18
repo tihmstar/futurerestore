@@ -398,6 +398,13 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths){
         if (_isUpdateInstall) {
             if(plist_t update =  plist_dict_get_item(apticket, "updateInstall")){
                 plist_t cpy = plist_copy(update);
+                plist_t gen_cpy = NULL;
+                if(plist_t gen = plist_dict_get_item(apticket, "generator")) {
+                    plist_t gen_cpy = plist_copy(gen);
+                    plist_free(gen);
+                    plist_dict_insert_item(cpy, "generator", gen_cpy);
+                }
+                if(gen_cpy != NULL) plist_free(gen_cpy);
                 plist_free(apticket);
                 apticket = cpy;
             }
@@ -1401,7 +1408,11 @@ void futurerestore::doRestore(const char *ipsw){
             if (_serial) {
                 bootargs.append("serial=0x3 ");
             }
-            bootargs.append("rd=md0 -restore -progress nand-enable-reformat=0x1 -v debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1");
+            bootargs.append("rd=md0 ");
+            if(!_isUpdateInstall) {
+                bootargs.append("nand-enable-reformat=0x1 ");
+            }
+            bootargs.append("-v -restore debug=0x2014e keepsyms=0x1 amfi=0xff amfi_allow_any_signature=0x1 amfi_get_out_of_my_way=0x1 cs_enforcement_disable=0x1");
         }
         enterPwnRecovery(build_identity, bootargs);
         irecv_device_event_unsubscribe(_client->irecv_e_ctx);
