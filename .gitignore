@@ -12,6 +12,7 @@
 aclocal.m4
 autom4te.cache
 compile
+!.github/workflows/config.guess
 config.*
 configure
 depcomp

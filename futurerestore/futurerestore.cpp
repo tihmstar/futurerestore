@@ -509,28 +509,31 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         ibss_name.append(img3_end);
         ibec_name.append(img3_end);
     }
-
-    ibss = fopen(ibss_name.c_str(), "rb");
-    if(ibss) {
-        fseek(ibss, 0, SEEK_END);
-        iBSS.second = ftell(ibss);
-        fseek(ibss, 0, SEEK_SET);
-        retassure(iBSS.first = (char*)malloc(iBSS.second), "failed to malloc memory for Rose\n");
-        size_t freadRet=0;
-        retassure((freadRet = fread((char*)iBSS.first, 1, iBSS.second, ibss)) == iBSS.second, "failed to load iBSS. size=%zu but fread returned %zu\n",iBSS.second,freadRet);
-        fclose(ibss);
-        cache1 = true;
-    }
-    ibec = fopen(ibec_name.c_str(), "rb");
-    if(ibec) {
-        fseek(ibec, 0, SEEK_END);
-        iBEC.second = ftell(ibec);
-        fseek(ibec, 0, SEEK_SET);
-        retassure(iBEC.first = (char*)malloc(iBEC.second), "failed to malloc memory for Rose\n");
-        size_t freadRet=0;
-        retassure((freadRet = fread((char*)iBEC.first, 1, iBEC.second, ibec)) == iBEC.second, "failed to load iBEC. size=%zu but fread returned %zu\n",iBEC.second,freadRet);
-        fclose(ibec);
-        cache2 = true;
+    if(!_noCache) {
+        ibss = fopen(ibss_name.c_str(), "rb");
+        if (ibss) {
+            fseek(ibss, 0, SEEK_END);
+            iBSS.second = ftell(ibss);
+            fseek(ibss, 0, SEEK_SET);
+            retassure(iBSS.first = (char *) malloc(iBSS.second), "failed to malloc memory for Rose\n");
+            size_t freadRet = 0;
+            retassure((freadRet = fread((char *) iBSS.first, 1, iBSS.second, ibss)) == iBSS.second,
+                      "failed to load iBSS. size=%zu but fread returned %zu\n", iBSS.second, freadRet);
+            fclose(ibss);
+            cache1 = true;
+        }
+        ibec = fopen(ibec_name.c_str(), "rb");
+        if (ibec) {
+            fseek(ibec, 0, SEEK_END);
+            iBEC.second = ftell(ibec);
+            fseek(ibec, 0, SEEK_SET);
+            retassure(iBEC.first = (char *) malloc(iBEC.second), "failed to malloc memory for Rose\n");
+            size_t freadRet = 0;
+            retassure((freadRet = fread((char *) iBEC.first, 1, iBEC.second, ibec)) == iBEC.second,
+                      "failed to load iBEC. size=%zu but fread returned %zu\n", iBEC.second, freadRet);
+            fclose(ibec);
+            cache2 = true;
+        }
     }
 
     /* Patch bootloaders */
@@ -1311,22 +1314,25 @@ void futurerestore::doRestore(const char *ipsw){
            for now a simple pointercompare should be fine, because both plist_t should point into the same buildidentity inside the buildmanifest */
         if (ticketIdentity != build_identity ){
             error("BuildIdentity selected for restore does not match APTicket\n\n");
-            printf("BuildIdentity selected for restore:\n");
+            info("BuildIdentity selected for restore:\n");
             img4tool::printGeneralBuildIdentityInformation(build_identity);
-            printf("\nBuildIdentity is valid for the APTicket:\n");
+            info("\nBuildIdentity is valid for the APTicket:\n");
 
             if (ticketIdentity) img4tool::printGeneralBuildIdentityInformation(ticketIdentity),putchar('\n');
             else{
-                printf("IM4M is not valid for any restore within the Buildmanifest\n");
-                printf("This APTicket can't be used for restoring this firmware\n");
+                info("IM4M is not valid for any restore within the Buildmanifest\n");
+                info("This APTicket can't be used for restoring this firmware\n");
             }
-            reterror("APTicket can't be used for this restore\n");
-        }else{
-            if (!img4tool::isIM4MSignatureValid({im4m.first,im4m.second})){
-                printf("IM4M signature is not valid!\n");
+            if(_skipBlob) {
+                info("[WARNING] NOT VALIDATING SHSH BLOBS!\n");
+            } else {
                 reterror("APTicket can't be used for this restore\n");
             }
-            printf("Verified APTicket to be valid for this restore\n");
+        }else{
+            if (!img4tool::isIM4MSignatureValid({im4m.first,im4m.second})){
+                info("IM4M signature is not valid!\n");
+            }
+            info("Verified APTicket to be valid for this restore\n");
         }
     }else if (_enterPwnRecoveryRequested){
         info("[WARNING] skipping ramdisk hash check, since device is in pwnDFU according to user\n");

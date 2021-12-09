@@ -84,7 +84,10 @@ class futurerestore {
 
     const char *_custom_nonce = NULL;
     const char *_boot_args = NULL;
-    
+
+    bool _noCache = false;
+    bool _skipBlob = false;
+
     bool _enterPwnRecoveryRequested = false;
     bool _rerestoreiOS9 = false;
     //methods
@@ -134,6 +137,8 @@ public:
     void setKernelPath(const char *kernelPath);
     void setNonce(const char *custom_nonce){_custom_nonce = custom_nonce;};
     void setBootArgs(const char *boot_args){_boot_args = boot_args;};
+    void disableCache(){_noCache = true;};
+    void skipBlobValidation(){_skipBlob = true;};
     bool isUpdateInstall(){return _isUpdateInstall;};
     
     plist_t sepManifest(){return _sepbuildmanifest;};

@@ -6,7 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  mac-x86_64:
+  macOS:
+    env:
+      PROCURSUS: /opt/procursus
+      PATH: /opt/procursus/bin:/opt/procursus/libexec/gnubin:/usr/local/lib/ruby/gems/2.7.0/bin:/usr/local/opt/ruby@2.7/bin:/usr/local/opt/pipx_bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Users/runner/.yarn/bin:/Users/runner/Library/Android/sdk/tools:/Users/runner/Library/Android/sdk/platform-tools:/Users/runner/Library/Android/sdk/ndk-bundle:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/bin:/bin:/usr/sbin:/sbin:/Users/runner/.dotnet/tools:/Users/runner/.ghcup/bin:/Users/runner/hostedtoolcache/stack/2.7.3/x64
     runs-on: macos-11
     steps:
     - name: Checkout
@@ -14,66 +17,92 @@ jobs:
       with:
         submodules: 'true'
         fetch-depth: 0
-    - name: macOS x86_64 Build
-      id: mac-x86_64
+    - name: macOS Build
+      id: macOS-Build
       run: |
         cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
-        curl -sO https://mac.cryptiiiic.com/CI-Scripts/futurerestore-mac-x86_64.sh
-        chmod +x futurerestore-mac-x86_64.sh
-        if [[ "$(file futurerestore-mac-x86_64.sh)" == "futurerestore-mac-x86_64.sh: a /usr/bin/env zsh script text executable, ASCII text" ]]; then ./futurerestore-mac-x86_64.sh; else ./mac-x86_64.sh; fi
-    - name: Archive
-      id: archive
+        ./mac-bootstrap.sh
+        cat /etc/paths
+        which pkg-config
+        ./Builder macOS x86_64 release 1300 10.12 &
+        ./Builder macOS x86_64 debug 1300 10.12 &
+        ./Builder macOS arm64 release 1700 11.0 &
+        ./Builder macOS arm64 debug 1700 11.0 &
+        wait
+        ./mac-post.sh
+    - name: macOS x86_64 RELEASE Archive
+      id: macOS-x86_64-RELEASE-Archive
       uses: actions/upload-artifact@v2
       with:
-        name: futurerestore-macOS-x86_64
+        name: futurerestore-macOS-x86_64-RELEASE
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
-  mac-arm64:
-    runs-on: macos-11
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: 'true'
-        fetch-depth: 0
-    - name: macOS arm64 Build
-      id: mac-arm64
-      run: |
-        cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
-        curl -sO https://mac.cryptiiiic.com/CI-Scripts/futurerestore-mac-arm64.sh
-        chmod +x futurerestore-mac-arm64.sh
-        if [[ "$(file futurerestore-mac-x86_64.sh)" == "futurerestore-mac-arm64.sh: a /usr/bin/env zsh script text executable, ASCII text" ]]; then ./futurerestore-mac-arm64.sh; else ./mac-arm64.sh; fi
-    - name: Archive
-      id: archive
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-x86_64-*-RELEASE.tar.xz
+    - name: macOS x86_64 DEBUG Archive
+      id: macOS-x86_64-DEBUG-Archive
       uses: actions/upload-artifact@v2
       with:
-        name: futurerestore-macOS-arm64
+        name: futurerestore-macOS-x86_64-DEBUG
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
-  linux:
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-x86_64-*-DEBUG.tar.xz
+    - name: macOS arm64 RELEASE Archive
+      id: macOS-arm64-RELEASE-Archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: futurerestore-macOS-arm64-RELEASE
+        path: |
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-arm64-*-RELEASE.tar.xz
+    - name: macOS arm64 DEBUG Archive
+      id: macOS-arm64-DEBUG-Archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: futurerestore-macOS-arm64-DEBUG
+        path: |
+          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-arm64-*-DEBUG.tar.xz
+  Linux:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: 'true'
-        fetch-depth: 0
-    - name: Linux Build
-      id: linux
-      uses: addnab/docker-run-action@v3
-      with:
-        image: debian:buster-slim
-        options: -v ${{ github.workspace }}/..:/tmp/build/ 
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+          fetch-depth: 0
+      - name: Linux Build
+        id: Linux
+        uses: addnab/docker-run-action@v3
+        with:
+          image: debian:buster-slim
+          options: -v ${{ github.workspace }}/..:/tmp/Builder/repos/
+          run: |
+            cd /tmp/Builder/repos/futurerestore/.github/workflows/
+            ./linux-bootstrap.sh
+            ./Builder Linux cctools
+            ./Builder Linux x86_64 Release &
+            ./Builder Linux x86_64 Debug &
+            wait
+            ./linux-post.sh
+      - name: Linux x86_64 RELEASE Build
         run: |
-          /tmp/build/futurerestore/.github/workflows/linux.sh
-    - name: Linux Copy
-      run: |
-        export FUTURERESTORE_VERSION_RELEASE=$(cat /home/runner/work/futurerestore/futurerestore/version.txt | tr -d '\n')
-        docker cp $(docker ps -ql):/tmp/build/futurerestore-${FUTURERESTORE_VERSION_RELEASE}-linux.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/
-    - name: Archive
-      id: archive
-      uses: actions/upload-artifact@v2
-      with:
-        name: futurerestore-linux
-        path: |
-          /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-*.tar.xz
+          mkdir -p /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/name1.txt /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/futurerestore1.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          mv /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore1.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/$(cat /home/runner/work/futurerestore/futurerestore/.github/workflows/name1.txt)
+      - name: Linux x86_64 DEBUG Build
+        run: |
+          mkdir -p /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/name2.txt /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/futurerestore2.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          mv /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore2.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/$(cat /home/runner/work/futurerestore/futurerestore/.github/workflows/name2.txt)
+      - name: futurerestore Linux x86_64 RELEASE Archive
+        id: futurerestore-Linux-x86_64-RELEASE-Archive
+        uses: actions/upload-artifact@v2
+        with:
+          name: futurerestore-Linux-x86_64-RELEASE
+          path: |
+            /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-Linux-x86_64*-RELEASE.tar.xz
+      - name: futurerestore Linux x86_64 DEBUG Archive
+        id: futurerestore-Linux-x86_64-DEBUG-Archive
+        uses: actions/upload-artifact@v2
+        with:
+          name: futurerestore-Linux-x86_64-DEBUG
+          path: |
+            /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-Linux-x86_64*-DEBUG.tar.xz

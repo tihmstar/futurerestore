@@ -55,6 +55,8 @@ static struct option longopts[] = {
         { "set-nonce",          optional_argument,      NULL, '7' },
         { "serial",             no_argument,            NULL, '8' },
         { "boot-args",          required_argument,      NULL, '9' },
+        { "no-cache",           no_argument,            NULL, 'a' },
+        { "skip-blob",          no_argument,            NULL, 'c' },
 #endif
         { NULL, 0, NULL, 0 }
 };
@@ -71,7 +73,9 @@ static struct option longopts[] = {
 #define FLAG_SET_NONCE          1 << 9
 #define FLAG_SERIAL             1 << 10
 #define FLAG_BOOT_ARGS          1 << 11
-#define FLAG_NO_RESTORE_FR      1 << 12
+#define FLAG_NO_CACHE           1 << 12
+#define FLAG_SKIP_BLOB          1 << 13
+#define FLAG_NO_RESTORE_FR      1 << 14
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] iPSW\n");
     printf("Allows restoring to non-matching firmware with custom SEP+baseband\n");
@@ -94,6 +98,8 @@ void cmd_help(){
     printf("      --set-nonce=0xNONCE\tSet custom nonce then exit recovery(requires use-pwndfu)\n");
     printf("      --serial\t\t\tEnable serial during boot(requires serial cable and use-pwndfu)\n");
     printf("      --boot-args\t\tSet custom restore boot-args(PROCEED WITH CAUTION)(requires use-pwndfu)\n");
+    printf("      --no-cache\t\tDisable cached patched iBSS/iBEC(requires use-pwndfu)\n");
+    printf("      --skip-blob\t\tSkip SHSH blob validation(PROCEED WITH CAUTION)(requires use-pwndfu)\n");
 #endif
 
     printf("\nOptions for SEP:\n");
@@ -158,7 +164,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wudez0123456789", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wudez0123456789ac", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPaths.push_back(optarg);
@@ -222,6 +228,12 @@ int main_r(int argc, const char * argv[]) {
                 flags |= FLAG_BOOT_ARGS;
                 bootargs = (optarg) ? optarg : NULL;
                 break;
+            case 'a': // long option: "no-cache";
+                flags |= FLAG_NO_CACHE;
+                break;
+            case 'c': // long option: "skip-blob";
+                flags |= FLAG_SKIP_BLOB;
+                break;
 #endif
             case 'e': // long option: "exit-recovery"; can be called as short option
                 exitRecovery = true;
@@ -279,6 +291,10 @@ int main_r(int argc, const char * argv[]) {
     }
     if(flags & FLAG_BOOT_ARGS)
         retassure((flags & FLAG_IS_PWN_DFU),"--boot-args requires --use-pwndfu\n");
+    if(flags & FLAG_NO_CACHE)
+        retassure((flags & FLAG_IS_PWN_DFU),"--no-cache requires --use-pwndfu\n");
+    if(flags & FLAG_SKIP_BLOB)
+        retassure((flags & FLAG_IS_PWN_DFU),"--skip-blob requires --use-pwndfu\n");
 
     if (exitRecovery) {
         client.exitRecovery();
@@ -327,6 +343,14 @@ int main_r(int argc, const char * argv[]) {
 
         if(flags & FLAG_BOOT_ARGS) {
             client.setBootArgs(bootargs);
+        }
+
+        if(flags & FLAG_NO_CACHE) {
+            client.disableCache();
+        }
+
+        if(flags & FLAG_SKIP_BLOB) {
+            client.skipBlobValidation();
         }
 
         if (flags & FLAG_LATEST_SEP){

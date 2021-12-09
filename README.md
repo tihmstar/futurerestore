@@ -76,6 +76,8 @@ Usage: `futurerestore [OPTIONS] iPSW`
 |                       | ` --set-nonce=0xNONCE `                           | Set custom nonce then exit recovery(requires use-pwndfu) |
 |                       | ` --serial `                           | Enable serial during boot(requires serial cable and use-pwndfu) |
 |                       | ` --boot-args "BOOTARGS" `                           | Set custom restore boot-args(PROCEED WITH CAUTION)(requires use-pwndfu) |
+|                       | ` --no-cache `                           | Disable cached patched iBSS/iBEC(requires use-pwndfu) |
+|                       | ` --skip-blob `                           | Skip SHSH blob validation(PROCEED WITH CAUTION)(requires use-pwndfu) |
 |                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one |
 |  ` -s `           | ` --sep PATH `                                 | Manually specify SEP to be flashed |
 |  ` -m `           | ` --sep-manifest PATH `              | BuildManifest for requesting SEP ticket |
