@@ -22,8 +22,6 @@ jobs:
       run: |
         cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
         ./mac-bootstrap.sh
-        cat /etc/paths
-        which pkg-config
         ./Builder macOS x86_64 release 1300 10.12 &
         ./Builder macOS x86_64 debug 1300 10.12 &
         ./Builder macOS arm64 release 1700 11.0 &

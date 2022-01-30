@@ -44,7 +44,24 @@ extern "C"{
 #define __mkdir(path, mode) mkdir(path)
 #else
 #include <sys/stat.h>
-#define __mkdir(path, mode) mkdir(path, mode)
+#ifdef __APPLE__
+#define NEW_ID 501
+#else
+#define NEW_ID 1000
+#endif
+#define __mkdir(path, mode) \
+do {                        \
+    int id = getuid();      \
+    setuid(NEW_ID);         \
+    setgid(NEW_ID);         \
+    seteuid(NEW_ID);        \
+    setegid(NEW_ID);        \
+    mkdir(path, mode);      \
+    setuid(id);             \
+    setgid(id);             \
+    seteuid(id);            \
+    setegid(id);            \
+} while(false)
 #endif
 
 #define USEC_PER_SEC 1000000
@@ -108,7 +125,7 @@ futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, b
     
     struct stat st{0};
     if (stat(FUTURERESTORE_TMP_PATH, &st) == -1) __mkdir(FUTURERESTORE_TMP_PATH, 0755);
-    
+
     nocache = 1; //tsschecker nocache
     _foundnonce = -1;
 }
@@ -537,21 +554,31 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
     }
 
     /* Patch bootloaders */
-    try {
-        std::string board = getDeviceBoardNoCopy();
-        info("Getting firmware keys for: %s\n", board.c_str());
-        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap" || board == "n66ap" || board == "n66map") {
-            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
-            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
-        } else {
-            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
-            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+    if(!cache1 && !cache2) {
+        try {
+            std::string board = getDeviceBoardNoCopy();
+            info("Getting firmware keys for: %s\n", board.c_str());
+            if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap" || board == "n66ap" || board == "n66map") {
+                if(!_noIBSS && !cache1) {
+                    iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
+                }
+                if(!cache2) {
+                    iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
+                }
+            } else {
+                if(!_noIBSS && !cache1) {
+                    iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
+                }
+                if(!cache2) {
+                    iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
+                }
+            }
+        } catch (tihmstar::exception &e) {
+            reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
         }
-    } catch (tihmstar::exception &e) {
-        reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
     }
 
-    if(!iBSS.first){
+    if(!iBSS.first && !_noIBSS){
         info("Patching iBSS\n");
         iBSS = getIPSWComponent(_client, build_identity, "iBSS");
         iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
@@ -565,19 +592,24 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
     if (_client->image4supported) {
         /* if this is 64-bit, we need to back IM4P to IMG4
            also due to the nature of iBoot64Patchers sigpatches we need to stich a valid signed im4m to it (but nonce is ignored) */
-        info("Repacking patched bootloaders as IMG4\n");
-        if(!cache1)
+        if(!cache1 && !_noIBSS) {
+            info("Repacking patched iBSS as IMG4\n");
             iBSS = move(libipatcher::packIM4PToIMG4(iBSS.first, iBSS.second, _im4ms[0].first, _im4ms[0].second));
-        if(!cache2)
+        }
+        if(!cache2) {
+            info("Repacking patched iBEC as IMG4\n");
             iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
+        }
     }
 
-    retassure(ibss = fopen(ibss_name.c_str(), "wb"), "can't save patched ibss at %s\n", ibss_name.c_str());
-    retassure(rv = fwrite(iBSS.first, iBSS.second, 1, ibss), "can't save patched ibss at %s\n", ibss_name.c_str());
+    if(!_noIBSS) {
+        retassure(ibss = fopen(ibss_name.c_str(), "wb"), "can't save patched ibss at %s\n", ibss_name.c_str());
+        retassure(rv = fwrite(iBSS.first, iBSS.second, 1, ibss), "can't save patched ibss at %s\n", ibss_name.c_str());
+        fflush(ibss);
+        fclose(ibss);
+    }
     retassure(ibec = fopen(ibec_name.c_str(), "wb"), "can't save patched ibec at %s\n", ibec_name.c_str());
     retassure(rv = fwrite(iBEC.first, iBEC.second, 1, ibec), "can't save patched ibec at %s\n", ibec_name.c_str());
-    fflush(ibss);
-    fclose(ibss);
     fflush(ibec);
     fclose(ibec);
 
@@ -649,7 +681,9 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         auto nonceelem = img4tool::getValFromIM4M({_im4ms[0].first,_im4ms[0].second}, 'BNCH');
 
         info("ApNonce pre-hax:\n");
-        get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
+        if(get_ap_nonce(_client, &_client->nonce, &_client->nonce_size) < 0) {
+            reterror("Failed to get apnonce from device!");
+        }
 
         std::string generator = (_setNonce && _custom_nonce != NULL) ? _custom_nonce : getGeneratorFromSHSH2(_client->tss);
 
@@ -684,7 +718,9 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
             getDeviceMode(true);
             retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode after ApNonce hax!");
             printf("APnonce post-hax:\n");
-            get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
+            if(get_ap_nonce(_client, &_client->nonce, &_client->nonce_size) < 0) {
+                reterror("Failed to get apnonce from device!");
+            }
             assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
             retassure(_setNonce || memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
         } else {
@@ -712,10 +748,28 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         }
         retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()), "failed to write generator to nvram");
         retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
+        uint64_t gen = std::stoul(generator, nullptr, 16);
+        uint8_t *nonce = (uint8_t *)calloc(_client->nonce_size, sizeof(uint8_t));
+        if(_client->nonce_size == 20) {
+            SHA1((unsigned char *)&gen, 8, nonce);
+        } else if(_client->nonce_size == 32) {
+            SHA384((unsigned char *)&gen, 8, nonce);
+        } else {
+            reterror("Failed to set nonce generator: %s! Unknown nonce size: %d\n", generator.c_str(), _client->nonce_size);
+        }
+        for(int i = 0; i < _client->nonce_size; i++) {
+            if(*(uint8_t *)(nonce + i) != *(uint8_t *)(_client->nonce + i)) {
+                reterror("Failed to set nonce generator: %s!\n", generator.c_str());
+            }
+        }
+        info("Successfully set nonce generator: %s\n", generator.c_str());
 
         if(_setNonce) {
-            info("Successfully set nonce generator: %s, exiting recovery mode...\n", generator.c_str());
-            exitRecovery();
+            info("Done setting nonce!\n");
+            info("Use futurerestore --exit-recovery to go back to normal mode if you aren't restoring.\n");
+            setAutoboot(false);
+            recovery_send_reset(_client);
+            recovery_client_free(_client);
             exit(0);
         }
 
@@ -723,450 +777,6 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
     }
 #endif //HAVE_LIBIPATCHER
 }
-
-
-
-
-
-
-#if 0
-void futurerestore::enterPwnRecovery(plist_t build_identity, string bootargs){
-#ifndef HAVE_LIBIPATCHER
-    reterror("compiled without libipatcher");
-#else
-    bootargs = "rd=md0 -restore -v serial=3 debug=0x14e keepsyms=1 amfi=0xff amfi_unrestrict_task_for_pid=1 amfi_allow_any_signature=1 amfi_get_out_of_my_way=1";
-    int mode = 0;
-    libipatcher::fw_key iBSSKeys;
-    libipatcher::fw_key iBECKeys;
-
-    getDeviceMode(false);
-    mutex_lock(&_client->device_event_mutex);
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 1000);
-    retassure(((_client->mode->index == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device isn't in DFU mode!");
-    retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
-    mutex_unlock(&_client->device_event_mutex);
-
-    try {
-        const char *board = getDeviceBoardNoCopy();
-        info("BOARD: %s\n", board);
-        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap" || board == "n66ap" || board == "n66map") {
-            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
-            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
-        } else {
-            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
-            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
-        }
-    } catch (tihmstar::exception &e) {
-        reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
-    }
-
-    auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
-    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
-
-    auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
-    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
-
-    if (_client->image4supported) {
-        /* if this is 64-bit, we need to back IM4P to IMG4
-           also due to the nature of iBoot64Patchers sigpatches we need to stich a valid signed im4m to it (but nonce is ignored) */
-        iBSS = move(libipatcher::packIM4PToIMG4(iBSS.first, iBSS.second, _im4ms[0].first, _im4ms[0].second));
-        iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
-    }
-
-    /* send iBSS */
-    info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
-    mutex_lock(&_client->device_event_mutex);
-    irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
-    retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
-
-    info("Booting iBSS, waiting for device to disconnect...\n");
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
-    mutex_unlock(&_client->device_event_mutex);
-    info("Booting iBSS, waiting for device to reconnect...\n");
-    mutex_lock(&_client->device_event_mutex);
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
-    mutex_unlock(&_client->device_event_mutex);
-    retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
-    mutex_lock(&_client->device_event_mutex);
-
-    if (_client->build_major > 8) {
-        retassure(irecv_usb_set_configuration(_client->dfu->client, 1) >= 0, "ERROR: set configuration failed\n");
-        if (_client->build_major >= 20) {
-            // Without this empty policy file & its special signature, iBEC won't start.
-            if (dfu_send_component_and_command(_client, build_identity, "Ap,LocalPolicy", "lpolrestore") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send Ap,LocalPolicy to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_iboot_stage1_components(_client, build_identity) < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send iBoot stage 1 components to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_command(_client, "setenv auto-boot false") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_command(_client, "saveenv") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_command(_client, "setenvnp boot-args rd=md0 nand-enable-reformat=1 -progress -restore -v") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_component(_client, build_identity, "RestoreLogo") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send RestoreDCP to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_command(_client, "setpicture 4") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-
-            if (dfu_send_command(_client, "bgcolor 0 0 0") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->dfu->client);
-                _client->dfu->client = NULL;
-                return;
-            }
-        }
-        /* send iBEC */
-        info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
-        err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
-        retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
-        info("Booting iBEC, waiting for device to disconnect...\n");
-        if(_client->mode->index == MODE_RECOVERY)
-            retassure(((irecv_send_command(_client->recovery->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
-        getDeviceMode(true);
-        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
-        mutex_unlock(&_client->device_event_mutex);
-        info("Booting iBEC, waiting for device to reconnect...\n");
-    }
-    mutex_lock(&_client->device_event_mutex);
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
-    mutex_unlock(&_client->device_event_mutex);
-    retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode! Reset device and try again.");
-    retassure((_client->mode->index == MODE_RECOVERY), "Failed to connect to device in Recovery Mode! Reset device and try again.");
-
-    
-    if (_client->image4supported) {
-        char *deviceGen = NULL;
-        cleanup([&]{
-            safeFree(deviceGen);
-        });
-        /* IMG4 requires to have a generator set for the device to successfully boot after restore
-           set generator now and make sure the nonce is the one we are trying to restore */
-        
-        assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 0 0"));
-        sleep(2); //yes, I like displaying colored screens to the user and making him wait for no reason :P
-        
-        auto nonceelem = img4tool::getValFromIM4M({_im4ms[0].first,_im4ms[0].second}, 'BNCH');
-
-        printf("ApNonce pre-hax:\n");
-        get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
-        std::string generator = getGeneratorFromSHSH2(_client->tss);
-
-        if (memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
-            printf("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
-            
-            assure(_client->tss);
-            printf("Writing generator=%s to nvram!\n",generator.c_str());
-            
-            retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),"failed to write generator to nvram");
-            retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
-            
-            /* send iBEC */
-            info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
-            mutex_lock(&_client->device_event_mutex);
-            irecv_error_t err = irecv_send_buffer(_client->recovery->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
-            retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
-            printf("waiting for device to reconnect...\n");
-            retassure(!irecv_send_command(_client->recovery->client, "go"),"failed to re-launch iBEC after ApNonce hax");
-            getDeviceMode(true);
-
-            info("Booting 2nd iBEC, Waiting for device to disconnect...\n");
-            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure((_client->mode->index == MODE_UNKNOWN || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
-            mutex_unlock(&_client->device_event_mutex);
-            
-            info("Booting 2nd iBEC, Waiting for device to reconnect...\n");
-            mutex_lock(&_client->device_event_mutex);
-            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            info("mode: %s\n", (_client->mode->index == MODE_RECOVERY) ? "RECOVERY" : (_client->mode->index == MODE_DFU) ? "DFU" : (_client->mode->index == MODE_UNKNOWN) ? "UNKNOWN" : (_client->mode->index == MODE_WTF) ? "WTF" : "ERR");
-            retassure((_client->mode->index == MODE_RECOVERY || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
-            mutex_unlock(&_client->device_event_mutex);
-
-            retassure(!recovery_client_new(_client), "failed to reconnect to recovery after ApNonce hax");
-            
-            printf("APnonce post-hax:\n");
-            get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
-            assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
-            retassure(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
-        }else{
-            printf("APNonce from device already matches IM4M nonce, no need for extra hax...\n");
-        }
-        retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),"failed to write generator to nvram");
-        retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
-        
-        sleep(2); //yes, I like displaying colored screens to the user and making him wait for no reason :P
-    }
-
-#endif //HAVE_LIBIPATCHER
-}
-
-
-
-
-
-
-void futurerestore::enterPwnRecovery2(plist_t build_identity, string bootargs){
-#ifndef HAVE_LIBIPATCHER
-    reterror("compiled without libipatcher");
-#else
-   bootargs = "rd=md0 -restore -v serial=3 debug=0x14e keepsyms=1 amfi=0xff amfi_unrestrict_task_for_pid=1 amfi_allow_any_signature=1 amfi_get_out_of_my_way=1";
-    int mode = 0;
-    libipatcher::fw_key iBSSKeys;
-    libipatcher::fw_key iBECKeys;
-
-    getDeviceMode(false);
-    mutex_lock(&_client->device_event_mutex);
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 1000);
-    retassure(((_client->mode->index == MODE_DFU) || (mutex_unlock(&_client->device_event_mutex),0)), "Device isn't in DFU mode!");
-    retassure(((dfu_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in DFU Mode!");
-    mutex_unlock(&_client->device_event_mutex);
-
-    try {
-        const char *board = getDeviceBoardNoCopy();
-        info("BOARD: %s\n", board);
-        if(board == "n71ap" || board == "n71map" || board == "n69ap" || board == "n69uap" || board == "n66ap" || board == "n66map") {
-            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS", board);
-            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC", board);
-        } else {
-            iBSSKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBSS");
-            iBECKeys = libipatcher::getFirmwareKey(_client->device->product_type, _client->build, "iBEC");
-        }
-    } catch (tihmstar::exception &e) {
-        reterror("getting keys failed with error: %d (%s). Are keys publicly available?",e.code(),e.what());
-    }
-
-    auto iBSS = getIPSWComponent(_client, build_identity, "iBSS");
-    iBSS = move(libipatcher::patchiBSS((char*)iBSS.first, iBSS.second, iBSSKeys));
-
-    auto iBEC = getIPSWComponent(_client, build_identity, "iBEC");
-    iBEC = move(libipatcher::patchiBEC((char*)iBEC.first, iBEC.second, iBECKeys, bootargs));
-
-    if (_client->image4supported) {
-        /* if this is 64-bit, we need to back IM4P to IMG4
-           also due to the nature of iBoot64Patchers sigpatches we need to stich a valid signed im4m to it (but nonce is ignored) */
-        iBSS = move(libipatcher::packIM4PToIMG4(iBSS.first, iBSS.second, _im4ms[0].first, _im4ms[0].second));
-        iBEC = move(libipatcher::packIM4PToIMG4(iBEC.first, iBEC.second, _im4ms[0].first, _im4ms[0].second));
-    }
-
-    /* send iBSS */
-    info("Sending %s (%lu bytes)...\n", "iBSS", iBSS.second);
-    mutex_lock(&_client->device_event_mutex);
-    irecv_error_t err = irecv_send_buffer(_client->dfu->client, (unsigned char*)(char*)iBSS.first, (unsigned long)iBSS.second, 1);
-    retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBSS", irecv_strerror(err));
-    getDeviceMode(true);
-    info("Booting iBSS, waiting for device to disconnect...\n");
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBSS. Reset device and try again");
-    mutex_unlock(&_client->device_event_mutex);
-    info("Booting iBSS, waiting for device to reconnect...\n");
-    mutex_lock(&_client->device_event_mutex);
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBSS. Reset device and try again");
-    mutex_unlock(&_client->device_event_mutex);
-    retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode!");
-    mutex_lock(&_client->device_event_mutex);
-
-    if (_client->build_major > 8) {
-        retassure(irecv_usb_set_configuration(_client->recovery->client, 1) >= 0, "ERROR: set configuration failed\n");
-        if (_client->build_major >= 20) {
-            // Without this empty policy file & its special signature, iBEC won't start.
-            if (recovery_send_component_and_command(_client, build_identity, "Ap,LocalPolicy", "lpolrestore") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send Ap,LocalPolicy to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-
-            // if (dfu_send_iboot_stage1_components(_client, build_identity) < 0) {
-            //     mutex_unlock(&_client->device_event_mutex);
-            //     error("ERROR: Unable to send iBoot stage 1 components to device\n");
-            //     irecv_close(_client->recovery->client);
-            //     _client->recovery->client = NULL;
-            //     return;
-            // }
-
-            if (irecv_send_command(_client->recovery->client, "setenv auto-boot false") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-
-            if (irecv_send_command(_client->recovery->client, "saveenv") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-
-            if (irecv_send_command(_client->recovery->client, "setenvnp boot-args rd=md0 nand-enable-reformat=1 -progress -restore -v") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-
-            if (recovery_send_component(_client, build_identity, "RestoreLogo") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send RestoreDCP to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-
-            if (irecv_send_command(_client->recovery->client, "setpicture 4") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-
-            if (irecv_send_command(_client->recovery->client, "bgcolor 0 0 0") < 0) {
-                mutex_unlock(&_client->device_event_mutex);
-                error("ERROR: Unable to send command to device\n");
-                irecv_close(_client->recovery->client);
-                _client->recovery->client = NULL;
-                return;
-            }
-        }
-        /* send iBEC */
-        info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
-        err = irecv_send_buffer(_client->recovery->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
-        retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
-        info("Booting iBEC, waiting for device to disconnect...\n");
-        if(_client->mode->index == MODE_RECOVERY)
-            retassure(((irecv_send_command(_client->recovery->client, "go") == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect/reconnect. Possibly invalid iBEC. Reset device and try again\n");
-        getDeviceMode(true);
-        cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-        retassure(((_client->mode->index == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect. Possibly invalid iBEC. Reset device and try again");
-        mutex_unlock(&_client->device_event_mutex);
-        info("Booting iBEC, waiting for device to reconnect...\n");
-    }
-    mutex_lock(&_client->device_event_mutex);
-    cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-    retassure(((_client->mode->index == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect. Possibly invalid iBEC. Reset device and try again");
-    mutex_unlock(&_client->device_event_mutex);
-    retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) || (mutex_unlock(&_client->device_event_mutex),0)), "Failed to connect to device in Recovery Mode! Reset device and try again.");
-    retassure((_client->mode->index == MODE_RECOVERY), "Failed to connect to device in Recovery Mode! Reset device and try again.");
-    if (_client->build_major < 20) {
-        irecv_usb_control_transfer(_client->recovery->client, 0x21, 1, 0, 0, 0, 0, 5000);
-    }
-    
-    if (_client->image4supported) {
-        char *deviceGen = NULL;
-        cleanup([&]{
-            safeFree(deviceGen);
-        });
-        /* IMG4 requires to have a generator set for the device to successfully boot after restore
-           set generator now and make sure the nonce is the one we are trying to restore */
-        
-        assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 0 0"));
-        sleep(2); //yes, I like displaying colored screens to the user and making him wait for no reason :P
-        
-        auto nonceelem = img4tool::getValFromIM4M({_im4ms[0].first,_im4ms[0].second}, 'BNCH');
-
-        printf("ApNonce pre-hax:\n");
-        get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
-        std::string generator = getGeneratorFromSHSH2(_client->tss);
-
-        if (memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) != 0) {
-            printf("ApNonce from device doesn't match IM4M nonce, applying hax...\n");
-            
-            assure(_client->tss);
-            printf("Writing generator=%s to nvram!\n",generator.c_str());
-            
-            retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),"failed to write generator to nvram");
-            retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
-            
-            /* send iBEC */
-            info("Sending %s (%lu bytes)...\n", "iBEC", iBEC.second);
-            mutex_lock(&_client->device_event_mutex);
-            irecv_error_t err = irecv_send_buffer(_client->recovery->client, (unsigned char*)(char*)iBEC.first, (unsigned long)iBEC.second, 1);
-            retassure(err == IRECV_E_SUCCESS,"ERROR: Unable to send %s component: %s\n", "iBEC", irecv_strerror(err));
-            printf("waiting for device to reconnect...\n");
-            retassure(!irecv_send_command(_client->recovery->client, "go"),"failed to re-launch iBEC after ApNonce hax");
-            getDeviceMode(true);
-
-            info("Booting 2nd iBEC, Waiting for device to disconnect...\n");
-            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            retassure((_client->mode->index == MODE_UNKNOWN || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not disconnect after sending hax-iBEC in pwn-iBEC mode");
-            mutex_unlock(&_client->device_event_mutex);
-            
-            info("Booting 2nd iBEC, Waiting for device to reconnect...\n");
-            mutex_lock(&_client->device_event_mutex);
-            cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-            info("mode: %s\n", (_client->mode->index == MODE_RECOVERY) ? "RECOVERY" : (_client->mode->index == MODE_DFU) ? "DFU" : (_client->mode->index == MODE_UNKNOWN) ? "UNKNOWN" : (_client->mode->index == MODE_WTF) ? "WTF" : "ERR");
-            retassure((_client->mode->index == MODE_RECOVERY || (mutex_unlock(&_client->device_event_mutex),0)), "Device did not reconnect after sending hax-iBEC in pwn-iBEC mode");
-            mutex_unlock(&_client->device_event_mutex);
-
-            retassure(!recovery_client_new(_client), "failed to reconnect to recovery after ApNonce hax");
-            
-            printf("APnonce post-hax:\n");
-            get_ap_nonce(_client, &_client->nonce, &_client->nonce_size);
-            assure(!irecv_send_command(_client->recovery->client, "bgcolor 255 255 0"));
-            retassure(memcmp(_client->nonce, nonceelem.payload(), _client->nonce_size) == 0, "ApNonce from device doesn't match IM4M nonce after applying ApNonce hax. Aborting!");
-        }else{
-            printf("APNonce from device already matches IM4M nonce, no need for extra hax...\n");
-        }
-        retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),"failed to write generator to nvram");
-        retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
-        
-        sleep(2); //yes, I like displaying colored screens to the user and making him wait for no reason :P
-    }
-    
-#endif //HAVE_LIBIPATCHER
-}
-#endif
 
 void get_custom_component(struct idevicerestore_client_t* client, plist_t build_identity, const char* component, unsigned char** data, unsigned int *size){
 #ifndef HAVE_LIBIPATCHER
@@ -1282,7 +892,11 @@ void futurerestore::doRestore(const char *ipsw){
     if (im4mEcid != deviceEcid) {
         error("ECID inside APTicket does not match device ECID\n");
         printf("APTicket is valid for %16llu (dec) but device is %16llu (dec)\n",im4mEcid,deviceEcid);
-        reterror("APTicket can't be used for restoring this device\n");
+        if(_skipBlob) {
+            info("[WARNING] NOT VALIDATING SHSH BLOBS ECID!\n");
+        } else {
+            reterror("APTicket can't be used for restoring this device\n");
+        }
     }else
         printf("Verified ECID in APTicket matches device ECID\n");
 
@@ -1293,7 +907,11 @@ void futurerestore::doRestore(const char *ipsw){
         if (im4mEcid != deviceEcid) {
             error("ECID inside APTicket does not match device ECID\n");
             printf("APTicket is valid for %16llu (dec) but device is %16llu (dec)\n",im4mEcid,deviceEcid);
-            reterror("APTicket can't be used for restoring this device\n");
+            if(_skipBlob) {
+                info("[WARNING] NOT VALIDATING SHSH BLOBS ECID!\n");
+            } else {
+                reterror("APTicket can't be used for restoring this device\n");
+            }
         }else
             printf("Verified ECID in APTicket matches device ECID\n");
 
@@ -1302,10 +920,14 @@ void futurerestore::doRestore(const char *ipsw){
         try {
             ticketIdentity = img4tool::getBuildIdentityForIm4m({im4m.first,im4m.second}, buildmanifest);
         } catch (tihmstar::exception &e) {
-            //
+            if (_skipBlob) {
+                info("[WARNING] NOT VALIDATING SHSH BLOBS IM4M!\n");
+            } else {
+                return;
+            }
         }
         
-        if (!ticketIdentity) {
+        if (!_skipBlob && !ticketIdentity) {
             printf("Failed to get exact match for build identity, using fallback to ignore certain values\n");
             ticketIdentity = img4tool::getBuildIdentityForIm4m({im4m.first,im4m.second}, buildmanifest, {"RestoreRamDisk","RestoreTrustCache"});
         }
