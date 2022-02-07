@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <functional>
 #include <vector>
+#include <array>
+#include <string>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -50,7 +52,7 @@ public:
 
 class futurerestore {
     struct idevicerestore_client_t* _client;
-    char *_ibootBuild = NULL;
+    char *_ibootBuild = nullptr;
     bool _didInit = false;
     vector<plist_t> _aptickets;
     vector<pair<char *, size_t>>_im4ms;
@@ -62,28 +64,23 @@ class futurerestore {
     bool _serial = false;
     bool _noRestore = false;
     
-    char *_firmwareJson = NULL;
-    jssytok_t *_firmwareTokens = NULL;;
-    char *__latestManifest = NULL;
-    char *__latestFirmwareUrl = NULL;
+    char *_firmwareJson = nullptr;
+    jssytok_t *_firmwareTokens = nullptr;;
+    char *_latestManifest = nullptr;
+    char *_latestFirmwareUrl = nullptr;
     
-    plist_t _sepbuildmanifest = NULL;
-    plist_t _basebandbuildmanifest = NULL;
-    
-    const char *_rosePath = NULL;
-    const char *_sePath = NULL;
-    const char *_savagePath[6];
-    const char *_veridianDGMPath = NULL;
-    const char *_veridianFWMPath = NULL;
+    plist_t _sepbuildmanifest = nullptr;
+    plist_t _basebandbuildmanifest = nullptr;
 
-    const char *_basebandPath = NULL;
-    const char *_sepbuildmanifestPath = NULL;
-    const char *_basebandbuildmanifestPath = NULL;
-    const char *_ramdiskPath = NULL;
-    const char *_kernelPath = NULL;
+    std::string _ramdiskPath;
+    std::string _kernelPath;
+    std::string _sepPath;
+    std::string _sepManifestPath;
+    std::string _basebandPath;
+    std::string _basebandManifestPath;
 
-    const char *_custom_nonce = NULL;
-    const char *_boot_args = NULL;
+    const char *_custom_nonce = nullptr;
+    const char *_boot_args = nullptr;
 
     bool _noCache = false;
     bool _skipBlob = false;
@@ -92,8 +89,7 @@ class futurerestore {
     bool _rerestoreiOS9 = false;
     //methods
     void enterPwnRecovery(plist_t build_identity, std::string bootargs);
-    void enterPwnRecovery2(plist_t build_identity, std::string bootargs = "");
-    
+
 public:
     futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false, bool setNonce = false, bool serial = false, bool noRestore = false);
     bool init();
@@ -115,43 +111,44 @@ public:
     const char *getDeviceBoardNoCopy();
     char *getLatestManifest();
     char *getLatestFirmwareUrl();
+    std::string getSepManifestPath(){return _sepManifestPath;}
+    std::string getBasebandManifestPath(){return _basebandManifestPath;}
     void downloadLatestRose();
     void downloadLatestSE();
     void downloadLatestSavage();
     void downloadLatestVeridian();
     void downloadLatestFirmwareComponents();
-    void loadLatestBaseband();
-    void loadLatestSep();
+    void downloadLatestBaseband();
+    void downloadLatestSep();
     
-    void setSepManifestPath(const char *sepManifestPath);
-    void setBasebandManifestPath(const char *basebandManifestPath);
-    void loadRose(const char *rosePath);
-    void loadSE(const char *sePath);
-    void loadSavage(const char *savagePath[6]);
-    void loadVeridian(const char *veridianDGMPath, const char *veridianFWMPath);
-    void loadRamdisk(const char *ramdiskPath);
-    void loadKernel(const char *kernelPath);
-    void loadSep(const char *sepPath);
-    void setBasebandPath(const char *basebandPath);
-    void setRamdiskPath(const char *ramdiskPath);
-    void setKernelPath(const char *kernelPath);
+    void loadSepManifest(std::string sepManifestPath);
+    void loadBasebandManifest(std::string basebandManifestPath);
+    void loadRose(std::string rosePath);
+    void loadSE(std::string sePath);
+    void loadSavage(std::array<std::string, 6> savagePaths);
+    void loadVeridian(std::string veridianDGMPath, std::string veridianFWMPath);
+    void loadRamdisk(std::string ramdiskPath);
+    void loadKernel(std::string kernelPath);
+    void loadSep(std::string sepPath);
+    void loadBaseband(std::string basebandPath);
+
+    void setSepPath(std::string sepPath) {_sepPath = sepPath;}
+    void setSepManifestPath(std::string sepManifestPath) {_sepManifestPath = sepManifestPath;}
+    void setRamdiskPath(std::string ramdiskPath) {_ramdiskPath = ramdiskPath;}
+    void setKernelPath(std::string kernelPath) {_kernelPath = kernelPath;}
+    void setBasebandPath(std::string basebandPath) {_basebandPath = basebandPath;}
+    void setBasebandManifestPath(std::string basebandManifestPath) {_basebandManifestPath = basebandManifestPath;}
     void setNonce(const char *custom_nonce){_custom_nonce = custom_nonce;};
     void setBootArgs(const char *boot_args){_boot_args = boot_args;};
     void disableCache(){_noCache = true;};
     void skipBlobValidation(){_skipBlob = true;};
-    bool isUpdateInstall(){return _isUpdateInstall;};
-    
-    plist_t sepManifest(){return _sepbuildmanifest;};
-    plist_t basebandManifest(){return _basebandbuildmanifest;};
-    const char *sepManifestPath(){return _sepbuildmanifestPath;};
-    const char *basebandManifestPath(){return _basebandbuildmanifestPath;};
+
     bool is32bit(){return !is_image4_supported(_client);};
     
     uint64_t getBasebandGoldCertIDFromDevice();
     
     void doRestore(const char *ipsw);
-    int doJustBoot(const char *ipsw, std::string bootargs = "");
-    
+
     ~futurerestore();
     
     static std::pair<const char *,size_t> getRamdiskHashFromSCAB(const char* scab, size_t scabSize);
@@ -160,8 +157,8 @@ public:
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(const char *str, const char *path);
     static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
-    bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
-    static std::string getGeneratorFromSHSH2(const plist_t shsh2);
+    static bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
+    static std::string getGeneratorFromSHSH2(plist_t shsh2);
 };
 
 #endif /* futurerestore_hpp */
