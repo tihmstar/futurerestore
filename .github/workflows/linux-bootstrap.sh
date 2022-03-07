@@ -9,7 +9,7 @@ apt-get -qq update
 apt-get -yqq dist-upgrade
 apt-get install --no-install-recommends -yqq zstd curl gnupg2 lsb-release wget software-properties-common build-essential git autoconf automake libtool-bin pkg-config cmake zlib1g-dev libminizip-dev libpng-dev libreadline-dev libbz2-dev libudev-dev libudev1
 cp -RpP /usr/bin/ld /
-rm -rf /usr/bin/ld /usr/lib/x86_64-linux-gnu/lib{usb-1.0,png*}.so*
+rm -rf /usr/bin/ld /usr/lib/x86_64-linux-gnu/lib{usb-1.0,png*,readline}.so*
 cd ${TMPDIR}/Builder/repos/futurerestore
 git submodule update --init --recursive
 cd ${BASE}

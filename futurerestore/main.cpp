@@ -350,6 +350,8 @@ int main_r(int argc, const char * argv[]) {
             info("user specified to use latest signed SEP\n");
             client.downloadLatestSep();
         }else if (!client.is32bit()){
+            client.setSepPath(sepPath);
+            client.setSepManifestPath(sepManifestPath);
             client.loadSep(sepPath);
             client.loadSepManifest(sepManifestPath);
         }
@@ -375,6 +377,8 @@ int main_r(int argc, const char * argv[]) {
                 client.downloadLatestBaseband();
             }else{
                 client.setBasebandPath(basebandPath);
+                client.setBasebandManifestPath(basebandManifestPath);
+                client.loadBaseband(basebandPath);
                 client.loadBasebandManifest(basebandManifestPath);
                 printf("Did set SEP+baseband path and firmware\n");
             }

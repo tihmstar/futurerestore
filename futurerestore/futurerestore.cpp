@@ -1548,8 +1548,8 @@ void futurerestore::downloadLatestVeridian() {
     }
     if (veridianFWMStr) {
         info("downloading Veridian FirmwareMap\n\n");
-        retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianDGMStr, veridianFWMTempPath.c_str()),
-                  "could not download Veridian DigestMap\n");
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianFWMStr, veridianFWMTempPath.c_str()),
+                  "could not download Veridian FirmwareMap\n");
     }
     if (veridianDGMStr && veridianFWMStr)
         loadVeridian(veridianDGMTempPath, veridianFWMTempPath);
@@ -1584,9 +1584,9 @@ void futurerestore::downloadLatestBaseband() {
               "could not download baseband\n");
     saveStringToFile(manifeststr, basebandManifestTempPath.c_str());
     setBasebandPath(basebandTempPath);
-    setBasebandPath(basebandManifestTempPath);
-    loadBaseband(basebandTempPath);
-    loadBasebandManifest(basebandManifestTempPath);
+    setBasebandManifestPath(basebandManifestTempPath);
+    loadBaseband(this->_basebandPath);
+    loadBasebandManifest(this->_basebandManifestPath);
 }
 
 void futurerestore::downloadLatestSep() {
@@ -1594,9 +1594,11 @@ void futurerestore::downloadLatestSep() {
     char *pathStr = getPathOfElementInManifest("SEP", manifeststr, getDeviceBoardNoCopy(), 0);
     info("downloading SEP\n\n");
     retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathStr, sepTempPath.c_str()), "could not download SEP\n");
-    loadSep(sepTempPath);
     saveStringToFile(manifeststr, sepManifestTempPath.c_str());
-    loadSepManifest(sepManifestTempPath);
+    setSepPath(sepTempPath);
+    setSepManifestPath(sepManifestTempPath);
+    loadSep(this->_sepPath);
+    loadSepManifest(this->_sepManifestPath);
 }
 
 void futurerestore::loadSepManifest(std::string sepManifestPath) {
