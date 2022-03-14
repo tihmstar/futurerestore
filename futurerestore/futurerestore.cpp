@@ -1039,7 +1039,7 @@ void futurerestore::doRestore(const char *ipsw) {
                  (_isUpdateInstall) ? "Update" : "Erase", (!_isUpdateInstall) ? "Update" : "Erase");
         }
 
-        client->bbfwtmp = (char *)basebandTempPath.c_str();
+        client->bbfwtmp = (char *)this->_basebandPath.c_str();
 
         plist_t bb_manifest = plist_dict_get_item(client->basebandBuildIdentity, "Manifest");
         plist_t bb_baseband = plist_copy(plist_dict_get_item(bb_manifest, "BasebandFirmware"));
