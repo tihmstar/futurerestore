@@ -68,7 +68,9 @@ class futurerestore {
     jssytok_t *_firmwareTokens = nullptr;;
     char *_latestManifest = nullptr;
     char *_latestFirmwareUrl = nullptr;
-    
+    bool _useCustomLatest = false;
+    std::string _customLatest;
+
     plist_t _sepbuildmanifest = nullptr;
     plist_t _basebandbuildmanifest = nullptr;
 
@@ -132,6 +134,7 @@ public:
     void loadSep(std::string sepPath);
     void loadBaseband(std::string basebandPath);
 
+    void setCustomLatest(std::string version){_customLatest = version; _useCustomLatest = true;}
     void setSepPath(std::string sepPath) {_sepPath = sepPath;}
     void setSepManifestPath(std::string sepManifestPath) {_sepManifestPath = sepManifestPath;}
     void setRamdiskPath(std::string ramdiskPath) {_ramdiskPath = ramdiskPath;}

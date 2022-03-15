@@ -39,6 +39,7 @@ static struct option longopts[] = {
         { "update",             no_argument,            nullptr, 'u' },
         { "debug",              no_argument,            nullptr, 'd' },
         { "exit-recovery",      no_argument,            nullptr, 'e' },
+        { "custom-latest",      required_argument,      nullptr, 'c' },
         { "latest-sep",         no_argument,            nullptr, '0' },
         { "no-restore",         no_argument,            nullptr, 'z' },
         { "latest-baseband",    no_argument,            nullptr, '1' },
@@ -52,7 +53,7 @@ static struct option longopts[] = {
         { "serial",             no_argument,            nullptr, '8' },
         { "boot-args",          required_argument,      nullptr, '9' },
         { "no-cache",           no_argument,            nullptr, 'a' },
-        { "skip-blob",          no_argument,            nullptr, 'c' },
+        { "skip-blob",          no_argument,            nullptr, 'f' },
 #endif
         { nullptr, 0, nullptr, 0 }
 };
@@ -83,6 +84,7 @@ void cmd_help(){
     printf("  -d, --debug\t\t\tShow all code, use to save a log for debug testing\n");
     printf("  -e, --exit-recovery\t\tExit recovery mode and quit\n");
     printf("  -z, --no-restore\t\tDo not restore and end right before NOR data is sent\n");
+    printf("  -c, --custom-latest VERSION\tSpecify custom latest version to use for SEP, Baseband and other FirmwareUpdater components\n");
 
 #ifdef HAVE_LIBIPATCHER
     printf("\nOptions for downgrading with Odysseus:\n");
@@ -142,6 +144,7 @@ int main_r(int argc, const char * argv[]) {
     const char *sepPath = nullptr;
     const char *sepManifestPath = nullptr;
     const char *bootargs = nullptr;
+    std::string customLatest;
     const char *ramdiskPath = nullptr;
     const char *kernelPath = nullptr;
     const char *custom_nonce = nullptr;
@@ -156,7 +159,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:wudez0123456789ac", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:c:wude0z123456789af", longopts, &optindex)) > 0) {
         switch (opt) {
             case 't': // long option: "apticket"; can be called as short option
                 apticketPaths.push_back(optarg);
@@ -178,6 +181,9 @@ int main_r(int argc, const char * argv[]) {
                 break;
             case 'u': // long option: "update"; can be called as short option
                 flags |= FLAG_UPDATE;
+                break;
+            case 'c': // long option: "custom-latest";
+                customLatest = (optarg) ? std::string(optarg) : std::string("");
                 break;
             case '0': // long option: "latest-sep";
                 flags |= FLAG_LATEST_SEP;
@@ -223,7 +229,7 @@ int main_r(int argc, const char * argv[]) {
             case 'a': // long option: "no-cache";
                 flags |= FLAG_NO_CACHE;
                 break;
-            case 'c': // long option: "skip-blob";
+            case 'f': // long option: "skip-blob";
                 flags |= FLAG_SKIP_BLOB;
                 break;
 #endif
@@ -296,6 +302,10 @@ int main_r(int argc, const char * argv[]) {
     try {
         if (!apticketPaths.empty()) {
             client.loadAPTickets(apticketPaths);
+        }
+
+        if(!customLatest.empty()) {
+            client.setCustomLatest(customLatest);
         }
 
         if (!(

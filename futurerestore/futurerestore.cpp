@@ -114,6 +114,8 @@ futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, b
 
     nocache = 1; //tsschecker nocache
     _foundnonce = -1;
+    _useCustomLatest = false;
+    _customLatest = std::string("");
 }
 
 bool futurerestore::init() {
@@ -1420,6 +1422,22 @@ char *futurerestore::getLatestManifest() {
             free((char *) versVals.version);
             if (--versionCnt == 0)
                 reterror("[TSSC] automatic selection of firmware couldn't find for non-beta versions\n");
+        }
+        if(_useCustomLatest) {
+            i = 0;
+            while(i < versionCnt) {
+                versVals.version = strdup(versions[i++]);
+                std::string version(versVals.version);
+                if(!std::equal(_customLatest.begin(), _customLatest.end(), version.begin())) {
+                    free((char *) versVals.version);
+                } else {
+                    i = -1;
+                    break;
+                }
+            }
+            if(i != -1) {
+                reterror("[TSSC] failed to find custom version for device!\n");
+            }
         }
         info("[TSSC] selecting latest firmware version: %s\n", versVals.version);
         if (bpos) *bpos = '\0';
