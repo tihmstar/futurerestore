@@ -38,33 +38,57 @@ extern "C" {
 #include <windows.h>
 #define safe_mkdir(path, mode) mkdir(path)
 #else
-
-#include <sys/stat.h>
-
+void safe_mkdir(const char *path, int mode) {
+    int newID = 1000;
 #ifdef __APPLE__
-#define NEW_ID 501
+    newID = 501;
 #else
-#define NEW_ID 1000
+    std::ifstream osReleaseStream(std::string("/etc/os-release"));
+    std::string osRelease;
+    if(osReleaseStream.good()) {
+        osReleaseStream.seekg(std::ifstream::end);
+        osRelease.reserve(osReleaseStream.tellg());
+        osReleaseStream.seekg(std::ifstream::beg);
+        osRelease.assign((std::istreambuf_iterator<char>(osReleaseStream)), std::istreambuf_iterator<char>());
+        if ((osReleaseStream.rdstate() & std::ifstream::goodbit) == 0) {
+            int pos = osRelease.find(std::string("\nID="));
+            if(pos != std::string::npos) {
+                osRelease.erase(0, pos + 4);
+                pos = osRelease.find('\n');
+                osRelease.erase(pos, osRelease.length());
+                if(std::equal(osRelease.begin(), osRelease.end(), std::string("ubuntu").end())) {
+                    if (getuid() == 999) {
+                        newID = 999;
+                    }
+                }
+            }
+        }
+    }
 #endif
-#define safe_mkdir(path, mode) \
-do {                        \
-    int id = getuid();      \
-    setuid(NEW_ID);         \
-    setgid(NEW_ID);         \
-    seteuid(NEW_ID);        \
-    setegid(NEW_ID);        \
-    mkdir(path, mode);      \
-    setuid(id);             \
-    setgid(id);             \
-    seteuid(id);            \
-    setegid(id);            \
-} while(false)
+    int id = (int)getuid();
+    int id1 = (int)getgid();
+    int id2 = (int)geteuid();
+    int id3 = (int)getegid();
+    if(newID > -1) {
+        setuid(newID);
+        setgid(newID);
+        seteuid(newID);
+        setegid(newID);
+    }
+    mkdir(path, mode);
+    if(newID > -1) {
+        setuid(id);
+        setgid(id1);
+        seteuid(id2);
+        setegid(id3);
+    }
+}
 #endif
 
 #define USEC_PER_SEC 1000000
 
 #ifdef WIN32
-std::string futurerestoreTempPath(download");
+std::string futurerestoreTempPath("download");
 #else
 std::string tempPath("/tmp");
 std::string futurerestoreTempPath(tempPath + "/futurerestore");
@@ -115,7 +139,10 @@ futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, b
     nocache = 1; //tsschecker nocache
     _foundnonce = -1;
     _useCustomLatest = false;
+    _useCustomLatestBuildID = false;
+    _useCustomLatestBeta = false;
     _customLatest = std::string("");
+    _customLatestBuildID = std::string("");
 }
 
 bool futurerestore::init() {
@@ -376,7 +403,8 @@ void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths) {
             int blen = 0;
             int readsize = 16384; //0x4000
             int bufsize = readsize;
-            char *bin = (char *) malloc(bufsize);
+            std::allocator<uint8_t> alloc;
+            char *bin = (char *)alloc.allocate(bufsize);
             char *p = bin;
             do {
                 int bytes_read = gzread(zf, p, readsize);
@@ -521,13 +549,14 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         ibss_name.append(img3_end);
         ibec_name.append(img3_end);
     }
+    std::allocator<uint8_t> alloc;
     if (!_noCache) {
         ibss = fopen(ibss_name.c_str(), "rb");
         if (ibss) {
             fseek(ibss, 0, SEEK_END);
             iBSS.second = ftell(ibss);
             fseek(ibss, 0, SEEK_SET);
-            retassure(iBSS.first = (char *) malloc(iBSS.second), "failed to calloc memory for Rose\n");
+            retassure(iBSS.first = (char *)alloc.allocate(iBSS.second), "failed to allocate memory for Rose\n");
             size_t freadRet = 0;
             retassure((freadRet = fread((char *) iBSS.first, 1, iBSS.second, ibss)) == iBSS.second,
                       "failed to load iBSS. size=%zu but fread returned %zu\n", iBSS.second, freadRet);
@@ -539,7 +568,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
             fseek(ibec, 0, SEEK_END);
             iBEC.second = ftell(ibec);
             fseek(ibec, 0, SEEK_SET);
-            retassure(iBEC.first = (char *) malloc(iBEC.second), "failed to calloc memory for Rose\n");
+            retassure(iBEC.first = (char *)alloc.allocate(iBEC.second), "failed to allocate memory for Rose\n");
             size_t freadRet = 0;
             retassure((freadRet = fread((char *) iBEC.first, 1, iBEC.second, ibec)) == iBEC.second,
                       "failed to load iBEC. size=%zu but fread returned %zu\n", iBEC.second, freadRet);
@@ -795,7 +824,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
                   "failed to write generator to nvram");
         retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
         uint64_t gen = std::stoul(generator, nullptr, 16);
-        auto *nonce = (uint8_t *) calloc(_client->nonce_size, sizeof(uint8_t));
+        auto *nonce = (uint8_t *)alloc.allocate(_client->nonce_size);
         if (_client->nonce_size == 20) {
             SHA1((unsigned char *) &gen, 8, nonce);
         } else if (_client->nonce_size == 32) {
@@ -1378,6 +1407,12 @@ void futurerestore::loadFirmwareTokens() {
         long cnt = parseTokens(_firmwareJson, &_firmwareTokens);
         retassure(cnt > 0, "[TSSC] parsing %s.json failed\n", (0) ? "ota" : "firmware");
     }
+    if(!_betaFirmwareTokens) {
+        if (!_betaFirmwareJson) _betaFirmwareJson = getBetaFirmwareJson(getDeviceModelNoCopy());
+        retassure(_betaFirmwareJson, "[TSSC] could not get betas json\n");
+        long cnt = parseTokens(_betaFirmwareJson, &_betaFirmwareTokens);
+        retassure(cnt > 0, "[TSSC] parsing %s.json failed\n", (0) ? "ota" : "firmware");
+    }
 }
 
 const char *futurerestore::getDeviceModelNoCopy() {
@@ -1441,7 +1476,12 @@ char *futurerestore::getLatestManifest() {
 
         int versionCnt = 0;
         int i = 0;
-        char **versions = getListOfiOSForDevice(_firmwareTokens, device, 0, &versionCnt);
+        char **versions = nullptr;
+        if(_useCustomLatestBuildID) {
+            versions = getListOfiOSForDevice2(_firmwareTokens, device, 0, &versionCnt, 1);
+        } else {
+            versions = getListOfiOSForDevice(_firmwareTokens, device, 0, &versionCnt);
+        }
         retassure(versionCnt, "[TSSC] failed finding latest firmware version\n");
         char *bpos = nullptr;
         while ((bpos = strstr((char *) (versVals.version = strdup(versions[i++])), "[B]")) != nullptr) {
@@ -1464,18 +1504,50 @@ char *futurerestore::getLatestManifest() {
             if(i != -1) {
                 reterror("[TSSC] failed to find custom version for device!\n");
             }
+        } else if(!_useCustomLatestBeta && _useCustomLatestBuildID) {
+            i = 0;
+            while (i < versionCnt) {
+                versVals.buildID = strdup(versions[i++]);
+                std::string version(versVals.buildID);
+                if (!std::equal(_customLatestBuildID.begin(), _customLatestBuildID.end(), version.begin())) {
+                    free((char *) versVals.buildID);
+                } else {
+                    i = -1;
+                    break;
+                }
+            }
+            if(i != -1) {
+                reterror("[TSSC] failed to find custom buildid for device!\n");
+            }
         }
-        info("[TSSC] selecting latest firmware version: %s\n", versVals.version);
+        if(!_useCustomLatestBeta) {
+            if(_useCustomLatestBuildID) {
+                info("[TSSC] selecting latest firmware version: %s\n", versVals.buildID);
+            } else {
+                info("[TSSC] selecting latest firmware version: %s\n", versVals.version);
+            }
+        }
         if (bpos) *bpos = '\0';
         if (versions) free(versions[versionCnt - 1]), free(versions);
 
         ptr_smart<const char *> autofree(
                 versVals.version); //make sure it gets freed after function finishes execution by either reaching end or throwing exception
+        ptr_smart<const char *> autofree2(
+                versVals.buildID); //make sure it gets freed after function finishes execution by either reaching end or throwing exception
 
-        _latestFirmwareUrl = getFirmwareUrl(device, &versVals, _firmwareTokens);
+        if(_useCustomLatestBeta) {
+            info("[TSSC] selecting latest firmware version: %s\n", _customLatestBuildID.c_str());
+            _latestFirmwareUrl = getBetaURLForDevice(_betaFirmwareTokens, _customLatestBuildID.c_str());
+            _latestManifest = getBuildManifest(_latestFirmwareUrl, device, nullptr, _customLatestBuildID.c_str(), 0);
+        } else {
+            _latestFirmwareUrl = getFirmwareUrl(device, &versVals, _firmwareTokens);
+            if(_useCustomLatestBuildID) {
+                _latestManifest = getBuildManifest(_latestFirmwareUrl, device, nullptr, versVals.buildID, 0);
+            } else {
+                _latestManifest = getBuildManifest(_latestFirmwareUrl, device, versVals.version, versVals.buildID, 0);
+            }
+        }
         retassure(_latestFirmwareUrl, "could not find url of latest firmware version\n");
-
-        _latestManifest = getBuildManifest(_latestFirmwareUrl, device, versVals.version, versVals.buildID, 0);
         retassure(_latestManifest, "could not get buildmanifest of latest firmware version\n");
     }
 
@@ -1626,7 +1698,7 @@ void futurerestore::downloadLatestBaseband() {
     info("downloading Baseband\n\n");
     retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathStr, basebandTempPath.c_str()),
               "could not download baseband\n");
-    saveStringToFile(manifeststr, basebandManifestTempPath.c_str());
+    saveStringToFile(manifeststr, basebandManifestTempPath);
     setBasebandPath(basebandTempPath);
     setBasebandManifestPath(basebandManifestTempPath);
     loadBaseband(this->_basebandPath);
@@ -1634,11 +1706,11 @@ void futurerestore::downloadLatestBaseband() {
 }
 
 void futurerestore::downloadLatestSep() {
-    char *manifeststr = getLatestManifest();
-    char *pathStr = getPathOfElementInManifest("SEP", manifeststr, getDeviceBoardNoCopy(), 0);
+    std::string manifestString = getLatestManifest();
+    std::string pathString = getPathOfElementInManifest("SEP", manifestString.c_str(), getDeviceBoardNoCopy(), 0);
     info("downloading SEP\n\n");
-    retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathStr, sepTempPath.c_str()), "could not download SEP\n");
-    saveStringToFile(manifeststr, sepManifestTempPath.c_str());
+    retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathString.c_str(), sepTempPath.c_str()), "could not download SEP\n");
+    saveStringToFile(manifestString, sepManifestTempPath);
     setSepPath(sepTempPath);
     setSepManifestPath(sepManifestTempPath);
     loadSep(this->_sepPath);
@@ -1663,8 +1735,9 @@ void futurerestore::loadRose(std::string rosePath) {
     roseFileStream.seekg(0, std::ios_base::end);
     _client->rosefwdatasize = roseFileStream.tellg();
     roseFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->rosefwdata = (char *) calloc(_client->rosefwdatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, rosePath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(_client->rosefwdata = (char *)alloc.allocate(_client->rosefwdatasize),
+              "%s: failed to allocate memory for %s\n", __func__, rosePath.c_str());
     roseFileStream.read((char *) _client->rosefwdata,
                           (std::streamsize) _client->rosefwdatasize);
     retassure(*(uint64_t *) (_client->rosefwdata) != 0,
@@ -1678,8 +1751,9 @@ void futurerestore::loadSE(std::string sePath) {
     seFileStream.seekg(0, std::ios_base::end);
     _client->sefwdatasize = seFileStream.tellg();
     seFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->sefwdata = (char *) calloc(_client->sefwdatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, sePath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(_client->sefwdata = (char *)alloc.allocate(_client->sefwdatasize),
+              "%s: failed to allocate memory for %s\n", __func__, sePath.c_str());
     seFileStream.read((char *) _client->sefwdata,
                         (std::streamsize) _client->sefwdatasize);
     retassure(*(uint64_t *) (_client->sefwdata) != 0,
@@ -1695,8 +1769,9 @@ void futurerestore::loadSavage(std::array<std::string, 6> savagePaths) {
         savageFileStream.seekg(0, std::ios_base::end);
         _client->savagefwdatasize[index] = savageFileStream.tellg();
         savageFileStream.seekg(0, std::ios_base::beg);
-        retassure(_client->savagefwdata[index] = (char *) calloc(_client->savagefwdatasize[index], 1),
-                  "%s: failed to calloc memory for %s\n", __func__, savagePath.c_str());
+        std::allocator<uint8_t> alloc;
+        retassure(_client->savagefwdata[index] = (char *)alloc.allocate(_client->savagefwdatasize[index]),
+                  "%s: failed to allocate memory for %s\n", __func__, savagePath.c_str());
         savageFileStream.read((char *) _client->savagefwdata[index],
                               (std::streamsize) _client->savagefwdatasize[index]);
         retassure(*(uint64_t *) (_client->savagefwdata[index]) != 0,
@@ -1715,8 +1790,9 @@ void futurerestore::loadVeridian(std::string veridianDGMPath, std::string veridi
     veridianDGMFileStream.seekg(0, std::ios_base::end);
     _client->veridiandgmfwdatasize = veridianDGMFileStream.tellg();
     veridianDGMFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->veridiandgmfwdata = (char *) calloc(_client->veridiandgmfwdatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, veridianDGMPath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(_client->veridiandgmfwdata = (char *)alloc.allocate(_client->veridiandgmfwdatasize),
+              "%s: failed to allocate memory for %s\n", __func__, veridianDGMPath.c_str());
     veridianDGMFileStream.read((char *) _client->veridiandgmfwdata,
                                (std::streamsize) _client->veridiandgmfwdatasize);
     retassure(*(uint64_t *) (_client->veridiandgmfwdata) != 0,
@@ -1725,8 +1801,8 @@ void futurerestore::loadVeridian(std::string veridianDGMPath, std::string veridi
     veridianFWMFileStream.seekg(0, std::ios_base::end);
     _client->veridianfwmfwdatasize = veridianFWMFileStream.tellg();
     veridianFWMFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->veridianfwmfwdata = (char *) calloc(_client->veridianfwmfwdatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, veridianFWMPath.c_str());
+    retassure(_client->veridianfwmfwdata = (char *)alloc.allocate(_client->veridianfwmfwdatasize),
+              "%s: failed to allocate memory for %s\n", __func__, veridianFWMPath.c_str());
     veridianFWMFileStream.read((char *) _client->veridianfwmfwdata,
                                (std::streamsize) _client->veridianfwmfwdatasize);
     retassure(*(uint64_t *) (_client->veridianfwmfwdata) != 0,
@@ -1740,8 +1816,9 @@ void futurerestore::loadRamdisk(std::string ramdiskPath) {
     ramdiskFileStream.seekg(0, std::ios_base::end);
     _client->ramdiskdatasize = ramdiskFileStream.tellg();
     ramdiskFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->ramdiskdata = (char *) calloc(_client->ramdiskdatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, ramdiskPath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(_client->ramdiskdata = (char *)alloc.allocate(_client->ramdiskdatasize),
+              "%s: failed to allocate memory for %s\n", __func__, ramdiskPath.c_str());
     ramdiskFileStream.read((char *) _client->ramdiskdata,
                            (std::streamsize) _client->ramdiskdatasize);
     retassure(*(uint64_t *) (_client->ramdiskdata) != 0,
@@ -1755,8 +1832,9 @@ void futurerestore::loadKernel(std::string kernelPath) {
     kernelFileStream.seekg(0, std::ios_base::end);
     _client->kerneldatasize = kernelFileStream.tellg();
     kernelFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->kerneldata = (char *) calloc(_client->kerneldatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, kernelPath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(_client->kerneldata = (char *)alloc.allocate(_client->kerneldatasize),
+              "%s: failed to allocate memory for %s\n", __func__, kernelPath.c_str());
     kernelFileStream.read((char *) _client->kerneldata,
                           (std::streamsize) _client->kerneldatasize);
     retassure(*(uint64_t *) (_client->kerneldata) != 0,
@@ -1770,8 +1848,9 @@ void futurerestore::loadSep(std::string sepPath) {
     sepFileStream.seekg(0, std::ios_base::end);
     _client->sepfwdatasize = sepFileStream.tellg();
     sepFileStream.seekg(0, std::ios_base::beg);
-    retassure(_client->sepfwdata = (char *) calloc(_client->sepfwdatasize, 1),
-              "%s: failed to calloc memory for %s\n", __func__, sepPath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(_client->sepfwdata = (char *)alloc.allocate(_client->sepfwdatasize),
+              "%s: failed to allocate memory for %s\n", __func__, sepPath.c_str());
     sepFileStream.read((char *) _client->sepfwdata,
                           (std::streamsize) _client->sepfwdatasize);
     retassure(*(uint64_t *) (_client->sepfwdata) != 0,
@@ -1784,8 +1863,9 @@ void futurerestore::loadBaseband(std::string basebandPath) {
     retassure(basebandFileStream.good(), "%s: failed init file stream for %s!\n", __func__, basebandPath.c_str());
     basebandFileStream.seekg(0, std::ios_base::beg);
     uint64_t *basebandFront = nullptr;
-    retassure(basebandFront = (uint64_t *) calloc(1, sizeof(uint64_t)),
-              "%s: failed to calloc memory for %s\n", __func__, basebandPath.c_str());
+    std::allocator<uint8_t> alloc;
+    retassure(basebandFront = (uint64_t *)alloc.allocate(sizeof(uint64_t)),
+              "%s: failed to allocate memory for %s\n", __func__, basebandPath.c_str());
     basebandFileStream.read((char *)basebandFront, (std::streamsize)sizeof(uint64_t));
     retassure(*(uint64_t *) (basebandFront) != 0, "%s: failed to load Baseband for %s!\n",
               __func__, basebandPath.c_str());
@@ -1793,13 +1873,15 @@ void futurerestore::loadBaseband(std::string basebandPath) {
 
 #pragma mark static methods
 
-inline void futurerestore::saveStringToFile(const char *str, const char *path) {
-    FILE *f = nullptr;
-    retassure(f = fopen(path, "w"), "can't save file at %s\n", path);
-    size_t len = strlen(str);
-    size_t wlen = fwrite(str, 1, len, f);
-    fclose(f);
-    retassure(len == wlen, "saving file failed, wrote=%zu actual=%zu\n", wlen, len);
+inline void futurerestore::saveStringToFile(std::string str, std::string path) {
+    if(str.empty() || path.empty()) {
+        info("%s: No data to save!", __func__);
+        return;
+    }
+    std::ofstream fileStream(path);
+    retassure(fileStream.good(), "%s: failed init file stream for %s!\n", __func__, path.c_str());
+    fileStream.write(str.data(), str.length());
+    retassure((fileStream.rdstate() & std::ofstream::goodbit) == 0, "Can't save file at %s\n", path.c_str());
 }
 
 std::pair<const char *, size_t> futurerestore::getNonceFromSCAB(const char *scab, size_t scabSize) {

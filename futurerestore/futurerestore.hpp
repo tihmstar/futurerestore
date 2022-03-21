@@ -65,11 +65,16 @@ class futurerestore {
     bool _noRestore = false;
     
     char *_firmwareJson = nullptr;
+    char *_betaFirmwareJson = nullptr;
     jssytok_t *_firmwareTokens = nullptr;;
+    jssytok_t *_betaFirmwareTokens = nullptr;
     char *_latestManifest = nullptr;
     char *_latestFirmwareUrl = nullptr;
     bool _useCustomLatest = false;
+    bool _useCustomLatestBuildID = false;
+    bool _useCustomLatestBeta = false;
     std::string _customLatest;
+    std::string _customLatestBuildID;
 
     plist_t _sepbuildmanifest = nullptr;
     plist_t _basebandbuildmanifest = nullptr;
@@ -135,6 +140,7 @@ public:
     void loadBaseband(std::string basebandPath);
 
     void setCustomLatest(std::string version){_customLatest = version; _useCustomLatest = true;}
+    void setCustomLatestBuildID(std::string version, bool beta){_customLatestBuildID = version; _useCustomLatest = false; _useCustomLatestBuildID = true; _useCustomLatestBeta = beta;}
     void setSepPath(std::string sepPath) {_sepPath = sepPath;}
     void setSepManifestPath(std::string sepManifestPath) {_sepManifestPath = sepManifestPath;}
     void setRamdiskPath(std::string ramdiskPath) {_ramdiskPath = ramdiskPath;}
@@ -158,7 +164,7 @@ public:
     static std::pair<const char *,size_t> getNonceFromSCAB(const char* scab, size_t scabSize);
     static uint64_t getEcidFromSCAB(const char* scab, size_t scabSize);
     static plist_t loadPlistFromFile(const char *path);
-    static void saveStringToFile(const char *str, const char *path);
+    static void saveStringToFile(std::string str, std::string path);
     static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static std::string getGeneratorFromSHSH2(plist_t shsh2);
