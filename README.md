@@ -1,11 +1,11 @@
 # futurerestore
-[![CI Building](https://img.shields.io/github/workflow/status/marijuanARM/futurerestore/CI)](https://github.com/marijuanARM/futurerestore/actions?workflow=CI)
+[![CI Building](https://img.shields.io/github/workflow/status/futurerestore/futurerestore/CI)](https://github.com/futurerestore/futurerestore/actions?workflow=CI)
 
 __Make sure to read this page before continuing.__
 
-Latest **stable** compiled version can be found [here](https://github.com/marijuanARM/futurerestore/releases).
+Latest **stable** compiled version can be found [here](https://github.com/futurerestore/futurerestore/releases).
 
-For A12-A14, and WiFi-only iPad restores - use the latest beta build for your platform [here](https://nightly.link/m1stadev/futurerestore/workflows/ci/test).
+For A12-A14, and WiFi-only iPad restores - use the latest beta build for your platform [here](https://nightly.link/futurerestore/futurerestore/workflows/ci/test).
 
 **There are currently no pre-compiled beta builds for Windows.**
 
@@ -49,11 +49,11 @@ FutureRestore is a modified idevicerestore wrapper, which allows manually specif
 
   * [jssy](https://github.com/tihmstar/jssy);
   * [tsschecker(fork)](https://github.com/1Conan/tsschecker);
-  * [idevicerestore(fork)](https://github.com/m1stadev/idevicerestore)
+  * [idevicerestore(fork)](https://github.com/futurerestore/idevicerestore)
 
   If you are cloning this repository you may run:
 
-  ```git clone https://github.com/m1stadev/futurerestore --recursive```
+  ```git clone https://github.com/futurerestore/futurerestore --recursive```
  
   which will clone these submodules for you.
 
@@ -314,4 +314,4 @@ If you have **signing ticket files for iOS 9.x**, which **do not contain a ApNon
 
 ## Report an issue
 Before you report an issue, please check that it is not mentioned in the [Common Issues section](#common-issues).
-If it is not, you can report your issue [here](https://github.com/m1stadev/futurerestore/issues).
+If it is not, you can report your issue [here](https://github.com/futurerestore/futurerestore/issues).

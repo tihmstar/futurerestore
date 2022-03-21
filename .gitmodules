@@ -1,6 +1,6 @@
 [submodule "external/idevicerestore"]
 	path = external/idevicerestore
-	url = https://github.com/m1stadev/idevicerestore.git
+	url = https://github.com/futurerestore/idevicerestore.git
 	branch = test
 [submodule "external/tsschecker"]
 	path = external/tsschecker
