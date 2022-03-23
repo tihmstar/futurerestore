@@ -1011,9 +1011,8 @@ void futurerestore::doRestore(const char *ipsw) {
         } catch (tihmstar::exception &e) {
             if (_skipBlob) {
                 info("[WARNING] NOT VALIDATING SHSH BLOBS IM4M!\n");
-            } else {
-                return;
             }
+            //
         }
 
         if (!_skipBlob && !ticketIdentity) {

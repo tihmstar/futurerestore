@@ -10,7 +10,8 @@ export FUTURERESTORE_VERSION_RELEASE=$(cat version.txt | tr -d '\n')
 cd ${BASE}
 echo "futurerestore-Linux-x86_64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-RELEASE.tar.xz" > name1.txt
 echo "futurerestore-Linux-x86_64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-DEBUG.tar.xz" > name2.txt
+cp -RpP "${TMPDIR}/Builder/linux_fix.sh" linux_fix.sh
 cp -RpP "${TMPDIR}/Builder/Linux_x86_64_Release/bin/futurerestore" futurerestore
-tar cpPJvf "futurerestore1.tar.xz" futurerestore
+tar cpPJvf "futurerestore1.tar.xz" futurerestore linux_fix.sh
 cp -RpP "${TMPDIR}/Builder/Linux_x86_64_Debug/bin/futurerestore" futurerestore
-tar cpPJvf "futurerestore2.tar.xz" futurerestore
+tar cpPJvf "futurerestore2.tar.xz" futurerestore linux_fix.sh

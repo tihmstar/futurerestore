@@ -18,11 +18,13 @@ chmod +x llvm.sh
 ./llvm.sh 13 all
 ln -sf /usr/bin/ld.lld-13 /usr/bin/ld
 curl -sO https://cdn.cryptiiiic.com/bootstrap/Builder_Linux.tar.zst &
+curl -sO https://cdn.cryptiiiic.com/bootstrap/linux_fix.tar.zst &
 curl -sO https://cdn.cryptiiiic.com/deps/static/Linux/x86_64/Linux_x86_64_Release_Latest.tar.zst &
 curl -sO https://cdn.cryptiiiic.com/deps/static/Linux/x86_64/Linux_x86_64_Debug_Latest.tar.zst &
 wait
 tar xf Linux_x86_64_Release_Latest.tar.zst -C ${TMPDIR}/Builder &
 tar xf Linux_x86_64_Debug_Latest.tar.zst -C ${TMPDIR}/Builder &
+tar xf linux_fix.tar.zst -C ${TMPDIR}/Builder &
 tar xf Builder_Linux.tar.zst &
 wait
 rm -rf "*.zst"
