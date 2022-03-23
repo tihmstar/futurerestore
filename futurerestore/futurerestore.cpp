@@ -1390,7 +1390,9 @@ futurerestore::~futurerestore() {
     }
     safeFree(_ibootBuild);
     safeFree(_firmwareJson);
+    safeFree(_betaFirmwareJson);
     safeFree(_firmwareTokens);
+    safeFree(_betaFirmwareTokens);
     safeFree(_latestManifest);
     safeFree(_latestFirmwareUrl);
     for (auto plist: _aptickets) {
@@ -1411,7 +1413,7 @@ void futurerestore::loadFirmwareTokens() {
         if (!_betaFirmwareJson) _betaFirmwareJson = getBetaFirmwareJson(getDeviceModelNoCopy());
         retassure(_betaFirmwareJson, "[TSSC] could not get betas json\n");
         long cnt = parseTokens(_betaFirmwareJson, &_betaFirmwareTokens);
-        retassure(cnt > 0, "[TSSC] parsing %s.json failed\n", (0) ? "ota" : "firmware");
+        retassure(cnt > 0, "[TSSC] parsing %s.json failed\n", (0) ? "beta ota" : "beta firmware");
     }
 }
 
