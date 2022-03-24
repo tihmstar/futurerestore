@@ -679,7 +679,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
             info("Booting iBEC, waiting for device to disconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
 
-#if arm64
+#if __aarch64__
             retassure(((_client->mode == MODE_UNKNOWN) || (mutex_unlock(&_client->device_event_mutex), 0)),
                       "Device did not disconnect. Switch to USB-A to lightning cable (see issue #67)");
 #else
@@ -688,7 +688,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
 #endif
             info("Booting iBEC, waiting for device to reconnect...\n");
             cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-#if arm64
+#if __aarch64__
             retassure(((_client->mode == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex), 0)),
                       "Device did not reconnect. Switch to USB-A to lightning cable (see issue #67)");
 #else
@@ -705,7 +705,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
                (_client->device->chip_id >= 0x8101 && _client->device->chip_id <= 0x8301)) {
         dfu = true;
         cond_wait_timeout(&_client->device_event_cond, &_client->device_event_mutex, 10000);
-#if arm64
+#if __aarch64__
         retassure(((_client->mode == MODE_RECOVERY) || (mutex_unlock(&_client->device_event_mutex), 0)),
                   "Device did not reconnect. Switch to USB-A to lightning cable (see issue #67)");
 #else
@@ -1317,7 +1317,7 @@ void futurerestore::doRestore(const char *ipsw) {
         debug("Waiting for device to disconnect...\n");
         mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-#if arm64
+#if __aarch64__
         retassure((client->mode == MODE_UNKNOWN || (mutex_unlock(&client->device_event_mutex), 0)),
                   "Device did not disconnect. Switch to USB-A to lightning cable (see issue #67)");
 #else
@@ -1329,7 +1329,7 @@ void futurerestore::doRestore(const char *ipsw) {
         debug("Waiting for device to reconnect...\n");
         mutex_unlock(&client->device_event_mutex);
         cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
-#if arm64
+#if __aarch64__
         retassure((client->mode == MODE_RECOVERY || (mutex_unlock(&client->device_event_mutex), 0)),
                   "Device did not disconnect. Switch to USB-A to lightning cable (see issue #67)");
 #else
