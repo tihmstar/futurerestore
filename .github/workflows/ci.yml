@@ -20,42 +20,37 @@ jobs:
     - name: macOS Build
       id: macOS-Build
       run: |
-        cd /Users/runner/work/futurerestore/futurerestore/.github/workflows
-        ./mac-bootstrap.sh
-        ./Builder macOS x86_64 release 1300 10.12 &
-        ./Builder macOS x86_64 debug 1300 10.12 &
-        ./Builder macOS arm64 release 1700 11.0 &
-        ./Builder macOS arm64 debug 1700 11.0 &
-        wait
-        ./mac-post.sh
+        /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-bootstrap.sh
+        /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-build.sh
+        /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-post.sh
     - name: macOS x86_64 RELEASE Archive
       id: macOS-x86_64-RELEASE-Archive
       uses: actions/upload-artifact@v2
       with:
         name: futurerestore-macOS-x86_64-RELEASE
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-x86_64-*-RELEASE.tar.xz
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-x86_64-*-RELEASE.tar.xz
     - name: macOS x86_64 DEBUG Archive
       id: macOS-x86_64-DEBUG-Archive
       uses: actions/upload-artifact@v2
       with:
         name: futurerestore-macOS-x86_64-DEBUG
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-x86_64-*-DEBUG.tar.xz
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-x86_64-*-DEBUG.tar.xz
     - name: macOS arm64 RELEASE Archive
       id: macOS-arm64-RELEASE-Archive
       uses: actions/upload-artifact@v2
       with:
         name: futurerestore-macOS-arm64-RELEASE
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-arm64-*-RELEASE.tar.xz
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-arm64-*-RELEASE.tar.xz
     - name: macOS arm64 DEBUG Archive
       id: macOS-arm64-DEBUG-Archive
       uses: actions/upload-artifact@v2
       with:
         name: futurerestore-macOS-arm64-DEBUG
         path: |
-          /Users/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-macOS-arm64-*-DEBUG.tar.xz
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-arm64-*-DEBUG.tar.xz
   Linux:
     runs-on: ubuntu-latest
     steps:
@@ -71,13 +66,9 @@ jobs:
           image: debian:buster-slim
           options: -v ${{ github.workspace }}/..:/tmp/Builder/repos/
           run: |
-            cd /tmp/Builder/repos/futurerestore/.github/workflows/
-            ./linux-bootstrap.sh
-            ./Builder Linux cctools
-            ./Builder Linux x86_64 Release &
-            ./Builder Linux x86_64 Debug &
-            wait
-            ./linux-post.sh
+            /tmp/Builder/repos/futurerestore/.github/workflows/linux-bootstrap.sh
+            /tmp/Builder/repos/futurerestore/.github/workflows/linux-build.sh
+            /tmp/Builder/repos/futurerestore/.github/workflows/linux-post.sh
       - name: Linux x86_64 RELEASE Build
         run: |
           mkdir -p /home/runner/work/futurerestore/futurerestore/.github/workflows/

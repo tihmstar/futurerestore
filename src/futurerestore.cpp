@@ -735,6 +735,10 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         auto nonceelem = img4tool::getValFromIM4M({_im4ms[0].first, _im4ms[0].second}, 'BNCH');
 
         info("ApNonce pre-hax:\n");
+        getDeviceMode(true);
+        retassure(((recovery_client_new(_client) == IRECV_E_SUCCESS) ||
+                   (mutex_unlock(&_client->device_event_mutex), 0)),
+                  "Failed to connect to device in Recovery Mode!");
         if (get_ap_nonce(_client, &_client->nonce, &_client->nonce_size) < 0) {
             reterror("Failed to get apnonce from device!");
         }

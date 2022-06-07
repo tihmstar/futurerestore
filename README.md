@@ -23,41 +23,11 @@ FutureRestore is a modified idevicerestore wrapper, which allows manually specif
   * Odysseus for 32-bit & 64-bit (A7-A11) devices
   * Re-restoring 32-bit devices to iOS 9.x with [alitek123](https://github.com/alitek12)'s no-ApNonce method (alternative — [idevicererestore](https://downgrade.party)).
 
-# Dependencies
-* ## External libs
-  Make sure these are installed
-  * [curl](https://github.com/curl/curl) (Linux/Windows only, macOS already has curl preinstalled);
-  * [openssl 1.1.1](https://github.com/openssl/openssl) (or CommonCrypto on macOS);
-  * [libusb 1.0.24](https://github.com/libusb/libusb) (Linux/Windows only, macOS can use IOKit for libirecovery);
-  * [libzip](https://github.com/nih-at/libzip);
-  * [libplist](https://github.com/libimobiledevice/libplist);
-  * [libusbmuxd](https://github.com/libimobiledevice/libusbmuxd);
-  * [libirecovery](https://github.com/libimobiledevice/libirecovery);
-  * [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice);
-  * [libpng16](https://github.com/glennrp/libpng);
-  * [xpwn(fork)](https://github.com/nyuszika7h/xpwn);
-  * [libgeneral](https://github.com/tihmstar/libgeneral);
-  * [libfragmentzip](https://github.com/tihmstar/libfragmentzip);
-  * [libinsn](https://github.com/tihmstar/libinsn);
-  * [lzfse](https://github.com/lzfse/lzfse);
-  * [img4tool](https://github.com/tihmstar/img4tool);
-  * [liboffsetfinder64(fork))](https://github.com/Cryptiiiic/liboffsetfinder64);
-  * [libipatcher(fork)](https://github.com/Cryptiiiic/libipatcher)
-
-* ## Submodules
-  Make sure these projects compile on your system (install it's dependencies):
-
-  * [jssy](https://github.com/tihmstar/jssy);
-  * [tsschecker(fork)](https://github.com/1Conan/tsschecker);
-  * [idevicerestore(fork)](https://github.com/futurerestore/idevicerestore)
-
-  If you are cloning this repository you may run:
-
-  ```git clone https://github.com/futurerestore/futurerestore --recursive```
- 
-  which will clone these submodules for you.
+# Compiling
+See [COMPILING](COMPILING.md)
 
 
+# Futurerestore Usage
 Usage: `futurerestore [OPTIONS] iPSW`
 
 | option (short) | option (long)                                      | description                                                                       |

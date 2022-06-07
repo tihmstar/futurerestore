@@ -11,9 +11,6 @@
 
 extern "C"{
 #include "tsschecker.h"
-#undef VERSION_COMMIT_SHA
-#undef VERSION_COMMIT_COUNT
-#undef VERSION_RELEASE
 };
 
 #include <libgeneral/macros.h>

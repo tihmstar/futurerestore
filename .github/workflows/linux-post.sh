@@ -2,16 +2,18 @@
 
 set -e
 export TMPDIR=/tmp
-export BASE=${TMPDIR}/Builder/repos/futurerestore/.github/workflows
+export WORKFLOW_ROOT=${TMPDIR}/Builder/repos/futurerestore/.github/workflows
+export DEP_ROOT=${TMPDIR}/Builder/repos/futurerestore/dep_root
+export BASE=${TMPDIR}/Builder/repos/futurerestore/
 
-cd ${BASE}/../../
+cd ${BASE}
 export FUTURERESTORE_VERSION=$(git rev-list --count HEAD | tr -d '\n')
 export FUTURERESTORE_VERSION_RELEASE=$(cat version.txt | tr -d '\n')
-cd ${BASE}
+cd ${WORKFLOW_ROOT}
 echo "futurerestore-Linux-x86_64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-RELEASE.tar.xz" > name1.txt
 echo "futurerestore-Linux-x86_64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-DEBUG.tar.xz" > name2.txt
 cp -RpP "${TMPDIR}/Builder/linux_fix.sh" linux_fix.sh
-cp -RpP "${TMPDIR}/Builder/Linux_x86_64_Release/bin/futurerestore" futurerestore
+cp -RpP "${BASE}/cmake-build-release-x86_64/src/futurerestore" futurerestore
 tar cpPJvf "futurerestore1.tar.xz" futurerestore linux_fix.sh
-cp -RpP "${TMPDIR}/Builder/Linux_x86_64_Debug/bin/futurerestore" futurerestore
+cp -RpP "${BASE}/cmake-build-debug-x86_64/src/futurerestore" futurerestore
 tar cpPJvf "futurerestore2.tar.xz" futurerestore linux_fix.sh
