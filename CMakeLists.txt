@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 find_package(PkgConfig REQUIRED)
+set(ignoreMe "${NO_PKGCFG}")
 set(SUBPROJECT_BUILD 1)
 if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
     if(NOT DEFINED NO_XCODE AND NOT DEFINED ENV{NO_XCODE})

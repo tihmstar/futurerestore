@@ -34,7 +34,9 @@ autom4te.cache
 autom4te.cache/*
 build
 cmake-build-debug
+cmake-build-debug*
 cmake-build-release
+cmake-build-release*
 cmake_install.cmake
 compile
 config.*
