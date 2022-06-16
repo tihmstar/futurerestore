@@ -48,6 +48,12 @@
   
   If you want to build in release mode pass in the RELEASE=1 environment variable.
   * Example: `RELEASE=1 ./build.sh -DARCH=x86_64` or `RELEASE=0 ./build.sh -DARCH=x86_64`
+
+  If you want to disable pkg-config linking you can provide the `NO_PKGCFG` flag. 
+
+  By default pkg-config linking is enabled. dep_root will be used when disabled.
+  * Example: `./build.sh -DARCH=x86_64 -DNO_PKGCFG`
+  * or `NO_PKGCFG=1 ./build.sh -DARCH=x86_64`
   
   If you want to overwrite the compiler on mac you can provide `NO_XCODE` flag.
   * Example: `CC=gcc CXX=g++ ./build.sh -DARCH=x86_64 -DNO_XCODE` 
@@ -58,5 +64,9 @@
   * By default it will remove cmake and cache and reconfigure for each subsequent build.
   
   The compiled binary will be located at:
-  * `cmake-build-release/src/futurerestore` for release build
+  * `cmake-build-release/src/futurerestore` for release builds
   * `cmake-build-debug/src/futurerestore` for debug builds
+  
+  Otherwise you can install the binary via:
+  * `make -C cmake-build-release install` for release builds
+  * `make -C cmake-build-debug install` for debug builds
