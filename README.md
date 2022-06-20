@@ -15,6 +15,9 @@ __Only use if you are sure what you're doing.__
 ## What is FutureRestore?
 FutureRestore is a modified idevicerestore wrapper, which allows manually specifying SEP and Baseband for restoring. This allows unsigned firmwares to be restored onto devices, providing you have a backup of the APTicket (SHSH Blobs), and can recreate all the specific conditions of the APTicket e.g. ECID, APNonce, Board ID.
 
+# Support
+For support, join the [FutureRestore Support server](https://discord.com/invite/96wCSnwYVX) on Discord.
+
 # Features  
 * Supports the following downgrade methods:
   * Prometheus for 64-bit devices:
