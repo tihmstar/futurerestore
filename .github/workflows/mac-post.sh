@@ -8,7 +8,11 @@ export BASE=/Users/runner/work/futurerestore/futurerestore/
 cd ${BASE}
 export FUTURERESTORE_VERSION=$(git rev-list --count HEAD | tr -d '\n')
 export FUTURERESTORE_VERSION_RELEASE=$(cat version.txt | tr -d '\n')
-tar cpPJf "futurerestore-macOS-x86_64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-RELEASE.tar.xz" -C cmake-build-release-x86_64/src futurerestore
-tar cpPJf "futurerestore-macOS-x86_64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-DEBUG.tar.xz" -C cmake-build-debug-x86_64/src futurerestore
-tar cpPJf "futurerestore-macOS-arm64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-RELEASE.tar.xz" -C cmake-build-release-arm64/src futurerestore
-tar cpPJf "futurerestore-macOS-arm64-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-DEBUG.tar.xz" -C cmake-build-debug-arm64/src futurerestore
+lipo -create -arch x86_64 cmake-build-release-x86_64/src/futurerestore -arch arm64 cmake-build-release-arm64/src/futurerestore -output futurerestore
+tar cpPJf "futurerestore-macOS-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-RELEASE.tar.xz" futurerestore
+rm -rf futurerestore
+lipo -create -arch x86_64 cmake-build-debug-x86_64/src/futurerestore -arch arm64 cmake-build-debug-arm64/src/futurerestore -output futurerestore
+tar cpPJf "futurerestore-macOS-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-DEBUG.tar.xz" futurerestore
+rm -rf futurerestore
+lipo -create -arch x86_64 cmake-build-asan-x86_64/src/futurerestore -arch arm64 cmake-build-asan-arm64/src/futurerestore -output futurerestore
+tar cpPJf "futurerestore-macOS-${FUTURERESTORE_VERSION_RELEASE}-Build_${FUTURERESTORE_VERSION}-ASAN.tar.xz" futurerestore

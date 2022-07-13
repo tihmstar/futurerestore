@@ -23,34 +23,27 @@ jobs:
         /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-bootstrap.sh
         /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-build.sh
         /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-post.sh
-    - name: macOS x86_64 RELEASE Archive
-      id: macOS-x86_64-RELEASE-Archive
+    - name: macOS RELEASE Archive
+      id: macOS-RELEASE-Archive
       uses: actions/upload-artifact@v2
       with:
-        name: futurerestore-macOS-x86_64-RELEASE
+        name: futurerestore-macOS-RELEASE
         path: |
-          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-x86_64-*-RELEASE.tar.xz
-    - name: macOS x86_64 DEBUG Archive
-      id: macOS-x86_64-DEBUG-Archive
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-*-RELEASE.tar.xz
+    - name: macOS DEBUG Archive
+      id: macOS-DEBUG-Archive
       uses: actions/upload-artifact@v2
       with:
-        name: futurerestore-macOS-x86_64-DEBUG
+        name: futurerestore-macOS-DEBUG
         path: |
-          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-x86_64-*-DEBUG.tar.xz
-    - name: macOS arm64 RELEASE Archive
-      id: macOS-arm64-RELEASE-Archive
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-*-DEBUG.tar.xz
+    - name: macOS ASAN Archive
+      id: macOS-ASAN-Archive
       uses: actions/upload-artifact@v2
       with:
-        name: futurerestore-macOS-arm64-RELEASE
+        name: futurerestore-macOS-ASAN
         path: |
-          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-arm64-*-RELEASE.tar.xz
-    - name: macOS arm64 DEBUG Archive
-      id: macOS-arm64-DEBUG-Archive
-      uses: actions/upload-artifact@v2
-      with:
-        name: futurerestore-macOS-arm64-DEBUG
-        path: |
-          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-arm64-*-DEBUG.tar.xz
+          /Users/runner/work/futurerestore/futurerestore/futurerestore-macOS-*-ASAN.tar.xz
   Linux:
     runs-on: ubuntu-latest
     steps:
@@ -81,6 +74,12 @@ jobs:
           docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/name2.txt /home/runner/work/futurerestore/futurerestore/.github/workflows/
           docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/futurerestore2.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/
           mv /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore2.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/$(cat /home/runner/work/futurerestore/futurerestore/.github/workflows/name2.txt)
+      - name: Linux x86_64 ASAN Build
+        run: |
+          mkdir -p /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/name3.txt /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          docker cp $(docker ps -ql):/tmp/Builder/repos/futurerestore/.github/workflows/futurerestore3.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/
+          mv /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore3.tar.xz /home/runner/work/futurerestore/futurerestore/.github/workflows/$(cat /home/runner/work/futurerestore/futurerestore/.github/workflows/name3.txt)
       - name: futurerestore Linux x86_64 RELEASE Archive
         id: futurerestore-Linux-x86_64-RELEASE-Archive
         uses: actions/upload-artifact@v2
@@ -95,3 +94,10 @@ jobs:
           name: futurerestore-Linux-x86_64-DEBUG
           path: |
             /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-Linux-x86_64*-DEBUG.tar.xz
+      - name: futurerestore Linux x86_64 ASAN Archive
+        id: futurerestore-Linux-x86_64-ASAN-Archive
+        uses: actions/upload-artifact@v2
+        with:
+          name: futurerestore-Linux-x86_64-ASAN
+          path: |
+            /home/runner/work/futurerestore/futurerestore/.github/workflows/futurerestore-Linux-x86_64*-ASAN.tar.xz
