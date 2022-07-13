@@ -923,6 +923,7 @@ void futurerestore::doRestore(const char *ipsw) {
         retassure(!ipsw_extract_build_manifest(client->ipsw, &buildmanifest, &unused),
                   "ERROR: Unable to extract BuildManifest from %s. Firmware file might be corrupt.\n", client->ipsw);
     }
+    client->build_manifest = plist_copy(buildmanifest);
 
     /* check if device type is supported by the given build manifest */
     retassure(!build_manifest_check_compatibility(buildmanifest, client->device->product_type),

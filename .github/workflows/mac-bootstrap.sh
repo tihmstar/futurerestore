@@ -19,6 +19,7 @@ echo "${PROCURSUS}/libexec/gnubin" | sudo tee /etc/paths1
 cat /etc/paths | sudo tee -a /etc/paths1
 sudo mv /etc/paths{1,}
 wait
+rm -rf ${DEP_ROOT}/{lib,include} || true
 mkdir -p ${DEP_ROOT}/macOS_x86_64_Release ${DEP_ROOT}/macOS_x86_64_Debug ${DEP_ROOT}/macOS_arm64_Release ${DEP_ROOT}/macOS_arm64_Debug
 gtar xf macOS_x86_64_Release_Latest.tar.zst -C ${DEP_ROOT}/macOS_x86_64_Release &
 gtar xf macOS_x86_64_Debug_Latest.tar.zst -C ${DEP_ROOT}/macOS_x86_64_Debug &
