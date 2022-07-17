@@ -1,11 +1,11 @@
 # futurerestore
-[![CI Building](https://img.shields.io/github/workflow/status/futurerestore/futurerestore/CI)](https://github.com/futurerestore/futurerestore/actions?workflow=CI)
+[![CI Building](https://img.shields.io/github/workflow/status/futurerestore/futurerestore/CI/main)](https://github.com/futurerestore/futurerestore/actions)
 
 __Make sure to read this page before continuing.__
 
 Latest **stable** compiled version can be found [here](https://github.com/futurerestore/futurerestore/releases).
 
-For devices that support iOS 15, and WiFi-only iPad restores - use the latest beta build for your platform [here](https://nightly.link/m1stadev/futurerestore/workflows/ci/test).
+For devices that support iOS 15, and WiFi-only iPad restores - use the latest beta build for your platform [here](https://nightly.link/futurerestore/futurerestore/workflows/ci/main).
 
 **There are currently no pre-compiled beta builds for Windows.**
 
