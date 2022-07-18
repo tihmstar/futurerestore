@@ -158,6 +158,11 @@ public:
     
     void doRestore(const char *ipsw);
 
+#ifdef __APPLE__
+    static int findProc(const char *procName);
+    void daemonManager(bool load);
+#endif
+
     ~futurerestore();
     
     static std::pair<const char *,size_t> getRamdiskHashFromSCAB(const char* scab, size_t scabSize);

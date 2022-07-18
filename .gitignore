@@ -65,3 +65,7 @@ src/idevicerestore
 stamp-h1
 swig/*
 xcuserdata
+*.tar
+*.zst
+*.shsh2
+*.shsh

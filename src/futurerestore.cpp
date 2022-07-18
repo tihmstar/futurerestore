@@ -104,7 +104,7 @@ std::string sepTempPath = futurerestoreTempPath + "/sep.im4p";
 std::string sepManifestTempPath = futurerestoreTempPath + "/sepManifest.plist";
 
 #ifdef __APPLE__
-
+#include <sys/sysctl.h>
 #   include <CommonCrypto/CommonDigest.h>
 
 #   define SHA1(d, n, md) CC_SHA1(d, n, md)
@@ -155,6 +155,9 @@ bool futurerestore::init() {
             info("[INFO] 64-bit device detected\n");
         }
     }
+#ifdef __APPLE__
+    daemonManager(false);
+#endif
     return _didInit;
 }
 
@@ -1386,6 +1389,128 @@ void futurerestore::doRestore(const char *ipsw) {
     else retassure(!(result), "ERROR: Unable to restore device\n");
 }
 
+#ifdef __APPLE__
+// Borrowed from apple killall.c
+int futurerestore::findProc(const char *procName) {
+    struct kinfo_proc *procs = nullptr, *procs2 = nullptr;
+    int mib[4];
+    size_t mibLen, size = 0;
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_ALL;
+    mib[3] = 0;
+    mibLen = 3;
+    int ctlRet = 0;
+    do {
+        ctlRet = sysctl(mib, mibLen, nullptr, &size, nullptr, 0);
+        if (ctlRet < 0) {
+            info("daemonManager: findProc: failed sysctl(KERN_PROC)!\n");
+            return -1;
+        }
+        if (!size) {
+            info("daemonManager: findProc: failed sysctl(KERN_PROC) size!\n");
+            return -1;
+        }
+        size += size / 10;
+        procs2 = static_cast<kinfo_proc *>(realloc(procs, size));
+        if (!procs2) {
+            info("daemonManager: findProc: realloc failed!\n");
+            safeFree(procs);
+            safeFree(procs2);
+            return -1;
+        }
+        procs = procs2;
+        ctlRet = sysctl(mib, mibLen, procs, &size, nullptr, 0);
+    } while(ctlRet < 0 && errno == ENOMEM);
+    int nprocs = size / sizeof(struct kinfo_proc);
+    int pid = 0;
+    char *cmd;
+    for(int i = 0; i < nprocs; i++) {
+        if (procs[i].kp_proc.p_stat == SZOMB) {
+            continue;
+        }
+        pid = procs[i].kp_proc.p_pid;
+        char *procArgs = nullptr, *foundProc = nullptr;
+        int mib2[3], argMax;
+        size_t sysSize;
+        mib2[0] = CTL_KERN;
+        mib2[1] = KERN_ARGMAX;
+        sysSize = sizeof(argMax);
+        if (sysctl(mib2, 2, &argMax, &sysSize, nullptr, 0) == -1) {
+            continue;
+        }
+        procArgs = static_cast<char *>(malloc(argMax));
+        if (procArgs == nullptr) {
+            continue;
+        }
+        mib2[0] = CTL_KERN;
+        mib2[1] = KERN_PROCARGS2;
+        mib2[2] = pid;
+        sysSize = (size_t)argMax;
+        if (sysctl(mib2, 3, procArgs, &sysSize, nullptr, 0) == -1) {
+            safeFree(procArgs);
+            continue;
+        }
+        for (foundProc = procArgs; foundProc < &procArgs[sysSize]; foundProc++) {
+            if (*foundProc == '\0') {
+                break;
+            }
+        }
+
+        if (foundProc == &procArgs[sysSize]) {
+            free(procArgs);
+            continue;
+        }
+
+        for (; foundProc < &procArgs[sysSize]; foundProc++) {
+            if (*foundProc != '\0') {
+                break;
+            }
+        }
+
+        if (foundProc == &procArgs[sysSize]) {
+            free(procArgs);
+            continue;
+        }
+
+        /* Strip off any path that was specified */
+        for(cmd = foundProc; (foundProc < &procArgs[sysSize]) && (*foundProc != '\0'); foundProc++) {
+            if (*foundProc == '/') {
+                cmd = foundProc + 1;
+            }
+        }
+        if (strcmp(cmd, procName) == 0) {
+            info("daemonManager: findProc: found %s!\n", procName);
+            return pid;
+        }
+    }
+    return -1;
+}
+
+void futurerestore::daemonManager(bool load) {
+    if(!load) {
+        info("daemonManager: suspending invasive macOS daemons...\n");
+    }
+    int pid = 0;
+    const char *procList[] = { "MobileDeviceUpdater", "AMPDevicesAgent", "AMPDeviceDiscoveryAgent", 0};
+    for(int i = 0; i < 3; i++) {
+        pid = findProc(procList[i]);
+        if (pid > 1) {
+            info("daemonManager: killing %s.\n", procList[i]);
+            if (load) {
+                int ret = kill(pid, SIGCONT);
+            } else {
+                int ret = kill(pid, SIGSTOP);
+            }
+        }
+    }
+
+    if(!load) {
+        info("daemonManager: done!\n");
+    }
+}
+#endif
+
 futurerestore::~futurerestore() {
     recovery_client_free(_client);
     idevicerestore_client_free(_client);
@@ -1404,6 +1529,9 @@ futurerestore::~futurerestore() {
     }
     safeFreeCustom(_sepbuildmanifest, plist_free);
     safeFreeCustom(_basebandbuildmanifest, plist_free);
+#ifdef __APPLE__
+    daemonManager(true);
+#endif
 }
 
 void futurerestore::loadFirmwareTokens() {
