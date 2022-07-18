@@ -52,16 +52,20 @@
   If you want to disable pkg-config linking you can provide the `NO_PKGCFG` flag. 
 
   By default pkg-config linking is enabled. dep_root will be used when disabled.
-  * Example: `./build.sh -DARCH=x86_64 -DNO_PKGCFG`
+  * Example: `./build.sh -DARCH=x86_64 -DNO_PKGCFG=1`
   * or `NO_PKGCFG=1 ./build.sh -DARCH=x86_64`
   
   If you want to overwrite the compiler on mac you can provide `NO_XCODE` flag.
-  * Example: `CC=gcc CXX=g++ ./build.sh -DARCH=x86_64 -DNO_XCODE` 
+  * Example: `CC=gcc CXX=g++ ./build.sh -DARCH=x86_64 -DNO_XCODE=1` 
   * or `NO_XCODE=1 CC=gcc CXX=g++ ./build.sh -DARCH=x86_64`
 
   If you want to disable cmake reconfigure for each build, you can provide the `NO_CLEAN` flag.
   * Example: `NO_CLEAN=1 ./build.sh -DARCH=x86_64`
   * By default it will remove cmake and cache and reconfigure for each subsequent build.
+  
+  If you enable the os built in AddressSanitizer feature use the `ASAN` flag.
+  * Example: `ASAN=1 ./build.sh -DARCH=x86_64`
+  * or `./build.sh -DARCH=x86_64 -DASAN=1`
   
   The compiled binary will be located at:
   * `cmake-build-release/src/futurerestore` for release builds

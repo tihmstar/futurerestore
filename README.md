@@ -1,5 +1,5 @@
 # futurerestore
-[![CI Building](https://img.shields.io/github/workflow/status/futurerestore/futurerestore/CI/main)](https://github.com/futurerestore/futurerestore/actions)
+[![CI Building](https://img.shields.io/github/workflow/status/futurerestore/futurerestore/CI?style=for-the-badge)](https://github.com/futurerestore/futurerestore/actions)
 
 __Make sure to read this page before continuing.__
 

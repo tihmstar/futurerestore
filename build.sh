@@ -8,7 +8,7 @@ export CXX="$(which clang++)"
 which xcrun >/dev/null
  if [[ "$?" -lt 1 ]]; then export CC="$(xcrun --find clang)"; export CXX="$(xcrun --find clang++)"; fi
 echo "[*] Building futurerestore"
-export FR_INSTALL_DIR="/usr/local/bin"
+export FR_INSTALL_DIR="/usr/local"
 if [[ -z "$NO_CLEAN" ]]; then rm -rf cmake-build-release cmake-build-debug; fi
 if [[ "$RELEASE" == "1" ]]
 then

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 find_package(PkgConfig REQUIRED)
+execute_process(COMMAND git submodule update --init --recursive WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(ignoreMe "${NO_PKGCFG}")
 set(ignoreMe "${ASAN}")
 set(ignoreMe "${ARCH}")

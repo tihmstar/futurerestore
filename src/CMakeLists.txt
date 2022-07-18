@@ -88,5 +88,5 @@ add_definitions(
         -DVERSION_COMMIT_SHA="${VERSION_COMMIT_SHA}"
         -DVERSION_RELEASE="${VERSION_RELEASE}")
 install(TARGETS futurerestore
-        DESTINATION ${CMAKE_INSTALL_PREFIX})
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 
