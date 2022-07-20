@@ -159,7 +159,7 @@ public:
     void doRestore(const char *ipsw);
 
 #ifdef __APPLE__
-    static int findProc(const char *procName);
+    static int findProc(const char *procName, bool load);
     void daemonManager(bool load);
 #endif
 

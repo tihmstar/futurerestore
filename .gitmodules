@@ -5,4 +5,4 @@
 [submodule "tsschecker"]
 	path = external/tsschecker
 	url = https://github.com/1Conan/tsschecker.git
-	branch = master
+	branch = iOS16

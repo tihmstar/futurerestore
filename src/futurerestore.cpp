@@ -163,9 +163,7 @@ bool futurerestore::init() {
 
 uint64_t futurerestore::getDeviceEcid() {
     retassure(_didInit, "did not init\n");
-    uint64_t ecid;
-    get_ecid(_client, &ecid);
-    return ecid;
+    return _client->ecid;
 }
 
 int futurerestore::getDeviceMode(bool reRequest) {
@@ -1352,7 +1350,6 @@ void futurerestore::doRestore(const char *ipsw) {
     //do magic
     if (_client->image4supported) get_sep_nonce(client, &client->sepnonce, &client->sepnonce_size);
     get_ap_nonce(client, &client->nonce, &client->nonce_size);
-    get_ecid(client, &client->ecid);
 
     if (client->mode == MODE_RECOVERY) {
         retassure(client->srnm, "ERROR: could not retrieve device serial number. Can't continue.\n");
@@ -1391,7 +1388,7 @@ void futurerestore::doRestore(const char *ipsw) {
 
 #ifdef __APPLE__
 // Borrowed from apple killall.c
-int futurerestore::findProc(const char *procName) {
+int futurerestore::findProc(const char *procName, bool load) {
     struct kinfo_proc *procs = nullptr, *procs2 = nullptr;
     int mib[4];
     size_t mibLen, size = 0;
@@ -1480,7 +1477,9 @@ int futurerestore::findProc(const char *procName) {
             }
         }
         if (strcmp(cmd, procName) == 0) {
-            info("daemonManager: findProc: found %s!\n", procName);
+            if(!load) {
+                info("daemonManager: findProc: found %s!\n", procName);
+            }
             return pid;
         }
     }
@@ -1494,12 +1493,12 @@ void futurerestore::daemonManager(bool load) {
     int pid = 0;
     const char *procList[] = { "MobileDeviceUpdater", "AMPDevicesAgent", "AMPDeviceDiscoveryAgent", 0};
     for(int i = 0; i < 3; i++) {
-        pid = findProc(procList[i]);
+        pid = findProc(procList[i], load);
         if (pid > 1) {
-            info("daemonManager: killing %s.\n", procList[i]);
             if (load) {
                 int ret = kill(pid, SIGCONT);
             } else {
+                info("daemonManager: killing %s.\n", procList[i]);
                 int ret = kill(pid, SIGSTOP);
             }
         }
