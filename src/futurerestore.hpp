@@ -63,7 +63,8 @@ class futurerestore {
     bool _setNonce = false;
     bool _serial = false;
     bool _noRestore = false;
-    
+    bool _noRSEP = false;
+
     char *_firmwareJson = nullptr;
     char *_betaFirmwareJson = nullptr;
     jssytok_t *_firmwareTokens = nullptr;;
@@ -75,9 +76,12 @@ class futurerestore {
     bool _useCustomLatestBeta = false;
     std::string _customLatest;
     std::string _customLatestBuildID;
+    const char *_model = nullptr;
+    const char *_board = nullptr;
 
     plist_t _sepbuildmanifest = nullptr;
     plist_t _basebandbuildmanifest = nullptr;
+    plist_t _buildidentity = nullptr;
 
     std::string _ramdiskPath;
     std::string _kernelPath;
@@ -98,7 +102,7 @@ class futurerestore {
     void enterPwnRecovery(plist_t build_identity, std::string bootargs);
 
 public:
-    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false, bool setNonce = false, bool serial = false, bool noRestore = false);
+    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false, bool noIBSS = false, bool setNonce = false, bool serial = false, bool noRestore = false, bool noRSEP = false);
     bool init();
     int getDeviceMode(bool reRequest);
     uint64_t getDeviceEcid();
@@ -138,6 +142,7 @@ public:
     void loadKernel(std::string kernelPath);
     void loadSep(std::string sepPath);
     void loadBaseband(std::string basebandPath);
+    unsigned char *getSHA(const std::string& filePath, int type = 0);
 
     void setCustomLatest(std::string version){_customLatest = version; _useCustomLatest = true;}
     void setCustomLatestBuildID(std::string version, bool beta){_customLatestBuildID = version; _useCustomLatest = false; _useCustomLatestBuildID = true; _useCustomLatestBeta = beta;}
@@ -171,8 +176,10 @@ public:
     static plist_t loadPlistFromFile(const char *path);
     static void saveStringToFile(std::string str, std::string path);
     static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
+    static unsigned char *getDigestOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static std::string getGeneratorFromSHSH2(plist_t shsh2);
+
 };
 
 #endif /* futurerestore_hpp */

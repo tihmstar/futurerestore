@@ -33,35 +33,36 @@ See [COMPILING](COMPILING.md)
 # Futurerestore Usage
 Usage: `futurerestore [OPTIONS] iPSW`
 
-| option (short) | option (long)                                      | description                                                                       |
-|----------------|------------------------------------------|-----------------------------------------------------------------------------------|
-|  ` -t `           | ` --apticket PATH	 `                    | Signing tickets used for restoring, commonly known as blobs |
-|  ` -u `           | ` --update `                                    | Update instead of erase install (requires appropriate APTicket) |
-|                       |                                                           | This parameter is recommended to not be used for downgrading. If you are jailbroken, make sure to have your orig-fs snapshot restored (Restore RootFS).  |
-|  ` -w `           | ` --wait `                                        | Keep rebooting until ApNonce matches APTicket (ApNonce collision, unreliable) |
-|  ` -d `           | ` --debug `                                      | Show all code, use to save a log for debug testing |
-|  ` -e `           | ` --exit-recovery `                       | Exit recovery mode and quit |
-|  ` -c `           | ` --custom-latest VERSION `                       | Specify custom latest version to use for SEP, Baseband and other FirmwareUpdater components |
-|  ` -g `           | ` --custom-latest-buildid BUILDID `                       | Specify custom latest buildid to use for SEP, Baseband and other FirmwareUpdater components |
-|  ` -i `           | ` --custom-latest-beta `                       | Get custom url from list of beta firmwares |
-|                       | ` --use-pwndfu `                           | Restoring devices with Odysseus method. Device needs to be in pwned DFU mode already |
-|                       | ` --no-ibss `                           | Restoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder. |
-|                       | ` --rdsk PATH `                           | Set custom restore ramdisk for entering restoremode(requires use-pwndfu) |
-|                       | ` --rkrn PATH `                           | Set custom restore kernelcache for entering restoremode(requires use-pwndfu) |
-|                       | ` --set-nonce `                           | Set custom nonce from your blob then exit recovery(requires use-pwndfu) |
-|                       | ` --set-nonce=0xNONCE `                           | Set custom nonce then exit recovery(requires use-pwndfu) |
-|                       | ` --serial `                           | Enable serial during boot(requires serial cable and use-pwndfu) |
-|                       | ` --boot-args "BOOTARGS" `                           | Set custom restore boot-args(PROCEED WITH CAUTION)(requires use-pwndfu) |
-|                       | ` --no-cache `                           | Disable cached patched iBSS/iBEC(requires use-pwndfu) |
-|                       | ` --skip-blob `                           | Skip SHSH blob validation(PROCEED WITH CAUTION)(requires use-pwndfu) |
-|                       | ` --latest-sep `                             | Use latest signed SEP instead of manually specifying one |
-|  ` -s `           | ` --sep PATH `                                 | Manually specify SEP to be flashed |
-|  ` -m `           | ` --sep-manifest PATH `              | BuildManifest for requesting SEP ticket |
-|                       | ` --latest-baseband `                | Use latest signed baseband instead of manually specifying one |
-|  ` -b `           | ` --baseband PATH	`                     | Manually specify baseband to be flashed |
-|  ` -p `           | ` --baseband-manifest PATH `  | BuildManifest for requesting baseband ticket |
-|                       | ` --no-baseband `                         | Skip checks and don't flash baseband |
-|                       |                                                           | Only use this for device without a baseband (eg. iPod touch or Wi-Fi only iPads) |
+| option (short) | option (long)                       | description                                                                                                                                             |
+|----------------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ` -t `         | ` --apticket PATH	 `                | Signing tickets used for restoring, commonly known as blobs                                                                                             |
+| ` -u `         | ` --update `                        | Update instead of erase install (requires appropriate APTicket)                                                                                         |
+|                |                                     | This parameter is recommended to not be used for downgrading. If you are jailbroken, make sure to have your orig-fs snapshot restored (Restore RootFS). |
+| ` -w `         | ` --wait `                          | Keep rebooting until ApNonce matches APTicket (ApNonce collision, unreliable)                                                                           |
+| ` -d `         | ` --debug `                         | Show all code, use to save a log for debug testing                                                                                                      |
+| ` -e `         | ` --exit-recovery `                 | Exit recovery mode and quit                                                                                                                             |
+| ` -c `         | ` --custom-latest VERSION `         | Specify custom latest version to use for SEP, Baseband and other FirmwareUpdater components                                                             |
+| ` -g `         | ` --custom-latest-buildid BUILDID ` | Specify custom latest buildid to use for SEP, Baseband and other FirmwareUpdater components                                                             |
+| ` -i `         | ` --custom-latest-beta `            | Get custom url from list of beta firmwares                                                                                                              |
+|                | ` --use-pwndfu `                    | Restoring devices with Odysseus method. Device needs to be in pwned DFU mode already                                                                    |
+|                | ` --no-ibss `                       | Restoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder.                    |
+|                | ` --rdsk PATH `                     | Set custom restore ramdisk for entering restoremode(requires use-pwndfu)                                                                                |
+|                | ` --rkrn PATH `                     | Set custom restore kernelcache for entering restoremode(requires use-pwndfu)                                                                            |
+|                | ` --set-nonce `                     | Set custom nonce from your blob then exit recovery(requires use-pwndfu)                                                                                 |
+|                | ` --set-nonce=0xNONCE `             | Set custom nonce then exit recovery(requires use-pwndfu)                                                                                                |
+|                | ` --serial `                        | Enable serial during boot(requires serial cable and use-pwndfu)                                                                                         |
+|                | ` --boot-args "BOOTARGS" `          | Set custom restore boot-args(PROCEED WITH CAUTION)(requires use-pwndfu)                                                                                 |
+|                | ` --no-cache `                      | Disable cached patched iBSS/iBEC(requires use-pwndfu)                                                                                                   |
+|                | ` --skip-blob `                     | Skip SHSH blob validation(PROCEED WITH CAUTION)(requires use-pwndfu)                                                                                    |
+|                | ` --latest-sep `                    | Use latest signed SEP instead of manually specifying one                                                                                                |
+| ` -s `         | ` --sep PATH `                      | Manually specify SEP to be flashed                                                                                                                      |
+| ` -m `         | ` --sep-manifest PATH `             | BuildManifest for requesting SEP ticket                                                                                                                 |
+| ` -j `         | ` --no-rsep `                       | Choose not to send Restore Mode SEP                                                                                                                     |
+|                | ` --latest-baseband `               | Use latest signed baseband instead of manually specifying one                                                                                           |
+| ` -b `         | ` --baseband PATH	`                 | Manually specify baseband to be flashed                                                                                                                 |
+| ` -p `         | ` --baseband-manifest PATH `        | BuildManifest for requesting baseband ticket                                                                                                            |
+|                | ` --no-baseband `                   | Skip checks and don't flash baseband                                                                                                                    |
+|                |                                     | Only use this for device without a baseband (eg. iPod touch or Wi-Fi only iPads)                                                                        |
 
 ---
 

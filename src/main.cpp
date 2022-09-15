@@ -44,6 +44,7 @@ static struct option longopts[] = {
         { "no-restore",                 no_argument,            nullptr, 'z' },
         { "latest-baseband",            no_argument,            nullptr, '1' },
         { "no-baseband",                no_argument,            nullptr, '2' },
+        { "no-rsep",                    no_argument,            nullptr, 'j' },
 #ifdef HAVE_LIBIPATCHER
         { "use-pwndfu",                 no_argument,            nullptr, '3' },
         { "no-ibss",                    no_argument,            nullptr, '4' },
@@ -76,6 +77,7 @@ static struct option longopts[] = {
 #define FLAG_CUSTOM_LATEST          1 << 15
 #define FLAG_CUSTOM_LATEST_BUILDID  1 << 16
 #define FLAG_CUSTOM_LATEST_BETA     1 << 17
+#define FLAG_NO_RSEP_FR             1 << 18
 
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] iPSW\n");
@@ -111,6 +113,7 @@ void cmd_help(){
     printf("      --latest-sep\t\t\tUse latest signed SEP instead of manually specifying one\n");
     printf("  -s, --sep PATH\t\t\tSEP to be flashed\n");
     printf("  -m, --sep-manifest PATH\t\tBuildManifest for requesting SEP ticket\n");
+    printf("  -j, --no-rsep\t\tChoose not to send Restore Mode SEP\n");
 
     printf("\nOptions for baseband:\n");
     printf("      --latest-baseband\t\t\tUse latest signed baseband instead of manually specifying one\n");
@@ -167,7 +170,7 @@ int main_r(int argc, const char * argv[]) {
         return -1;
     }
 
-    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:c:g:hiwude0z123456789af", longopts, &optindex)) > 0) {
+    while ((opt = getopt_long(argc, (char* const *)argv, "ht:b:p:s:m:c:g:hiwude0z123456789afj", longopts, &optindex)) > 0) {
         switch (opt) {
             case 'h': // long option: "help"; can be called as short option
                 cmd_help();
@@ -213,6 +216,9 @@ int main_r(int argc, const char * argv[]) {
                 break;
             case '2': // long option: "no-baseband";
                 flags |= FLAG_NO_BASEBAND;
+                break;
+            case 'j': // long option: "no-rsep";
+                flags |= FLAG_NO_RSEP_FR;
                 break;
 #ifdef HAVE_LIBIPATCHER
             case '3': // long option: "use-pwndfu";
@@ -286,7 +292,7 @@ int main_r(int argc, const char * argv[]) {
         return -5;
     }
 
-    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS, flags & FLAG_SET_NONCE, flags & FLAG_SERIAL, flags & FLAG_NO_RESTORE_FR);
+    futurerestore client(flags & FLAG_UPDATE, flags & FLAG_IS_PWN_DFU, flags & FLAG_NO_IBSS, flags & FLAG_SET_NONCE, flags & FLAG_SERIAL, flags & FLAG_NO_RESTORE_FR, flags & FLAG_NO_RSEP_FR);
     retassure(client.init(),"can't init, no device found\n");
 
     printf("futurerestore init done\n");
@@ -384,7 +390,7 @@ int main_r(int argc, const char * argv[]) {
         }
 
         if (flags & FLAG_LATEST_SEP){
-            info("user specified to use latest signed SEP\n");
+            info("User specified to use latest signed SEP\n");
             client.downloadLatestSep();
         }else if (!client.is32bit()){
             client.setSepPath(sepPath);
@@ -394,38 +400,44 @@ int main_r(int argc, const char * argv[]) {
         }
 
         versVals.basebandMode = kBasebandModeWithoutBaseband;
-        if (!client.is32bit() && !(isManifestSignedForDevice(client.getSepManifestPath().c_str(), &devVals, &versVals, nullptr))){
+        info("Checking if SEP is being signed...\n");
+        if (!client.is32bit() && !(isManifestSignedForDevice(client.getSepManifestPath().c_str(), &devVals, &versVals, nullptr))) {
             reterror("SEP firmware is NOT being signed!\n");
+        } else {
+            info("SEP is being signed!\n");
         }
         if (flags & FLAG_NO_BASEBAND){
-            printf("\nWARNING: user specified is not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
-            printf("if you added this flag by mistake, you can press CTRL-C now to cancel\n");
+            info("\nWARNING: user specified is not to flash a baseband. This can make the restore fail if the device needs a baseband!\n");
+            info("\nIf you added this flag by mistake, you can press CTRL-C now to cancel\n");
             int c = 10;
-            printf("continuing restore in ");
+            info("Continuing restore in ");
             while (c) {
-                printf("%d ",c--);
+                info("%d ",c--);
                 fflush(stdout);
                 sleep(1);
             }
-            printf("\n");
+            info("");
         }else{
             if (flags & FLAG_LATEST_BASEBAND){
-                info("user specified to use latest signed baseband\n");
+                info("User specified to use latest signed baseband\n");
                 client.downloadLatestBaseband();
             }else{
                 client.setBasebandPath(basebandPath);
                 client.setBasebandManifestPath(basebandManifestPath);
                 client.loadBaseband(basebandPath);
                 client.loadBasebandManifest(basebandManifestPath);
-                printf("Did set SEP+baseband path and firmware\n");
+                info("Did set SEP and baseband path and firmware\n");
             }
 
             versVals.basebandMode = kBasebandModeOnlyBaseband;
             if (!(devVals.bbgcid = client.getBasebandGoldCertIDFromDevice())){
-                printf("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
+                debug("[WARNING] using tsschecker's fallback to get BasebandGoldCertID. This might result in invalid baseband signing status information\n");
             }
+            info("Checking if Baseband is being signed...\n");
             if (!(isManifestSignedForDevice(client.getBasebandManifestPath().c_str(), &devVals, &versVals, nullptr))) {
-                reterror("baseband firmware is NOT being signed!\n");
+                reterror("Baseband firmware is NOT being signed!\n");
+            } else {
+                info("Baseband is being signed!\n");
             }
         }
 
