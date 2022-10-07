@@ -30,14 +30,12 @@
 #include <jssy.h>
 #include <plist/plist.h>
 
-using namespace std;
-
 template <typename T>
 class ptr_smart {
     std::function<void(T)> _ptr_free = NULL;
 public:
     T _p;
-    ptr_smart(T p, function<void(T)> ptr_free){static_assert(is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
+    ptr_smart(T p, std::function<void(T)> ptr_free){static_assert(std::is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
     ptr_smart(T p){_p = p;}
     ptr_smart(){_p = NULL;}
     ptr_smart(ptr_smart &&p){ _p = p._p; _ptr_free = p._ptr_free; p._p = NULL; p._ptr_free = NULL;}
@@ -54,8 +52,8 @@ class futurerestore {
     struct idevicerestore_client_t* _client;
     char *_ibootBuild = nullptr;
     bool _didInit = false;
-    vector<plist_t> _aptickets;
-    vector<pair<char *, size_t>>_im4ms;
+    std::vector<plist_t> _aptickets;
+    std::vector<std::pair<char *, size_t>>_im4ms;
     int _foundnonce = -1;
     bool _isUpdateInstall = false;
     bool _isPwnDfu = false;
@@ -110,8 +108,8 @@ public:
     void setAutoboot(bool val);
     void exitRecovery();
     void waitForNonce();
-    void waitForNonce(vector<const char *>nonces, size_t nonceSize);
-    void loadAPTickets(const vector<const char *> &apticketPaths);
+    void waitForNonce(std::vector<const char *>nonces, size_t nonceSize);
+    void loadAPTickets(const std::vector<const char *> &apticketPaths);
     char *getiBootBuild();
     
     plist_t nonceMatchesApTickets();

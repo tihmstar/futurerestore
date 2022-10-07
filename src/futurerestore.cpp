@@ -36,6 +36,9 @@ extern "C" {
 #endif
 #ifdef WIN32
 #include <windows.h>
+#ifdef mkdir
+#undef mkdir
+#endif
 #define safe_mkdir(path, mode) mkdir(path)
 #else
 void safe_mkdir(const char *path, int mode) {
@@ -43,14 +46,13 @@ void safe_mkdir(const char *path, int mode) {
 #ifdef __APPLE__
     newID = 501;
 #else
-    std::ifstream osReleaseStream(std::string("/etc/os-release"));
+    std::ifstream osReleaseStream(std::string("/etc/os-release"), std::ios::in | std::ios::binary | std::ios::ate);
     std::string osRelease;
     if(osReleaseStream.good()) {
-        osReleaseStream.seekg(std::ifstream::end);
         osRelease.reserve(osReleaseStream.tellg());
         osReleaseStream.seekg(std::ifstream::beg);
         osRelease.assign((std::istreambuf_iterator<char>(osReleaseStream)), std::istreambuf_iterator<char>());
-        if ((osReleaseStream.rdstate() & std::ifstream::goodbit) == 0) {
+        if ((osReleaseStream.good())) {
             int pos = osRelease.find(std::string("\nID="));
             if(pos != std::string::npos) {
                 osRelease.erase(0, pos + 4);
@@ -265,7 +267,7 @@ plist_t futurerestore::nonceMatchesApTickets() {
         info("\n");
     }
 
-    vector<const char *> nonces;
+    std::vector<const char *> nonces;
 
     if (_client->image4supported) {
         for (int i = 0; i < _im4ms.size(); i++) {
@@ -310,7 +312,7 @@ std::pair<const char *, size_t> futurerestore::nonceMatchesIM4Ms() {
     int realNonceSize = 0;
     recovery_get_ap_nonce(_client, &realnonce, &realNonceSize);
 
-    vector<const char *> nonces;
+    std::vector<const char *> nonces;
 
     if (_client->image4supported) {
         for (auto &_im4m: _im4ms) {
@@ -337,7 +339,7 @@ std::pair<const char *, size_t> futurerestore::nonceMatchesIM4Ms() {
     return {NULL, 0};
 }
 
-void futurerestore::waitForNonce(vector<const char *> nonces, size_t nonceSize) {
+void futurerestore::waitForNonce(std::vector<const char *> nonces, size_t nonceSize) {
     retassure(_didInit, "did not init\n");
     setAutoboot(false);
 
@@ -381,7 +383,7 @@ void futurerestore::waitForNonce() {
     retassure(!_im4ms.empty(), "No IM4M loaded\n");
 
     size_t nonceSize = 0;
-    vector<const char *> nonces;
+    std::vector<const char *> nonces;
 
     retassure(_client->image4supported, "Error: ApNonce collision function is not supported on 32-bit devices\n");
 
@@ -397,7 +399,7 @@ void futurerestore::waitForNonce() {
     waitForNonce(nonces, nonceSize);
 }
 
-void futurerestore::loadAPTickets(const vector<const char *> &apticketPaths) {
+void futurerestore::loadAPTickets(const std::vector<const char *> &apticketPaths) {
     for (auto apticketPath: apticketPaths) {
         plist_t apticket = nullptr;
         char *im4m = nullptr;
@@ -493,8 +495,8 @@ char *futurerestore::getiBootBuild() {
     return _ibootBuild;
 }
 
-pair<ptr_smart<char *>, size_t>
-getIPSWComponent(struct idevicerestore_client_t *client, plist_t build_identity, const string &component) {
+std::pair<ptr_smart<char *>, size_t>
+getIPSWComponent(struct idevicerestore_client_t *client, plist_t build_identity, const std::string &component) {
     ptr_smart<char *> path;
     unsigned char *component_data = nullptr;
     unsigned int component_size = 0;
@@ -517,8 +519,8 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
     idevicerestore_mode_t *mode = nullptr;
     libipatcher::fw_key iBSSKeys{};
     libipatcher::fw_key iBECKeys{};
-    pair<ptr_smart<char *>, size_t> iBSS;
-    pair<ptr_smart<char *>, size_t> iBEC;
+    std::pair<ptr_smart<char *>, size_t> iBSS;
+    std::pair<ptr_smart<char *>, size_t> iBEC;
     FILE *ibss = nullptr;
     FILE *ibec = nullptr;
     int rv;
@@ -834,7 +836,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
         retassure(!irecv_setenv(_client->recovery->client, "com.apple.System.boot-nonce", generator.c_str()),
                   "failed to write generator to nvram");
         retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
-        uint64_t gen = std::stoul(generator, nullptr, 16);
+        uint64_t gen = std::stoull(generator, nullptr, 16);
         auto *nonce = (uint8_t *)alloc.allocate(_client->nonce_size);
         if (_client->nonce_size == 20) {
             SHA1((unsigned char *) &gen, 8, nonce);
@@ -946,7 +948,7 @@ void futurerestore::doRestore(const char *ipsw) {
 
     if (_enterPwnRecoveryRequested) //we are in pwnDFU, so we don't need to check nonces
         client->tss = _aptickets.at(0);
-    else if (!(client->tss = nonceMatchesApTickets()))
+    else if (!(client->tss = nonceMatchesApTickets()) && !this->_isPwnDfu)
         reterror("Device ApNonce does not match APTicket nonce\n");
 
     plist_dict_remove_item(client->tss, "BBTicket");
@@ -1116,17 +1118,18 @@ void futurerestore::doRestore(const char *ipsw) {
         plist_dict_set_item(manifest, "SEP", sep_sep);
         unsigned char genHash[48]; //SHA384 digest length
         ptr_smart<unsigned char *> sephash = NULL;
-        uint64_t sephashlen = 0;
+        uint64_t sephashlen = 20;
         plist_t digest = plist_dict_get_item(sep_sep, "Digest");
 
         retassure(digest && plist_get_node_type(digest) == PLIST_DATA, "ERROR: can't find SEP digest\n");
 
         plist_get_data_val(digest, reinterpret_cast<char **>(&sephash), &sephashlen);
-
-        if (sephashlen == 20)
-            SHA1((unsigned char *) _client->sepfwdata, (unsigned int) _client->sepfwdatasize, genHash);
-        else
-            SHA384((const unsigned char *) _client->sepfwdata, (unsigned long) _client->sepfwdatasize, genHash);
+        if (sephashlen == 20) {
+            SHA1((unsigned char *) _client->sepfwdata, _client->sepfwdatasize, (unsigned char *)&genHash);
+        }
+        else {
+            SHA384((const unsigned char *) _client->sepfwdata, (uint64_t) _client->sepfwdatasize, genHash);
+        }
         retassure(!memcmp(genHash, sephash, sephashlen), "ERROR: SEP does not match sepmanifest\n");
     }
 
@@ -1710,14 +1713,11 @@ void futurerestore::downloadLatestRose() {
             "Rap,RTKitOS", manifeststr, getDeviceBoardNoCopy(), 0) : nullptr);
     if (roseStr) {
         auto *digestString = getDigestOfElementInManifest("Rap,RTKitOS", manifeststr, getDeviceBoardNoCopy(), 0);
-        unsigned char *hash = getSHA(roseTempPath);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 48)) {
-                info("Using cached Rose\n");
-                safeFree(digestString);
-                safeFree(hash);
-                return;
-            }
+        unsigned char *hash = getSHA(roseTempPath, ((_client->device->chip_id < 0x8010) ? 3 : 0));
+        if(hash && digestString && !memcmp(digestString, hash, ((_client->device->chip_id < 0x8010) ? 20 : 48))) {
+            info("Using cached Rose\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Rose firmware\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), roseStr, roseTempPath.c_str()),
@@ -1767,12 +1767,10 @@ void futurerestore::downloadLatestSavage() {
         savagePaths[0] = futurerestoreTempPath + "/savageB0PP.fw";
         auto *digestString = getDigestOfElementInManifest("Savage,B0-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0);
         unsigned char *hash = getSHA(savagePaths[0], 1);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 32)) {
-                info("Using cached Savage,B0-Prod-Patch.\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        if(hash && digestString && !memcmp(digestString, hash, 32)) {
+            info("Using cached Savage,B0-Prod-Patch.\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Savage,B0-Prod-Patch\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0ProdStr, savagePaths[0].c_str()),
@@ -1783,12 +1781,10 @@ void futurerestore::downloadLatestSavage() {
         savagePaths[1] = futurerestoreTempPath + "//savageB0DP.fw";
         auto *digestString = getDigestOfElementInManifest("Savage,B0-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0);
         unsigned char *hash = getSHA(savagePaths[1], 1);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 32)) {
-                info("Using cached Savage,B0-Dev-Patch.\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        if(hash && digestString && !memcmp(digestString, hash, 32)) {
+            info("Using cached Savage,B0-Dev-Patch.\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Savage,B0-Dev-Patch\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB0DevStr, savagePaths[1].c_str()),
@@ -1799,12 +1795,10 @@ void futurerestore::downloadLatestSavage() {
         savagePaths[2] = futurerestoreTempPath + "//savageB2PP.fw";
         auto *digestString = getDigestOfElementInManifest("Savage,B2-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0);
         unsigned char *hash = getSHA(savagePaths[2], 1);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 32)) {
-                info("Using cached Savage,B2-Prod-Patch.\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        if(hash && digestString && !memcmp(digestString, hash, 32)) {
+            info("Using cached Savage,B2-Prod-Patch.\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Savage,B2-Prod-Patch\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2ProdStr, savagePaths[2].c_str()),
@@ -1815,12 +1809,10 @@ void futurerestore::downloadLatestSavage() {
         savagePaths[3] = futurerestoreTempPath + "//savageB2DP.fw";
         auto *digestString = getDigestOfElementInManifest("Savage,B2-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0);
         unsigned char *hash = getSHA(savagePaths[3], 1);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 32)) {
-                info("Using cached Savage,B2-Dev-Patch.\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        if(hash && digestString && !memcmp(digestString, hash, 32)) {
+            info("Using cached Savage,B2-Dev-Patch.\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Savage,B2-Dev-Patch\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageB2DevStr, savagePaths[3].c_str()),
@@ -1831,12 +1823,10 @@ void futurerestore::downloadLatestSavage() {
         savagePaths[4] = futurerestoreTempPath + "//savageBAPP.fw";
         auto *digestString = getDigestOfElementInManifest("Savage,BA-Prod-Patch", manifeststr, getDeviceBoardNoCopy(), 0);
         unsigned char *hash = getSHA(savagePaths[4], 1);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 32)) {
-                info("Using cached Savage,BA-Prod-Patch.\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        if(hash && digestString && !memcmp(digestString, hash, 32)) {
+            info("Using cached Savage,BA-Prod-Patch.\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Savage,BA-Prod-Patch\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageBAProdStr, savagePaths[4].c_str()),
@@ -1847,12 +1837,10 @@ void futurerestore::downloadLatestSavage() {
         savagePaths[5] = futurerestoreTempPath + "//savageBADP.fw";
         auto *digestString = getDigestOfElementInManifest("Savage,BA-Dev-Patch", manifeststr, getDeviceBoardNoCopy(), 0);
         unsigned char *hash = getSHA(savagePaths[5], 1);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 32)) {
-                info("Using cached Savage,BA-Dev-Patch.\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        if(hash && digestString && !memcmp(digestString, hash, 32)) {
+            info("Using cached Savage,BA-Dev-Patch.\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Savage,BA-Dev-Patch\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), savageBADevStr, savagePaths[5].c_str()),
@@ -1880,13 +1868,11 @@ void futurerestore::downloadLatestVeridian() {
 
     if (veridianDGMStr) {
         auto *digestString = getDigestOfElementInManifest("BMU,DigestMap", manifeststr, getDeviceBoardNoCopy(), 0);
-        unsigned char *hash = getSHA(veridianDGMTempPath);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 48)) {
-                info("Using cached BMU,DigestMap(Veridian).\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        unsigned char *hash = getSHA(veridianDGMTempPath, ((_client->device->chip_id < 0x8010) ? 3 : 0));
+        if(hash && digestString && !memcmp(digestString, hash, ((_client->device->chip_id < 0x8010) ? 20 : 48))) {
+            info("Using cached BMU,DigestMap(Veridian).\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Veridian DigestMap\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianDGMStr, veridianDGMTempPath.c_str()),
@@ -1895,13 +1881,11 @@ void futurerestore::downloadLatestVeridian() {
     }
     if (veridianFWMStr) {
         auto digestString = getDigestOfElementInManifest("BMU,FirmwareMap", manifeststr, getDeviceBoardNoCopy(), 0);
-        auto hash = getSHA(veridianFWMTempPath);
-        if(hash && digestString) {
-            if(!memcmp(digestString, hash, 48)) {
-                info("Using cached BMU,FirmwareMap(Veridian).\n");
-                safeFree(digestString);
-                safeFree(hash);
-            }
+        auto hash = getSHA(veridianFWMTempPath, ((_client->device->chip_id < 0x8010) ? 3 : 0));
+        if(hash && digestString && !memcmp(digestString, hash, ((_client->device->chip_id < 0x8010) ? 20 : 48))) {
+            info("Using cached BMU,FirmwareMap(Veridian).\n");
+            safeFree(digestString);
+            safeFree(hash);
         } else {
             info("Downloading Veridian FirmwareMap\n\n");
             retassure(!downloadPartialzip(getLatestFirmwareUrl(), veridianFWMStr, veridianFWMTempPath.c_str()),
@@ -1951,13 +1935,11 @@ void futurerestore::downloadLatestSep() {
     auto manifestString = getLatestManifest();
     auto pathString = getPathOfElementInManifest("SEP", manifestString, getDeviceBoardNoCopy(), 0);
     auto *digestString = getDigestOfElementInManifest("SEP",manifestString,getDeviceBoardNoCopy(),0);
-    auto *hash = getSHA(sepTempPath);
-    if(hash && digestString) {
-        if(!memcmp(digestString, hash, 48)) {
-            info("Using cached SEP.\n");
-            safeFree(digestString);
-            safeFree(hash);
-        }
+    auto *hash = getSHA(sepTempPath, ((_client->device->chip_id < 0x8010) ? 3 : 0));
+    if(hash && digestString && !memcmp(digestString, hash, ((_client->device->chip_id < 0x8010) ? 20 : 48))) {
+        info("Using cached SEP.\n");
+        safeFree(digestString);
+        safeFree(hash);
     } else {
         info("Downloading SEP\n\n");
         retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathString, sepTempPath.c_str()), "Could not download SEP\n");
@@ -1982,9 +1964,8 @@ void futurerestore::loadBasebandManifest(std::string basebandManifestPath) {
 };
 
 void futurerestore::loadRose(std::string rosePath) {
-    std::ifstream roseFileStream(rosePath);
+    std::ifstream roseFileStream(rosePath, std::ios::in | std::ios::binary | std::ios::ate);
     retassure(roseFileStream.good(), "%s: failed init file stream for %s!\n", __func__, rosePath.c_str());
-    roseFileStream.seekg(0, std::ios_base::end);
     _client->rosefwdatasize = roseFileStream.tellg();
     roseFileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
@@ -1992,15 +1973,15 @@ void futurerestore::loadRose(std::string rosePath) {
               "%s: failed to allocate memory for %s\n", __func__, rosePath.c_str());
     roseFileStream.read((char *) _client->rosefwdata,
                           (std::streamsize) _client->rosefwdatasize);
+    retassure(roseFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, rosePath.c_str());
     retassure(*(uint64_t *) (_client->rosefwdata) != 0,
               "%s: failed to load Rose for %s with the size %zu!\n",
               __func__, rosePath.c_str(), _client->rosefwdatasize);
 }
 
 void futurerestore::loadSE(std::string sePath) {
-    std::ifstream seFileStream(sePath);
+    std::ifstream seFileStream(sePath, std::ios::in | std::ios::binary | std::ios::ate);
     retassure(seFileStream.good(), "%s: failed init file stream for %s!\n", __func__, sePath.c_str());
-    seFileStream.seekg(0, std::ios_base::end);
     _client->sefwdatasize = seFileStream.tellg();
     seFileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
@@ -2008,6 +1989,7 @@ void futurerestore::loadSE(std::string sePath) {
               "%s: failed to allocate memory for %s\n", __func__, sePath.c_str());
     seFileStream.read((char *) _client->sefwdata,
                         (std::streamsize) _client->sefwdatasize);
+    retassure(seFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, sePath.c_str());
     retassure(*(uint64_t *) (_client->sefwdata) != 0,
               "%s: failed to load SE for %s with the size %zu!\n",
               __func__, sePath.c_str(), _client->sefwdatasize);
@@ -2016,9 +1998,8 @@ void futurerestore::loadSE(std::string sePath) {
 void futurerestore::loadSavage(std::array<std::string, 6> savagePaths) {
     int index = 0;
     for (const auto &savagePath: savagePaths) {
-        std::ifstream savageFileStream(savagePath);
+        std::ifstream savageFileStream(savagePath, std::ios::in | std::ios::binary | std::ios::ate);
         retassure(savageFileStream.good(), "%s: failed init file stream for %s!\n", __func__, savagePath.c_str());
-        savageFileStream.seekg(0, std::ios_base::end);
         _client->savagefwdatasize[index] = savageFileStream.tellg();
         savageFileStream.seekg(0, std::ios_base::beg);
         std::allocator<uint8_t> alloc;
@@ -2026,6 +2007,7 @@ void futurerestore::loadSavage(std::array<std::string, 6> savagePaths) {
                   "%s: failed to allocate memory for %s\n", __func__, savagePath.c_str());
         savageFileStream.read((char *) _client->savagefwdata[index],
                               (std::streamsize) _client->savagefwdatasize[index]);
+        retassure(savageFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, savagePath.c_str());
         retassure(*(uint64_t *) (_client->savagefwdata[index]) != 0,
                   "%s: failed to load Savage for %s with the size %zu!\n",
                   __func__, savagePath.c_str(), _client->savagefwdatasize[index]);
@@ -2034,12 +2016,11 @@ void futurerestore::loadSavage(std::array<std::string, 6> savagePaths) {
 }
 
 void futurerestore::loadVeridian(std::string veridianDGMPath, std::string veridianFWMPath) {
-    std::ifstream veridianDGMFileStream(veridianDGMPath);
-    std::ifstream veridianFWMFileStream(veridianFWMPath);
+    std::ifstream veridianDGMFileStream(veridianDGMPath, std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream veridianFWMFileStream(veridianFWMPath, std::ios::in | std::ios::binary | std::ios::ate);
     retassure(veridianDGMFileStream.good(), "%s: failed init file stream for %s!\n", __func__, veridianDGMPath.c_str());
     retassure(veridianFWMFileStream.good(), "%s: failed init file stream for %s!\n", __func__,
               veridianFWMPath.c_str());
-    veridianDGMFileStream.seekg(0, std::ios_base::end);
     _client->veridiandgmfwdatasize = veridianDGMFileStream.tellg();
     veridianDGMFileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
@@ -2047,6 +2028,7 @@ void futurerestore::loadVeridian(std::string veridianDGMPath, std::string veridi
               "%s: failed to allocate memory for %s\n", __func__, veridianDGMPath.c_str());
     veridianDGMFileStream.read((char *) _client->veridiandgmfwdata,
                                (std::streamsize) _client->veridiandgmfwdatasize);
+    retassure(veridianDGMFileStream.good(), "%s: failed init read stream for %s!\n", __func__, veridianDGMPath.c_str());
     retassure(*(uint64_t *) (_client->veridiandgmfwdata) != 0,
               "%s: failed to load Veridian for %s with the size %zu!\n",
               __func__, veridianDGMPath.c_str(), _client->veridiandgmfwdatasize);
@@ -2057,15 +2039,16 @@ void futurerestore::loadVeridian(std::string veridianDGMPath, std::string veridi
               "%s: failed to allocate memory for %s\n", __func__, veridianFWMPath.c_str());
     veridianFWMFileStream.read((char *) _client->veridianfwmfwdata,
                                (std::streamsize) _client->veridianfwmfwdatasize);
+    retassure(veridianFWMFileStream.good(), "%s: failed to read file stream for %s!\n", __func__,
+              veridianFWMPath.c_str());
     retassure(*(uint64_t *) (_client->veridianfwmfwdata) != 0,
               "%s: failed to load Veridian for %s with the size %zu!\n",
               __func__, veridianFWMPath.c_str(), _client->veridianfwmfwdatasize);
 }
 
 void futurerestore::loadRamdisk(std::string ramdiskPath) {
-    std::ifstream ramdiskFileStream(ramdiskPath);
+    std::ifstream ramdiskFileStream(ramdiskPath, std::ios::in | std::ios::binary | std::ios::ate);
     retassure(ramdiskFileStream.good(), "%s: failed init file stream for %s!\n", __func__, ramdiskPath.c_str());
-    ramdiskFileStream.seekg(0, std::ios_base::end);
     _client->ramdiskdatasize = ramdiskFileStream.tellg();
     ramdiskFileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
@@ -2073,15 +2056,15 @@ void futurerestore::loadRamdisk(std::string ramdiskPath) {
               "%s: failed to allocate memory for %s\n", __func__, ramdiskPath.c_str());
     ramdiskFileStream.read((char *) _client->ramdiskdata,
                            (std::streamsize) _client->ramdiskdatasize);
+    retassure(ramdiskFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, ramdiskPath.c_str());
     retassure(*(uint64_t *) (_client->ramdiskdata) != 0,
               "%s: failed to load Ramdisk for %s with the size %zu!\n",
               __func__, ramdiskPath.c_str(), _client->ramdiskdatasize);
 }
 
 void futurerestore::loadKernel(std::string kernelPath) {
-    std::ifstream kernelFileStream(kernelPath);
+    std::ifstream kernelFileStream(kernelPath, std::ios::in | std::ios::binary | std::ios::ate);
     retassure(kernelFileStream.good(), "%s: failed init file stream for %s!\n", __func__, kernelPath.c_str());
-    kernelFileStream.seekg(0, std::ios_base::end);
     _client->kerneldatasize = kernelFileStream.tellg();
     kernelFileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
@@ -2089,47 +2072,47 @@ void futurerestore::loadKernel(std::string kernelPath) {
               "%s: failed to allocate memory for %s\n", __func__, kernelPath.c_str());
     kernelFileStream.read((char *) _client->kerneldata,
                           (std::streamsize) _client->kerneldatasize);
+    retassure(kernelFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, kernelPath.c_str());
     retassure(*(uint64_t *) (_client->kerneldata) != 0,
               "%s: failed to load Kernel for %s with the size %zu!\n",
               __func__, kernelPath.c_str(), _client->kerneldatasize);
 }
 
 void futurerestore::loadSep(std::string sepPath) {
-    std::ifstream sepFileStream(sepPath);
+    std::ifstream sepFileStream(sepPath, std::ios::binary | std::ios::in | std::ios::ate);
     retassure(sepFileStream.good(), "%s: failed init file stream for %s!\n", __func__, sepPath.c_str());
-    sepFileStream.seekg(0, std::ios_base::end);
     _client->sepfwdatasize = sepFileStream.tellg();
     sepFileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
     retassure(_client->sepfwdata = (char *)alloc.allocate(_client->sepfwdatasize),
               "%s: failed to allocate memory for %s\n", __func__, sepPath.c_str());
-    sepFileStream.read((char *) _client->sepfwdata,
-                          (std::streamsize) _client->sepfwdatasize);
+    sepFileStream.read(reinterpret_cast<char*>(_client->sepfwdata),
+                          _client->sepfwdatasize);
+    retassure(sepFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, sepPath.c_str());
     retassure(*(uint64_t *) (_client->sepfwdata) != 0,
               "%s: failed to load SEP for %s with the size %zu!\n",
               __func__, sepPath.c_str(), _client->sepfwdatasize);
 }
 
 void futurerestore::loadBaseband(std::string basebandPath) {
-    std::ifstream basebandFileStream(basebandPath);
+    std::ifstream basebandFileStream(basebandPath, std::ios::binary | std::ios::in);
     retassure(basebandFileStream.good(), "%s: failed init file stream for %s!\n", __func__, basebandPath.c_str());
-    basebandFileStream.seekg(0, std::ios_base::beg);
     uint64_t *basebandFront = nullptr;
     std::allocator<uint8_t> alloc;
     retassure(basebandFront = (uint64_t *)alloc.allocate(sizeof(uint64_t)),
               "%s: failed to allocate memory for %s\n", __func__, basebandPath.c_str());
     basebandFileStream.read((char *)basebandFront, (std::streamsize)sizeof(uint64_t));
+    retassure(basebandFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, basebandPath.c_str());
     retassure(*(uint64_t *) (basebandFront) != 0, "%s: failed to load Baseband for %s!\n",
               __func__, basebandPath.c_str());
 }
 
 unsigned char *futurerestore::getSHA(const std::string& filePath, int type) {
-    std::ifstream fileStream(filePath);
+    std::ifstream fileStream(filePath, std::ios::binary | std::ios::in | std::ios::ate);
     if(!fileStream.good()) {
         info("Cached %s not found, downloading a new one.\n", filePath.c_str());
         return nullptr;
     }
-    fileStream.seekg(0, std::ios_base::end);
     size_t dataSize = fileStream.tellg();
     fileStream.seekg(0, std::ios_base::beg);
     std::allocator<uint8_t> alloc;
@@ -2140,6 +2123,10 @@ unsigned char *futurerestore::getSHA(const std::string& filePath, int type) {
     }
     fileStream.read((char *) data,
                        (std::streamsize) dataSize);
+    if(!fileStream.good()) {
+        info("Failed to read cached file %s, downloading a new one.\n", filePath.c_str());
+        return nullptr;
+    }
     if(*(uint64_t *)(data) == 0) {
         error("%s: failed to load File for %s with the size %zu!\n",
               __func__, filePath.c_str(), dataSize);
@@ -2178,10 +2165,10 @@ inline void futurerestore::saveStringToFile(std::string str, std::string path) {
         info("%s: No data to save!", __func__);
         return;
     }
-    std::ofstream fileStream(path);
+    std::ofstream fileStream(path, std::ios::out | std::ios::binary);
     retassure(fileStream.good(), "%s: failed init file stream for %s!\n", __func__, path.c_str());
     fileStream.write(str.data(), str.length());
-    retassure((fileStream.rdstate() & std::ofstream::goodbit) == 0, "Can't save file at %s\n", path.c_str());
+    retassure((fileStream.good()), "Can't save file at %s\n", path.c_str());
 }
 
 std::pair<const char *, size_t> futurerestore::getNonceFromSCAB(const char *scab, size_t scabSize) {
@@ -2318,12 +2305,17 @@ unsigned char *futurerestore::getDigestOfElementInManifest(const char *element, 
 
     plist_from_xml(manifeststr, (uint32_t) strlen(manifeststr), &buildmanifest);
 
-    if (plist_t identity = getBuildidentityWithBoardconfig(buildmanifest._p, boardConfig, isUpdateInstall))
-        if (plist_t manifest = plist_dict_get_item(identity, "Manifest"))
-            if (plist_t elem = plist_dict_get_item(manifest, element))
-                if (plist_t path = plist_dict_get_item(elem, "Digest"))
-                    if (plist_get_data_val(path, &digestStr, &size), digestStr)
+    if (plist_t identity = getBuildidentityWithBoardconfig(buildmanifest._p, boardConfig, isUpdateInstall)) {
+        if (plist_t manifest = plist_dict_get_item(identity, "Manifest")) {
+            if (plist_t elem = plist_dict_get_item(manifest, element)) {
+                if (plist_t path = plist_dict_get_item(elem, "Digest")) {
+                    if (plist_get_data_val(path, &digestStr, &size), digestStr) {
                         goto noerror;
+                    }
+                }
+            }
+        }
+    }
 
     return nullptr;
     noerror:
@@ -2365,7 +2357,8 @@ std::string futurerestore::getGeneratorFromSHSH2(plist_t shsh2) {
     plist_get_string_val(pGenerator, &genstr);
     assure(genstr);
 
-    gen = std::stoul(genstr, nullptr, 16);
+
+    gen = std::stoull(genstr, nullptr, 16);
     retassure(gen, "failed to parse generator. Make sure it is in format 0x%16llx");
 
     return {genstr};

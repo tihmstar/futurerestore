@@ -67,18 +67,52 @@ else()
             usbmuxd-2.0
             pthread)
     endif()
-    if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
+    if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Darwin")
         target_link_libraries(futurerestore PRIVATE
                 compression
                 "-framework CoreFoundation"
                 "-framework IOKit")
+elseif("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "MSYS" OR "${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Windows")
+    target_link_directories(futurerestore PRIVATE "/clang64/lib")
+    set(CMAKE_SYSTEM_LIBRARY_PATH "/clang64/lib")
+    target_link_libraries(futurerestore PRIVATE
+                idevicerestore
+                curl
+                tsschecker
+                jssy
+                "-lgeneral"
+                fragmentzip
+                img4tool
+                lzfse
+                ipatcher
+                offsetfinder64
+                insn
+                xpwn
+                common
+                png16
+                irecovery-1.0
+                imobiledevice-1.0
+                usbmuxd-2.0
+                imobiledevice-glue-1.0
+                plist-2.0
+                usb-1.0
+                bz2
+                lzma
+                iphlpapi
+                ws2_32
+                setupapi
+                bcrypt
+                crypt32
+                schannel
+                advapi32)
     else()
         target_link_libraries(futurerestore PRIVATE
                 usb-1.0
                 dl
                 udev
                 lzfse)
-endif()
+
+    endif()
 if(NOT DEFINED VERSION_COMMIT_COUNT)
     execute_process(COMMAND git rev-list --count HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE VERSION_COMMIT_COUNT ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
