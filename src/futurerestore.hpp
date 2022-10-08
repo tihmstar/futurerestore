@@ -191,6 +191,7 @@ public:
     static unsigned char *getDigestOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static std::string getGeneratorFromSHSH2(plist_t shsh2);
+    static std::string extractZipFileToString(char *zip_buffer, const char *file, uint32_t sz);
 
 };
 

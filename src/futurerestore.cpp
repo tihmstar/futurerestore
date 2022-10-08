@@ -29,6 +29,8 @@ extern "C" {
 #include "restore.h"
 #include "endianness.h"
 #include "tsschecker.h"
+#include "download.h"
+#include <zip.h>
 }
 
 #ifdef safe_mkdir
@@ -2387,53 +2389,31 @@ std::string futurerestore::getGeneratorFromSHSH2(plist_t shsh2) {
 #ifndef WIN32
 
 void futurerestore::checkForUpdates() {
-    info("Checking for updates...\n\n");
-    std::string num = futurerestoreTempPath + "/latest_build_num.txt";
-    std::string sha = futurerestoreTempPath + "/latest_build_sha.txt";
+    info("Checking for updates...\n");
     std::string url = "https://nightly.link/futurerestore/futurerestore/workflows/ci/main/Versioning.zip";
     bool fail = false;
-    if(downloadPartialzip(url.c_str(), "latest_build_num.txt", num.c_str())) {
+    char *buffer = nullptr;
+    uint32_t sz = 0;
+    if(download_to_buffer(url.c_str(), &buffer, &sz)) {
         fail = true;
+    } else {
+        std::string num_str = extractZipFileToString(buffer, "latest_build_num.txt", sz);
+        if(num_str.empty()) {
+            fail = true;
+        } else {
+            this->latest_num = num_str;
+        }
     }
-    if(downloadPartialzip(url.c_str(), "latest_build_sha.txt", sha.c_str())) {
+    if(download_to_buffer(url.c_str(), &buffer, &sz)) {
         fail = true;
+    } else {
+        std::string sha_str = extractZipFileToString(buffer, "latest_build_sha.txt", sz);
+        if(sha_str.empty()) {
+            fail = true;
+        } else {
+            this->latest_sha = sha_str;
+        }
     }
-    struct stat st{0};
-    if(fail || stat(num.c_str(), &st) == -1 || stat(sha.c_str(), &st) == -1) {
-        info("ERROR: failed to check for futurerestore updates! continuing...\n");
-        return;
-    }
-    char *num_data = nullptr;
-    size_t num_size = 0;
-    std::ifstream numFileStream(num, std::ios::binary | std::ios::in | std::ios::ate);
-    retassure(numFileStream.good(), "%s: failed init file stream for %s!\n", __func__, num.c_str());
-    num_size = numFileStream.tellg();
-    numFileStream.seekg(0, std::ios_base::beg);
-    std::allocator<uint8_t> alloc;
-    retassure(num_data = (char *)alloc.allocate(num_size),
-              "%s: failed to allocate memory for %s\n", __func__, num.c_str());
-    numFileStream.read(reinterpret_cast<char*>(num_data),
-                       num_size);
-    retassure(numFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, num.c_str());
-    retassure(*(uint64_t *) (num_data) != 0,
-              "%s: failed to load num versioning file for %s with the size %zu!\n",
-              __func__, num.c_str(), num_size);
-    this->latest_num = std::string(num_data);
-    char *sha_data = nullptr;
-    size_t sha_size = 0;
-    std::ifstream shaFileStream(sha, std::ios::binary | std::ios::in | std::ios::ate);
-    retassure(shaFileStream.good(), "%s: failed init file stream for %s!\n", __func__, sha.c_str());
-    sha_size = shaFileStream.tellg();
-    shaFileStream.seekg(0, std::ios_base::beg);
-    retassure(sha_data = (char *)alloc.allocate(sha_size),
-              "%s: failed to allocate memory for %s\n", __func__, sha.c_str());
-    shaFileStream.read(reinterpret_cast<char*>(sha_data),
-                       sha_size);
-    retassure(shaFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, sha.c_str());
-    retassure(*(uint64_t *) (sha_data) != 0,
-              "%s: failed to load sha versioning file for %s with the size %zu!\n",
-              __func__, sha.c_str(), sha_size);
-    this->latest_sha = std::string(sha_data);
     if(this->latest_num.empty() || this->latest_sha.empty()) {
         info("ERROR: failed to check for futurerestore updates! continuing...\n");
         return;
@@ -2452,6 +2432,49 @@ void futurerestore::checkForUpdates() {
     if(updated) {
         info("Futurerestore is up to date!\n");
     }
+}
+
+std::string futurerestore::extractZipFileToString(char *zip_buffer, const char *file, uint32_t sz) {
+    bool fail = false;
+    std::allocator<uint8_t> alloc;
+    std::string str;
+    zip_error_t *err = nullptr;
+    zip_source_t *target_source_zip = zip_source_buffer_create(zip_buffer, sz, 0, err);
+    zip_t *target_zip = zip_open_from_source(target_source_zip, 0, err);
+    if(target_zip == nullptr) {
+        fail = true;
+    } else {
+        int idx = zip_name_locate(target_zip, file, 0);
+        if(idx < 0) {
+            fail = true;
+        } else {
+            struct zip_stat zstat;
+            zip_stat_init(&zstat);
+            if(zip_stat_index(target_zip, idx, 0, &zstat) != 0) {
+                fail = true;
+            } else {
+                struct zip_file* target_file = zip_fopen_index(target_zip, idx, 0);
+                if (target_file == nullptr) {
+                    fail = true;
+                } else {
+                    unsigned char *target_buffer = (unsigned char*)alloc.allocate(zstat.size+1);
+                    if(target_buffer == nullptr) {
+                        fail = true;
+                    } else {
+                        if (zip_fread(target_file, target_buffer, zstat.size) != zstat.size) {
+                            fail = true;
+                        } else {
+                            target_buffer[zstat.size] = '\0';
+                            str = std::string(reinterpret_cast<const char *>(target_buffer));
+                        }
+                    }
+                    free(target_buffer);
+                }
+                zip_fclose(target_file);
+            }
+        }
+    }
+    return fail ? "" : str;
 }
 
 #endif
