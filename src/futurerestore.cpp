@@ -77,7 +77,7 @@ void safe_mkdir(const char *path, int mode) {
         seteuid(newID);
         setegid(newID);
     }
-    mkdir(path, mode);
+    __mkdir(path, mode);
     if(newID > -1) {
         setuid(id);
         setgid(id1);
@@ -140,9 +140,28 @@ futurerestore::futurerestore(bool isUpdateInstall, bool isPwnDfu, bool noIBSS, b
                                                _setNonce(setNonce), _serial(serial), _noRestore(noRestore), _noRSEP(noRSEP) {
     _client = idevicerestore_client_new();
     retassure(_client != nullptr, "Could not create idevicerestore client\n");
-
     struct stat st{0};
+    char *tmpdir = std::getenv("TMPDIR");
+    if(tmpdir != nullptr ) {
+        std::string TMPDIR(tmpdir);
+        if(!TMPDIR.empty() && stat(tmpdir, &st) > -1) {
+            futurerestoreTempPath = TMPDIR +"/futurerestore";
+            roseTempPath = futurerestoreTempPath + "/rose.bin";
+            seTempPath = futurerestoreTempPath + "/se.sefw";
+            veridianDGMTempPath = futurerestoreTempPath + "/veridianDGM.der";
+            veridianFWMTempPath = futurerestoreTempPath + "/veridianFWM.plist";
+            basebandTempPath = futurerestoreTempPath + "/baseband.bbfw";
+            basebandManifestTempPath = futurerestoreTempPath + "/basebandManifest.plist";
+            sepTempPath = futurerestoreTempPath + "/sep.im4p";
+            sepManifestTempPath = futurerestoreTempPath + "/sepManifest.plist";
+        }
+    }
     if (stat(futurerestoreTempPath.c_str(), &st) == -1) safe_mkdir(futurerestoreTempPath.c_str(), 0755);
+
+// TODO: implement windows CI and enable update check
+#ifndef WIN32
+    this->checkForUpdates();
+#endif
 
     nocache = 1; //tsschecker nocache
     _foundnonce = -1;
@@ -2363,3 +2382,76 @@ std::string futurerestore::getGeneratorFromSHSH2(plist_t shsh2) {
 
     return {genstr};
 }
+
+// TODO: implement windows CI and enable update check
+#ifndef WIN32
+
+void futurerestore::checkForUpdates() {
+    info("Checking for updates...\n\n");
+    std::string num = futurerestoreTempPath + "/latest_build_num.txt";
+    std::string sha = futurerestoreTempPath + "/latest_build_sha.txt";
+    std::string url = "https://nightly.link/futurerestore/futurerestore/workflows/ci/main/Versioning.zip";
+    bool fail = false;
+    if(downloadPartialzip(url.c_str(), "latest_build_num.txt", num.c_str())) {
+        fail = true;
+    }
+    if(downloadPartialzip(url.c_str(), "latest_build_sha.txt", sha.c_str())) {
+        fail = true;
+    }
+    struct stat st{0};
+    if(fail || stat(num.c_str(), &st) == -1 || stat(sha.c_str(), &st) == -1) {
+        info("ERROR: failed to check for futurerestore updates! continuing...\n");
+        return;
+    }
+    char *num_data = nullptr;
+    size_t num_size = 0;
+    std::ifstream numFileStream(num, std::ios::binary | std::ios::in | std::ios::ate);
+    retassure(numFileStream.good(), "%s: failed init file stream for %s!\n", __func__, num.c_str());
+    num_size = numFileStream.tellg();
+    numFileStream.seekg(0, std::ios_base::beg);
+    std::allocator<uint8_t> alloc;
+    retassure(num_data = (char *)alloc.allocate(num_size),
+              "%s: failed to allocate memory for %s\n", __func__, num.c_str());
+    numFileStream.read(reinterpret_cast<char*>(num_data),
+                       num_size);
+    retassure(numFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, num.c_str());
+    retassure(*(uint64_t *) (num_data) != 0,
+              "%s: failed to load num versioning file for %s with the size %zu!\n",
+              __func__, num.c_str(), num_size);
+    this->latest_num = std::string(num_data);
+    char *sha_data = nullptr;
+    size_t sha_size = 0;
+    std::ifstream shaFileStream(sha, std::ios::binary | std::ios::in | std::ios::ate);
+    retassure(shaFileStream.good(), "%s: failed init file stream for %s!\n", __func__, sha.c_str());
+    sha_size = shaFileStream.tellg();
+    shaFileStream.seekg(0, std::ios_base::beg);
+    retassure(sha_data = (char *)alloc.allocate(sha_size),
+              "%s: failed to allocate memory for %s\n", __func__, sha.c_str());
+    shaFileStream.read(reinterpret_cast<char*>(sha_data),
+                       sha_size);
+    retassure(shaFileStream.good(), "%s: failed to read file stream for %s!\n", __func__, sha.c_str());
+    retassure(*(uint64_t *) (sha_data) != 0,
+              "%s: failed to load sha versioning file for %s with the size %zu!\n",
+              __func__, sha.c_str(), sha_size);
+    this->latest_sha = std::string(sha_data);
+    if(this->latest_num.empty() || this->latest_sha.empty()) {
+        info("ERROR: failed to check for futurerestore updates! continuing...\n");
+        return;
+    }
+    bool updated = false;
+    if(std::equal(this->current_sha.begin(), this->current_sha.end(), this->latest_sha.begin())) {
+       updated = true;
+    } else {
+        if(std::stoi(this->current_num) < std::stoi(this->latest_num)) {
+            info("Error: Futurerestore is outdated! Please download the latest futurerestore! exitting...\n");
+            exit(-1);
+        } else {
+            updated = true;
+        }
+    }
+    if(updated) {
+        info("Futurerestore is up to date!\n");
+    }
+}
+
+#endif

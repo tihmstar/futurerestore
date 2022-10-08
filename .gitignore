@@ -69,3 +69,6 @@ xcuserdata
 *.zst
 *.shsh2
 *.shsh
+.cmake
+Testing
+*.cbp

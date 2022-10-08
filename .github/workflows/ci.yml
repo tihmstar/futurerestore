@@ -23,6 +23,14 @@ jobs:
         /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-bootstrap.sh
         /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-build.sh
         /Users/runner/work/futurerestore/futurerestore/.github/workflows/mac-post.sh
+    - name: Versioning
+      id: Versioning
+      uses: actions/upload-artifact@v2
+      with:
+        name: Versioning
+        path: |
+          /Users/runner/work/futurerestore/futurerestore/latest_build_sha.txt
+          /Users/runner/work/futurerestore/futurerestore/latest_build_num.txt
     - name: macOS RELEASE Archive
       id: macOS-RELEASE-Archive
       uses: actions/upload-artifact@v2

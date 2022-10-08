@@ -32,4 +32,6 @@ make -j4 -l4 -C cmake-build-asan-arm64
 
 
 llvm-strip -s cmake-build-release-x86_64/src/futurerestore
+codesign --deep --force --sign - cmake-build-release-x86_64/src/futurerestore
 llvm-strip -s cmake-build-release-arm64/src/futurerestore
+codesign --deep --force --sign - cmake-build-release-arm64/src/futurerestore

@@ -88,6 +88,15 @@ class futurerestore {
     std::string _basebandPath;
     std::string _basebandManifestPath;
 
+
+// TODO: implement windows CI and enable update check
+#ifndef WIN32
+    std::string latest_num;
+    std::string latest_sha;
+    std::string current_num = VERSION_COMMIT_COUNT;
+    std::string current_sha = VERSION_COMMIT_SHA;
+#endif
+
     const char *_custom_nonce = nullptr;
     const char *_boot_args = nullptr;
 
@@ -122,6 +131,11 @@ public:
     char *getLatestFirmwareUrl();
     std::string getSepManifestPath(){return _sepManifestPath;}
     std::string getBasebandManifestPath(){return _basebandManifestPath;}
+
+// TODO: implement windows CI and enable update check
+#ifndef WIN32
+    void checkForUpdates();
+#endif
     void downloadLatestRose();
     void downloadLatestSE();
     void downloadLatestSavage();

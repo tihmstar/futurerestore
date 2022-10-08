@@ -79,6 +79,8 @@ static struct option longopts[] = {
 #define FLAG_CUSTOM_LATEST_BETA     1 << 17
 #define FLAG_NO_RSEP_FR             1 << 18
 
+bool manual = false;
+
 void cmd_help(){
     printf("Usage: futurerestore [OPTIONS] iPSW\n");
     printf("Allows restoring to non-matching firmware with custom SEP+baseband\n");
@@ -97,29 +99,33 @@ void cmd_help(){
 
 #ifdef HAVE_LIBIPATCHER
     printf("\nOptions for downgrading with Odysseus:\n");
-    printf("      --use-pwndfu\t\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
-    printf("      --no-ibss\t\t\t\tRestoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder.\n");
-    printf("      --rdsk PATH\t\t\tSet custom restore ramdisk for entering restoremode(requires use-pwndfu)\n");
-    printf("      --rkrn PATH\t\t\tSet custom restore kernelcache for entering restoremode(requires use-pwndfu)\n");
-    printf("      --set-nonce\t\t\tSet custom nonce from your blob then exit recovery(requires use-pwndfu)\n");
-    printf("      --set-nonce=0xNONCE\t\tSet custom nonce then exit recovery(requires use-pwndfu)\n");
-    printf("      --serial\t\t\t\tEnable serial during boot(requires serial cable and use-pwndfu)\n");
-    printf("      --boot-args\t\t\tSet custom restore boot-args(PROCEED WITH CAUTION)(requires use-pwndfu)\n");
-    printf("      --no-cache\t\t\tDisable cached patched iBSS/iBEC(requires use-pwndfu)\n");
-    printf("      --skip-blob\t\t\tSkip SHSH blob validation(PROCEED WITH CAUTION)(requires use-pwndfu)\n");
+    printf("  -3, --use-pwndfu\t\t\tRestoring devices with Odysseus method. Device needs to be in pwned DFU mode already\n");
+    printf("  -4, --no-ibss\t\t\t\tRestoring devices with Odysseus method. For checkm8/iPwnder32 specifically, bootrom needs to be patched already with unless iPwnder.\n");
+    printf("  -5, --rdsk PATH\t\t\tSet custom restore ramdisk for entering restoremode(requires use-pwndfu)\n");
+    printf("  -6, --rkrn PATH\t\t\tSet custom restore kernelcache for entering restoremode(requires use-pwndfu)\n");
+    printf("  -7, --set-nonce\t\t\tSet custom nonce from your blob then exit recovery(requires use-pwndfu)\n");
+    printf("  -7, --set-nonce=0xNONCE\t\tSet custom nonce then exit recovery(requires use-pwndfu)\n");
+    printf("  -8, --serial\t\t\t\tEnable serial during boot(requires serial cable and use-pwndfu)\n");
+    printf("  -9, --boot-args\t\t\tSet custom restore boot-args(PROCEED WITH CAUTION)(requires use-pwndfu)\n");
+    printf("  -a, --no-cache\t\t\tDisable cached patched iBSS/iBEC(requires use-pwndfu)\n");
+    printf("  -f, --skip-blob\t\t\tSkip SHSH blob validation(PROCEED WITH CAUTION)(requires use-pwndfu)\n");
 #endif
 
     printf("\nOptions for SEP:\n");
-    printf("      --latest-sep\t\t\tUse latest signed SEP instead of manually specifying one\n");
-    printf("  -s, --sep PATH\t\t\tSEP to be flashed\n");
-    printf("  -m, --sep-manifest PATH\t\tBuildManifest for requesting SEP ticket\n");
-    printf("  -j, --no-rsep\t\tChoose not to send Restore Mode SEP\n");
+    printf("  -0, --latest-sep\t\t\tUse latest signed SEP instead of manually specifying one\n");
+    if(manual) {
+        printf("  -s, --sep PATH\t\t\tSEP to be flashed\n");
+        printf("  -m, --sep-manifest PATH\t\tBuildManifest for requesting SEP ticket\n");
+    }
+    printf("  -j, --no-rsep\t\t\t\tChoose not to send Restore Mode SEP firmware command\n");
 
     printf("\nOptions for baseband:\n");
-    printf("      --latest-baseband\t\t\tUse latest signed baseband instead of manually specifying one\n");
-    printf("  -b, --baseband PATH\t\t\tBaseband to be flashed\n");
-    printf("  -p, --baseband-manifest PATH\t\tBuildManifest for requesting baseband ticket\n");
-    printf("      --no-baseband\t\t\tSkip checks and don't flash baseband\n");
+    printf("  -1, --latest-baseband\t\t\tUse latest signed baseband instead of manually specifying one\n");
+    if(manual) {
+        printf("  -b, --baseband PATH\t\t\tBaseband to be flashed\n");
+        printf("  -p, --baseband-manifest PATH\t\tBuildManifest for requesting baseband ticket\n");
+    }
+    printf("  -2, --no-baseband\t\t\tSkip checks and don't flash baseband\n");
     printf("                   \t\t\tOnly use this for device without a baseband (eg. iPod touch or some Wi-Fi only iPads)\n\n");
 }
 
@@ -165,6 +171,12 @@ int main_r(int argc, const char * argv[]) {
     t_devicevals devVals = {nullptr};
     t_iosVersion versVals = {nullptr};
 
+    char *legacy = std::getenv("FUTURERESTORE_I_SOLEMNLY_SWEAR_THAT_I_AM_UP_TO_NO_GOOD");
+    manual = legacy != nullptr;
+    if(manual) {
+        info("WARNING: User specified to enable Deprecated/Legacy options, at risk of boot loop!\n");
+    }
+
     if (argc == 1){
         cmd_help();
         return -1;
@@ -180,15 +192,19 @@ int main_r(int argc, const char * argv[]) {
                 apticketPaths.push_back(optarg);
                 break;
             case 'b': // long option: "baseband"; can be called as short option
+                retassure(manual, "--baseband is Deprecated!");
                 basebandPath = optarg;
                 break;
             case 'p': // long option: "baseband-manifest"; can be called as short option
+                retassure(manual, "--baseband-manifest is Deprecated!");
                 basebandManifestPath = optarg;
                 break;
             case 's': // long option: "sep"; can be called as short option
+                retassure(manual, "--sep is Deprecated!");
                 sepPath = optarg;
                 break;
             case 'm': // long option: "sep-manifest"; can be called as short option
+                retassure(manual, "--sep-manifest is Deprecated!");
                 sepManifestPath = optarg;
                 break;
             case 'w': // long option: "wait"; can be called as short option
