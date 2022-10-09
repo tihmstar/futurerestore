@@ -1941,10 +1941,27 @@ void futurerestore::downloadLatestFirmwareComponents() {
 void futurerestore::downloadLatestBaseband() {
     auto manifeststr = getLatestManifest();
     auto pathStr = getPathOfElementInManifest("BasebandFirmware", manifeststr, getDeviceBoardNoCopy(), 0);
-    // TODO: Baseband caching. How on earth does basebandfirmware digest work?
-    info("Downloading Baseband\n\n");
-    retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathStr, basebandTempPath.c_str()),
-              "Could not download baseband\n");
+    auto *bbcfgDigestString = getBBCFGDigestInManifest(manifeststr, getDeviceBoardNoCopy(), 0);
+    uint32_t basebandSize;
+    char *basebandData = readBaseband(basebandTempPath, basebandData, reinterpret_cast<size_t *>(&basebandSize));
+    bool cached = false;
+    if(bbcfgDigestString != nullptr && basebandData != nullptr) {
+        const char *bbcfgData = extractZipFileToString(basebandData, "bbcfg.mbn", &basebandSize);
+        if(bbcfgData != nullptr) {
+            auto *hash = getSHABuffer((char *) bbcfgData, basebandSize, ((_client->device->chip_id < 0x8010) ? 3 : 1));
+            if(hash && bbcfgDigestString && !memcmp(bbcfgDigestString, hash, ((_client->device->chip_id < 0x8010) ? 20 : 32))) {
+                info("Using cached Baseband.\n");
+                safeFree(bbcfgDigestString);
+                safeFree(hash);
+                cached = true;
+            }
+        }
+    }
+    if(!cached) {
+        info("Downloading Baseband\n\n");
+        retassure(!downloadPartialzip(getLatestFirmwareUrl(), pathStr, basebandTempPath.c_str()),
+                  "Could not download baseband\n");
+    }
     saveStringToFile(manifeststr, basebandManifestTempPath);
     setBasebandPath(basebandTempPath);
     setBasebandManifestPath(basebandManifestTempPath);
@@ -2128,6 +2145,60 @@ void futurerestore::loadBaseband(std::string basebandPath) {
               __func__, basebandPath.c_str());
 }
 
+char *futurerestore::readBaseband(std::string basebandPath, char *data, size_t *sz) {
+    std::ifstream basebandFileStream(basebandPath, std::ios::binary | std::ios::in | std::ios::ate);
+    if(!basebandFileStream.good()) {
+        return nullptr;
+    }
+    size_t basebandSize = basebandFileStream.tellg();
+    basebandFileStream.seekg(0, std::ios_base::beg);
+    uint64_t *basebandData = nullptr;
+    std::allocator<uint8_t> alloc;
+    basebandData = (uint64_t *)alloc.allocate(basebandSize);
+    if(!basebandData) {
+        return nullptr;
+    }
+    basebandFileStream.read((char *)basebandData, (std::streamsize)basebandSize);
+    if(!basebandFileStream.good()) {
+        return nullptr;
+    }
+    *sz = basebandSize;
+    return reinterpret_cast<char *>(basebandData);
+}
+
+unsigned char *futurerestore::getSHABuffer(char *data, size_t dataSize, int type) {
+    std::allocator<uint8_t> alloc;
+    auto *fileHash = (unsigned char *)nullptr;
+    switch(type) {
+        case 0:
+            fileHash = (unsigned char *) alloc.allocate(48);
+            memset(fileHash, 0, 48);
+            SHA384((const unsigned char*)data, (unsigned int)dataSize, fileHash);
+            break;
+        case 1:
+            fileHash = (unsigned char *) alloc.allocate(32);
+            memset(fileHash, 0, 32);
+            SHA256((const unsigned char*)data, (unsigned int)dataSize, fileHash);
+            break;
+        case 2:
+            fileHash = (unsigned char *) alloc.allocate(64);
+            memset(fileHash, 0, 64);
+            SHA512((const unsigned char*)data, (unsigned int)dataSize, fileHash);
+            break;
+        case 3:
+            fileHash = (unsigned char *) alloc.allocate(20);
+            memset(fileHash, 0, 20);
+            SHA1((const unsigned char*)data, (unsigned int)dataSize, fileHash);
+            break;
+        default:
+            fileHash = (unsigned char *) alloc.allocate(48);
+            memset(fileHash, 0, 48);
+            SHA384((const unsigned char*)data, (unsigned int)dataSize, fileHash);
+            break;
+    }
+    return fileHash;
+}
+
 unsigned char *futurerestore::getSHA(const std::string& filePath, int type) {
     std::ifstream fileStream(filePath, std::ios::binary | std::ios::in | std::ios::ate);
     if(!fileStream.good()) {
@@ -2153,30 +2224,7 @@ unsigned char *futurerestore::getSHA(const std::string& filePath, int type) {
               __func__, filePath.c_str(), dataSize);
         return nullptr;
     }
-    auto *fileHash = (unsigned char *)nullptr;
-    switch(type) {
-        case 0:
-            fileHash = (unsigned char *) alloc.allocate(48);
-            SHA384((const unsigned char*)data, (unsigned int)dataSize, fileHash);
-            break;
-        case 1:
-            fileHash = (unsigned char *) alloc.allocate(32);
-            SHA256((const unsigned char*)data, (unsigned int)dataSize, fileHash);
-            break;
-        case 2:
-            fileHash = (unsigned char *) alloc.allocate(64);
-            SHA512((const unsigned char*)data, (unsigned int)dataSize, fileHash);
-            break;
-        case 3:
-            fileHash = (unsigned char *) alloc.allocate(20);
-            SHA1((const unsigned char*)data, (unsigned int)dataSize, fileHash);
-            break;
-        default:
-            fileHash = (unsigned char *) alloc.allocate(48);
-            SHA384((const unsigned char*)data, (unsigned int)dataSize, fileHash);
-            break;
-    }
-    return fileHash;
+    return getSHABuffer(data, dataSize, type);
 }
 
 #pragma mark static methods
@@ -2343,6 +2391,31 @@ unsigned char *futurerestore::getDigestOfElementInManifest(const char *element, 
     return (unsigned char *)digestStr;
 }
 
+unsigned char *futurerestore::getBBCFGDigestInManifest(const char *manifeststr, const char *boardConfig,
+                                                int isUpdateInstall) {
+    char *digestStr = nullptr;
+    ptr_smart<plist_t> buildmanifest(NULL, plist_free);
+    uint64_t size;
+
+    plist_from_xml(manifeststr, (uint32_t) strlen(manifeststr), &buildmanifest);
+
+    if (plist_t identity = getBuildidentityWithBoardconfig(buildmanifest._p, boardConfig, isUpdateInstall)) {
+        if (plist_t manifest = plist_dict_get_item(identity, "Manifest")) {
+            if (plist_t elem = plist_dict_get_item(manifest, "BasebandFirmware")) {
+                if (plist_t path = plist_dict_get_item(elem, "BBCFG-DownloadDigest")) {
+                    if (plist_get_data_val(path, &digestStr, &size), digestStr) {
+                        goto noerror;
+                    }
+                }
+            }
+        }
+    }
+
+    return nullptr;
+    noerror:
+    return (unsigned char *)digestStr;
+}
+
 bool
 futurerestore::elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall) {
     char *pathStr = nullptr;
@@ -2394,27 +2467,36 @@ void futurerestore::checkForUpdates() {
     bool fail = false;
     char *buffer = nullptr;
     uint32_t sz = 0;
+    uint32_t sz2 = 0;
     if(download_to_buffer(url.c_str(), &buffer, &sz)) {
         fail = true;
     } else {
-        std::string num_str = extractZipFileToString(buffer, "latest_build_num.txt", sz);
-        if(num_str.empty()) {
+        sz2 = sz;
+        const char *tmp = extractZipFileToString(buffer, "latest_build_num.txt", &sz);
+        if(!tmp) {
             fail = true;
         } else {
-            this->latest_num = num_str;
+            std::string num_str = std::string(tmp);
+            if (num_str.empty()) {
+                fail = true;
+            } else {
+                this->latest_num = num_str;
+            }
         }
     }
-    if(download_to_buffer(url.c_str(), &buffer, &sz)) {
+    const char *tmp = extractZipFileToString(buffer, "latest_build_sha.txt", &sz2);
+    if(!tmp) {
         fail = true;
     } else {
-        std::string sha_str = extractZipFileToString(buffer, "latest_build_sha.txt", sz);
-        if(sha_str.empty()) {
+        std::string sha_str = std::string(tmp);
+        if (sha_str.empty()) {
             fail = true;
         } else {
             this->latest_sha = sha_str;
         }
     }
-    if(this->latest_num.empty() || this->latest_sha.empty()) {
+
+    if(this->latest_num.empty() || this->latest_sha.empty() || fail) {
         info("ERROR: failed to check for futurerestore updates! continuing...\n");
         return;
     }
@@ -2422,7 +2504,7 @@ void futurerestore::checkForUpdates() {
     if(std::equal(this->current_sha.begin(), this->current_sha.end(), this->latest_sha.begin())) {
        updated = true;
     } else {
-        if(std::stoi(this->current_num) < std::stoi(this->latest_num)) {
+        if (std::stoi(this->current_num) < std::stoi(this->latest_num)) {
             info("Error: Futurerestore is outdated! Please download the latest futurerestore! exitting...\n");
             exit(-1);
         } else {
@@ -2434,47 +2516,54 @@ void futurerestore::checkForUpdates() {
     }
 }
 
-std::string futurerestore::extractZipFileToString(char *zip_buffer, const char *file, uint32_t sz) {
-    bool fail = false;
+#endif
+
+const char *futurerestore::extractZipFileToString(char *zip_buffer, const char *file, uint32_t *sz) {
     std::allocator<uint8_t> alloc;
-    std::string str;
     zip_error_t *err = nullptr;
-    zip_source_t *target_source_zip = zip_source_buffer_create(zip_buffer, sz, 0, err);
+    unsigned char *target_buffer = nullptr;
+    zip_source_t *target_source_zip = zip_source_buffer_create(zip_buffer, *sz, 0, err);
+    if(err != nullptr) {
+        return nullptr;
+    }
+    if(target_source_zip == nullptr) {
+        return nullptr;
+    }
     zip_t *target_zip = zip_open_from_source(target_source_zip, 0, err);
+    if(err != nullptr) {
+        info("err: %d %s\n", __LINE__, zip_error_strerror(err));
+    }
     if(target_zip == nullptr) {
-        fail = true;
+        return nullptr;
     } else {
         int idx = zip_name_locate(target_zip, file, 0);
         if(idx < 0) {
-            fail = true;
+            return nullptr;
         } else {
             struct zip_stat zstat;
             zip_stat_init(&zstat);
             if(zip_stat_index(target_zip, idx, 0, &zstat) != 0) {
-                fail = true;
+                return nullptr;
             } else {
                 struct zip_file* target_file = zip_fopen_index(target_zip, idx, 0);
                 if (target_file == nullptr) {
-                    fail = true;
+                    return nullptr;
                 } else {
-                    unsigned char *target_buffer = (unsigned char*)alloc.allocate(zstat.size+1);
+                    target_buffer = (unsigned char*)alloc.allocate(zstat.size+1);
                     if(target_buffer == nullptr) {
-                        fail = true;
+                        return nullptr;
                     } else {
                         if (zip_fread(target_file, target_buffer, zstat.size) != zstat.size) {
-                            fail = true;
+                            return nullptr;
                         } else {
                             target_buffer[zstat.size] = '\0';
-                            str = std::string(reinterpret_cast<const char *>(target_buffer));
+                            *sz = zstat.size;
                         }
                     }
-                    free(target_buffer);
                 }
                 zip_fclose(target_file);
             }
         }
     }
-    return fail ? "" : str;
+    return (const char *)target_buffer;
 }
-
-#endif

@@ -154,6 +154,8 @@ public:
     void loadKernel(std::string kernelPath);
     void loadSep(std::string sepPath);
     void loadBaseband(std::string basebandPath);
+    char *readBaseband(std::string basebandPath, char *data, size_t *sz);
+    unsigned char *getSHABuffer(char *data, size_t dataSize, int type = 0);
     unsigned char *getSHA(const std::string& filePath, int type = 0);
 
     void setCustomLatest(std::string version){_customLatest = version; _useCustomLatest = true;}
@@ -189,9 +191,10 @@ public:
     static void saveStringToFile(std::string str, std::string path);
     static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static unsigned char *getDigestOfElementInManifest(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
+    static unsigned char *getBBCFGDigestInManifest(const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static bool elemExists(const char *element, const char *manifeststr, const char *boardConfig, int isUpdateInstall);
     static std::string getGeneratorFromSHSH2(plist_t shsh2);
-    static std::string extractZipFileToString(char *zip_buffer, const char *file, uint32_t sz);
+    static const char *extractZipFileToString(char *zip_buffer, const char *file, uint32_t *sz);
 
 };
 
