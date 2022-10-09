@@ -192,19 +192,19 @@ int main_r(int argc, const char * argv[]) {
                 apticketPaths.push_back(optarg);
                 break;
             case 'b': // long option: "baseband"; can be called as short option
-                retassure(manual, "--baseband is Deprecated!");
+                retassure(manual, "--baseband is Deprecated! Please switch to --custom-latest or --custom-latest-beta.");
                 basebandPath = optarg;
                 break;
             case 'p': // long option: "baseband-manifest"; can be called as short option
-                retassure(manual, "--baseband-manifest is Deprecated!");
+                retassure(manual, "--baseband-manifest is Deprecated! Please switch to --custom-latest or --custom-latest-beta.");
                 basebandManifestPath = optarg;
                 break;
             case 's': // long option: "sep"; can be called as short option
-                retassure(manual, "--sep is Deprecated!");
+                retassure(manual, "--sep is Deprecated! Please switch to --custom-latest or --custom-latest-beta.");
                 sepPath = optarg;
                 break;
             case 'm': // long option: "sep-manifest"; can be called as short option
-                retassure(manual, "--sep-manifest is Deprecated!");
+                retassure(manual, "--sep-manifest is Deprecated! Please switch to --custom-latest or --custom-latest-beta.");
                 sepManifestPath = optarg;
                 break;
             case 'w': // long option: "wait"; can be called as short option
