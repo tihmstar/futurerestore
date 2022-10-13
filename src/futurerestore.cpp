@@ -858,7 +858,7 @@ void futurerestore::enterPwnRecovery(plist_t build_identity, std::string bootarg
                   "failed to write generator to nvram");
         retassure(!irecv_saveenv(_client->recovery->client), "failed to save nvram");
         uint64_t gen = std::stoull(generator, nullptr, 16);
-        auto *nonce = (uint8_t *)alloc.allocate(_client->nonce_size);
+        auto *nonce = (uint8_t *)alloc.allocate(_client->nonce_size == 32 ? 48 : 20);
         if (_client->nonce_size == 20) {
             SHA1((unsigned char *) &gen, 8, nonce);
         } else if (_client->nonce_size == 32) {
