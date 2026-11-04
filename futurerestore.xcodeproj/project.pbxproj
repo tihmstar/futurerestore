@@ -7,45 +7,32 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5669111D23B3D86E00C93279 /* libbz2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669111C23B3D86E00C93279 /* libbz2.a */; };
-		5669111F23B3D88200C93279 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669111E23B3D88200C93279 /* libcrypto.a */; };
-		5669112123B3D89B00C93279 /* libcurl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112023B3D89B00C93279 /* libcurl.tbd */; };
-		5669112323B3D89E00C93279 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112223B3D89E00C93279 /* libz.tbd */; };
-		5669112523B3D8B200C93279 /* libfragmentzip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112423B3D8B200C93279 /* libfragmentzip.a */; };
-		5669112723B3D8BE00C93279 /* libgeneral.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112623B3D8BE00C93279 /* libgeneral.a */; };
-		5669112923B3D8CF00C93279 /* libimg4tool.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112823B3D8CE00C93279 /* libimg4tool.a */; };
-		5669112B23B3D8DA00C93279 /* libimobiledevice.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112A23B3D8DA00C93279 /* libimobiledevice.a */; };
-		5669112D23B3D8E200C93279 /* libipatcher.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112C23B3D8E200C93279 /* libipatcher.a */; };
-		5669112F23B3D8ED00C93279 /* libirecovery.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669112E23B3D8ED00C93279 /* libirecovery.a */; };
-		5669113123B3D91B00C93279 /* libpartialzip-1.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669113023B3D91B00C93279 /* libpartialzip-1.0.a */; };
-		5669113323B3D92B00C93279 /* libplist.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669113223B3D92B00C93279 /* libplist.a */; };
-		5669113523B3D94300C93279 /* libzip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5669113423B3D94300C93279 /* libzip.a */; };
+		2A3E771029ACA1590079E6B4 /* libimg3tool.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A3E770F29ACA1590079E6B4 /* libimg3tool.0.dylib */; };
+		2A3E771129ACA1590079E6B4 /* libimg3tool.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A3E770F29ACA1590079E6B4 /* libimg3tool.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A4C882A2DF810E10010BA7E /* libfwkeyfetch.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A4C88292DF810E10010BA7E /* libfwkeyfetch.0.dylib */; };
+		2A4C882B2DF810E10010BA7E /* libfwkeyfetch.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A4C88292DF810E10010BA7E /* libfwkeyfetch.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A76ED882A5BFBED0074B9E4 /* libtsschecker.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A76ED872A5BFBED0074B9E4 /* libtsschecker.0.dylib */; };
+		2A76ED892A5BFBED0074B9E4 /* libtsschecker.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A76ED872A5BFBED0074B9E4 /* libtsschecker.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A8D85DB296D7056004894E4 /* libra1nsn0w.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A8D85DA296D7056004894E4 /* libra1nsn0w.0.dylib */; };
+		2A8D85DC296D7056004894E4 /* libra1nsn0w.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A8D85DA296D7056004894E4 /* libra1nsn0w.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2A8D85DE296D75B1004894E4 /* libpatchfinder.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A8D85DD296D75B1004894E4 /* libpatchfinder.0.dylib */; };
+		2A8D85DF296D75B1004894E4 /* libpatchfinder.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2A8D85DD296D75B1004894E4 /* libpatchfinder.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AC7AB922A8279A0004F21C9 /* libplist-2.0.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AC7AB912A8279A0004F21C9 /* libplist-2.0.4.dylib */; };
+		2AC7AB932A8279A0004F21C9 /* libplist-2.0.4.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AC7AB912A8279A0004F21C9 /* libplist-2.0.4.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AE12620296C1F6B0051DB0F /* libgeneral.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE1261F296C1F6B0051DB0F /* libgeneral.0.dylib */; };
+		2AE12621296C1F6B0051DB0F /* libgeneral.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AE1261F296C1F6B0051DB0F /* libgeneral.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AE12626296C1F830051DB0F /* libidevicerestore.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE12625296C1F830051DB0F /* libidevicerestore.0.dylib */; };
+		2AE12627296C1F830051DB0F /* libidevicerestore.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AE12625296C1F830051DB0F /* libidevicerestore.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AE1262C296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE1262B296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib */; };
+		2AE1262D296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AE1262B296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AE12632296C278E0051DB0F /* libimobiledevice-1.0.6.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE12631296C278E0051DB0F /* libimobiledevice-1.0.6.dylib */; };
+		2AE12633296C278E0051DB0F /* libimobiledevice-1.0.6.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AE12631296C278E0051DB0F /* libimobiledevice-1.0.6.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AE12635296C306A0051DB0F /* libimg4tool.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AE12634296C306A0051DB0F /* libimg4tool.0.dylib */; };
+		2AE12636296C306A0051DB0F /* libimg4tool.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AE12634296C306A0051DB0F /* libimg4tool.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2AF0D6332C63BFA000CDBC03 /* libirecovery-1.0.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2AF0D6322C63BFA000CDBC03 /* libirecovery-1.0.5.dylib */; };
+		2AF0D6342C63BFA000CDBC03 /* libirecovery-1.0.5.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 2AF0D6322C63BFA000CDBC03 /* libirecovery-1.0.5.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		878587471D89CFDC008689F0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 878587461D89CFDC008689F0 /* main.cpp */; };
 		8799B0B21D89D99D002F4D5F /* futurerestore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8799B0B01D89D99D002F4D5F /* futurerestore.cpp */; };
-		8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875C1D89D1C1008689F0 /* idevicerestore.c */; };
-		8799B0B41D89DAF6002F4D5F /* tss.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587761D89D1C1008689F0 /* tss.c */; };
-		8799B0B51D89DAFF002F4D5F /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587511D89D1C1008689F0 /* common.c */; };
-		8799B0B61D89DAFF002F4D5F /* dfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587531D89D1C1008689F0 /* dfu.c */; };
-		8799B0B71D89DAFF002F4D5F /* normal.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876C1D89D1C1008689F0 /* normal.c */; };
-		8799B0B81D89DAFF002F4D5F /* recovery.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876E1D89D1C1008689F0 /* recovery.c */; };
-		8799B0B91D89DB0D002F4D5F /* img3.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875E1D89D1C1008689F0 /* img3.c */; };
-		8799B0BB1D89DB12002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587551D89D1C1008689F0 /* download.c */; settings = {COMPILER_FLAGS = "-DPACKAGE_VERSION=\"\""; }; };
-		8799B0BC1D89DB27002F4D5F /* ipsw.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587621D89D1C1008689F0 /* ipsw.c */; };
-		8799B0BD1D89DB27002F4D5F /* limera1n.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587641D89D1C1008689F0 /* limera1n.c */; };
-		8799B0BE1D89DB27002F4D5F /* restore.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587701D89D1C1008689F0 /* restore.c */; };
-		8799B0BF1D89DB38002F4D5F /* asr.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785874F1D89D1C1008689F0 /* asr.c */; };
-		8799B0C01D89DB38002F4D5F /* fdr.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587581D89D1C1008689F0 /* fdr.c */; };
-		8799B0C11D89DB38002F4D5F /* fls.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785875A1D89D1C1008689F0 /* fls.c */; };
-		8799B0C21D89DB46002F4D5F /* thread.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587741D89D1C1008689F0 /* thread.c */; };
-		8799B0C31D89DB4B002F4D5F /* socket.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587721D89D1C1008689F0 /* socket.c */; };
-		8799B0C41D89DB55002F4D5F /* mbn.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785876A1D89D1C1008689F0 /* mbn.c */; };
-		8799B0C51D89DB67002F4D5F /* locking.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587671D89D1C1008689F0 /* locking.c */; };
-		8799B0CA1D89E371002F4D5F /* img4.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587601D89D1C1008689F0 /* img4.c */; };
-		8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */ = {isa = PBXBuildFile; fileRef = 8785879F1D89D2BA008689F0 /* tsschecker.c */; };
-		8799B0CC1D89F7B9002F4D5F /* download.c in Sources */ = {isa = PBXBuildFile; fileRef = 878587981D89D2BA008689F0 /* download.c */; };
-		87B517C3236EF36B009EAB8F /* ftab.c in Sources */ = {isa = PBXBuildFile; fileRef = 87B517C1236EF36B009EAB8F /* ftab.c */; };
-		87B517C6236EF3B0009EAB8F /* json_plist.c in Sources */ = {isa = PBXBuildFile; fileRef = 87B517C5236EF3B0009EAB8F /* json_plist.c */; };
-		87B517C9236EF3CD009EAB8F /* jsmn.c in Sources */ = {isa = PBXBuildFile; fileRef = 87B517C7236EF3CD009EAB8F /* jsmn.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -55,6 +42,18 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				2AE12633296C278E0051DB0F /* libimobiledevice-1.0.6.dylib in Embed Libraries */,
+				2AE12636296C306A0051DB0F /* libimg4tool.0.dylib in Embed Libraries */,
+				2AC7AB932A8279A0004F21C9 /* libplist-2.0.4.dylib in Embed Libraries */,
+				2A8D85DF296D75B1004894E4 /* libpatchfinder.0.dylib in Embed Libraries */,
+				2A4C882B2DF810E10010BA7E /* libfwkeyfetch.0.dylib in Embed Libraries */,
+				2AE1262D296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib in Embed Libraries */,
+				2A3E771129ACA1590079E6B4 /* libimg3tool.0.dylib in Embed Libraries */,
+				2AE12621296C1F6B0051DB0F /* libgeneral.0.dylib in Embed Libraries */,
+				2AF0D6342C63BFA000CDBC03 /* libirecovery-1.0.5.dylib in Embed Libraries */,
+				2AE12627296C1F830051DB0F /* libidevicerestore.0.dylib in Embed Libraries */,
+				2A8D85DC296D7056004894E4 /* libra1nsn0w.0.dylib in Embed Libraries */,
+				2A76ED892A5BFBED0074B9E4 /* libtsschecker.0.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -71,6 +70,21 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2A3E770F29ACA1590079E6B4 /* libimg3tool.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libimg3tool.0.dylib; path = ../../../../usr/local/lib/libimg3tool.0.dylib; sourceTree = "<group>"; };
+		2A4C88292DF810E10010BA7E /* libfwkeyfetch.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfwkeyfetch.0.dylib; path = ../../../../usr/local/lib/libfwkeyfetch.0.dylib; sourceTree = "<group>"; };
+		2A76ED872A5BFBED0074B9E4 /* libtsschecker.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtsschecker.0.dylib; path = ../../../../usr/local/lib/libtsschecker.0.dylib; sourceTree = "<group>"; };
+		2A8D85DA296D7056004894E4 /* libra1nsn0w.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libra1nsn0w.0.dylib; path = ../../../../usr/local/lib/libra1nsn0w.0.dylib; sourceTree = "<group>"; };
+		2A8D85DD296D75B1004894E4 /* libpatchfinder.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpatchfinder.0.dylib; path = ../../../../usr/local/lib/libpatchfinder.0.dylib; sourceTree = "<group>"; };
+		2AC7AB912A8279A0004F21C9 /* libplist-2.0.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libplist-2.0.4.dylib"; path = "../../../../usr/local/lib/libplist-2.0.4.dylib"; sourceTree = "<group>"; };
+		2AE1261F296C1F6B0051DB0F /* libgeneral.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgeneral.0.dylib; path = ../../../../usr/local/lib/libgeneral.0.dylib; sourceTree = "<group>"; };
+		2AE12622296C1F760051DB0F /* libirecovery-1.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libirecovery-1.0.3.dylib"; path = "../../../../usr/local/lib/libirecovery-1.0.3.dylib"; sourceTree = "<group>"; };
+		2AE12625296C1F830051DB0F /* libidevicerestore.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libidevicerestore.0.dylib; path = ../../../../usr/local/lib/libidevicerestore.0.dylib; sourceTree = "<group>"; };
+		2AE12628296C1F9C0051DB0F /* libipatcher.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libipatcher.0.dylib; path = ../../../../usr/local/lib/libipatcher.0.dylib; sourceTree = "<group>"; };
+		2AE1262B296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libimobiledevice-glue-1.0.0.dylib"; path = "../../../../usr/local/lib/libimobiledevice-glue-1.0.0.dylib"; sourceTree = "<group>"; };
+		2AE1262E296C270B0051DB0F /* libplist-2.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libplist-2.0.3.dylib"; path = "../../../../usr/local/lib/libplist-2.0.3.dylib"; sourceTree = "<group>"; };
+		2AE12631296C278E0051DB0F /* libimobiledevice-1.0.6.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libimobiledevice-1.0.6.dylib"; path = "../../../../usr/local/lib/libimobiledevice-1.0.6.dylib"; sourceTree = "<group>"; };
+		2AE12634296C306A0051DB0F /* libimg4tool.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libimg4tool.0.dylib; path = ../../../../usr/local/lib/libimg4tool.0.dylib; sourceTree = "<group>"; };
+		2AF0D6322C63BFA000CDBC03 /* libirecovery-1.0.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libirecovery-1.0.5.dylib"; path = "../../../../usr/local/lib/libirecovery-1.0.5.dylib"; sourceTree = "<group>"; };
 		5669111C23B3D86E00C93279 /* libbz2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbz2.a; path = ../../../../../usr/local/lib/libbz2.a; sourceTree = "<group>"; };
 		5669111E23B3D88200C93279 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = ../../../../../usr/local/lib/libcrypto.a; sourceTree = "<group>"; };
 		5669112023B3D89B00C93279 /* libcurl.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurl.tbd; path = usr/lib/libcurl.tbd; sourceTree = SDKROOT; };
@@ -86,60 +100,8 @@
 		5669113423B3D94300C93279 /* libzip.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libzip.a; path = ../../../../../usr/local/lib/libzip.a; sourceTree = "<group>"; };
 		878587431D89CFDC008689F0 /* futurerestore */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = futurerestore; sourceTree = BUILT_PRODUCTS_DIR; };
 		878587461D89CFDC008689F0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		8785874F1D89D1C1008689F0 /* asr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = asr.c; sourceTree = "<group>"; };
-		878587501D89D1C1008689F0 /* asr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asr.h; sourceTree = "<group>"; };
-		878587511D89D1C1008689F0 /* common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = common.c; sourceTree = "<group>"; };
-		878587521D89D1C1008689F0 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
-		878587531D89D1C1008689F0 /* dfu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dfu.c; sourceTree = "<group>"; };
-		878587541D89D1C1008689F0 /* dfu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dfu.h; sourceTree = "<group>"; };
-		878587551D89D1C1008689F0 /* download.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = download.c; sourceTree = "<group>"; };
-		878587561D89D1C1008689F0 /* download.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = download.h; sourceTree = "<group>"; };
-		878587571D89D1C1008689F0 /* endianness.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = endianness.h; sourceTree = "<group>"; };
-		878587581D89D1C1008689F0 /* fdr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fdr.c; sourceTree = "<group>"; };
-		878587591D89D1C1008689F0 /* fdr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fdr.h; sourceTree = "<group>"; };
-		8785875A1D89D1C1008689F0 /* fls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fls.c; sourceTree = "<group>"; };
-		8785875B1D89D1C1008689F0 /* fls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fls.h; sourceTree = "<group>"; };
-		8785875C1D89D1C1008689F0 /* idevicerestore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = idevicerestore.c; sourceTree = "<group>"; };
-		8785875D1D89D1C1008689F0 /* idevicerestore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = idevicerestore.h; sourceTree = "<group>"; };
-		8785875E1D89D1C1008689F0 /* img3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = img3.c; sourceTree = "<group>"; };
-		8785875F1D89D1C1008689F0 /* img3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = img3.h; sourceTree = "<group>"; };
-		878587601D89D1C1008689F0 /* img4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = img4.c; sourceTree = "<group>"; };
-		878587611D89D1C1008689F0 /* img4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = img4.h; sourceTree = "<group>"; };
-		878587621D89D1C1008689F0 /* ipsw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ipsw.c; sourceTree = "<group>"; };
-		878587631D89D1C1008689F0 /* ipsw.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ipsw.h; sourceTree = "<group>"; };
-		878587641D89D1C1008689F0 /* limera1n.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = limera1n.c; sourceTree = "<group>"; };
-		878587651D89D1C1008689F0 /* limera1n.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = limera1n.h; sourceTree = "<group>"; };
-		878587661D89D1C1008689F0 /* limera1n_payload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = limera1n_payload.h; sourceTree = "<group>"; };
-		878587671D89D1C1008689F0 /* locking.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = locking.c; sourceTree = "<group>"; };
-		878587681D89D1C1008689F0 /* locking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = locking.h; sourceTree = "<group>"; };
-		8785876A1D89D1C1008689F0 /* mbn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mbn.c; sourceTree = "<group>"; };
-		8785876B1D89D1C1008689F0 /* mbn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mbn.h; sourceTree = "<group>"; };
-		8785876C1D89D1C1008689F0 /* normal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = normal.c; sourceTree = "<group>"; };
-		8785876D1D89D1C1008689F0 /* normal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = normal.h; sourceTree = "<group>"; };
-		8785876E1D89D1C1008689F0 /* recovery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = recovery.c; sourceTree = "<group>"; };
-		8785876F1D89D1C1008689F0 /* recovery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = recovery.h; sourceTree = "<group>"; };
-		878587701D89D1C1008689F0 /* restore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = restore.c; sourceTree = "<group>"; };
-		878587711D89D1C1008689F0 /* restore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = restore.h; sourceTree = "<group>"; };
-		878587721D89D1C1008689F0 /* socket.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = socket.c; sourceTree = "<group>"; };
-		878587731D89D1C1008689F0 /* socket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = socket.h; sourceTree = "<group>"; };
-		878587741D89D1C1008689F0 /* thread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = thread.c; sourceTree = "<group>"; };
-		878587751D89D1C1008689F0 /* thread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = thread.h; sourceTree = "<group>"; };
-		878587761D89D1C1008689F0 /* tss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tss.c; sourceTree = "<group>"; };
-		878587771D89D1C1008689F0 /* tss.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tss.h; sourceTree = "<group>"; };
-		878587981D89D2BA008689F0 /* download.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = download.c; sourceTree = "<group>"; };
-		878587991D89D2BA008689F0 /* download.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = download.h; sourceTree = "<group>"; };
-		8785879A1D89D2BA008689F0 /* jssy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = jssy.c; path = ../external/jssy/jssy/jssy.c; sourceTree = "<group>"; };
-		8785879B1D89D2BA008689F0 /* jssy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = jssy.h; path = ../external/jssy/jssy/jssy.h; sourceTree = "<group>"; };
-		8785879F1D89D2BA008689F0 /* tsschecker.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tsschecker.c; sourceTree = "<group>"; };
-		878587A01D89D2BA008689F0 /* tsschecker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tsschecker.h; sourceTree = "<group>"; };
 		8799B0B01D89D99D002F4D5F /* futurerestore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = futurerestore.cpp; sourceTree = "<group>"; };
 		8799B0B11D89D99D002F4D5F /* futurerestore.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = futurerestore.hpp; sourceTree = "<group>"; };
-		87B517C1236EF36B009EAB8F /* ftab.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ftab.c; sourceTree = "<group>"; };
-		87B517C2236EF36B009EAB8F /* ftab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ftab.h; sourceTree = "<group>"; };
-		87B517C4236EF3B0009EAB8F /* json_plist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_plist.h; sourceTree = "<group>"; };
-		87B517C5236EF3B0009EAB8F /* json_plist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = json_plist.c; sourceTree = "<group>"; };
-		87B517C7236EF3CD009EAB8F /* jsmn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jsmn.c; sourceTree = "<group>"; };
-		87B517C8236EF3CD009EAB8F /* jsmn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jsmn.h; sourceTree = "<group>"; };
 		87F574C71E151DA6008D5C4D /* libcommonCrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcommonCrypto.tbd; path = usr/lib/system/libcommonCrypto.tbd; sourceTree = SDKROOT; };
 		87F574CC1E151EF8008D5C4D /* libcorecrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcorecrypto.tbd; path = usr/lib/system/libcorecrypto.tbd; sourceTree = SDKROOT; };
 		87F574CE1E151F11008D5C4D /* libSystem.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libSystem.tbd; path = usr/lib/libSystem.tbd; sourceTree = SDKROOT; };
@@ -150,19 +112,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5669113323B3D92B00C93279 /* libplist.a in Frameworks */,
-				5669111D23B3D86E00C93279 /* libbz2.a in Frameworks */,
-				5669112523B3D8B200C93279 /* libfragmentzip.a in Frameworks */,
-				5669112923B3D8CF00C93279 /* libimg4tool.a in Frameworks */,
-				5669112D23B3D8E200C93279 /* libipatcher.a in Frameworks */,
-				5669112B23B3D8DA00C93279 /* libimobiledevice.a in Frameworks */,
-				5669112F23B3D8ED00C93279 /* libirecovery.a in Frameworks */,
-				5669113123B3D91B00C93279 /* libpartialzip-1.0.a in Frameworks */,
-				5669112723B3D8BE00C93279 /* libgeneral.a in Frameworks */,
-				5669112123B3D89B00C93279 /* libcurl.tbd in Frameworks */,
-				5669112323B3D89E00C93279 /* libz.tbd in Frameworks */,
-				5669111F23B3D88200C93279 /* libcrypto.a in Frameworks */,
-				5669113523B3D94300C93279 /* libzip.a in Frameworks */,
+				2AC7AB922A8279A0004F21C9 /* libplist-2.0.4.dylib in Frameworks */,
+				2A3E771029ACA1590079E6B4 /* libimg3tool.0.dylib in Frameworks */,
+				2AF0D6332C63BFA000CDBC03 /* libirecovery-1.0.5.dylib in Frameworks */,
+				2AE12632296C278E0051DB0F /* libimobiledevice-1.0.6.dylib in Frameworks */,
+				2A4C882A2DF810E10010BA7E /* libfwkeyfetch.0.dylib in Frameworks */,
+				2A76ED882A5BFBED0074B9E4 /* libtsschecker.0.dylib in Frameworks */,
+				2A8D85DB296D7056004894E4 /* libra1nsn0w.0.dylib in Frameworks */,
+				2A8D85DE296D75B1004894E4 /* libpatchfinder.0.dylib in Frameworks */,
+				2AE12635296C306A0051DB0F /* libimg4tool.0.dylib in Frameworks */,
+				2AE1262C296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib in Frameworks */,
+				2AE12620296C1F6B0051DB0F /* libgeneral.0.dylib in Frameworks */,
+				2AE12626296C1F830051DB0F /* libidevicerestore.0.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -189,7 +150,6 @@
 		878587451D89CFDC008689F0 /* futurerestore */ = {
 			isa = PBXGroup;
 			children = (
-				8785874D1D89D1A4008689F0 /* external */,
 				8799B0B11D89D99D002F4D5F /* futurerestore.hpp */,
 				8799B0B01D89D99D002F4D5F /* futurerestore.cpp */,
 				878587461D89CFDC008689F0 /* main.cpp */,
@@ -197,86 +157,24 @@
 			path = futurerestore;
 			sourceTree = "<group>";
 		};
-		8785874D1D89D1A4008689F0 /* external */ = {
-			isa = PBXGroup;
-			children = (
-				878587961D89D2BA008689F0 /* tsschecker */,
-				8785874E1D89D1C1008689F0 /* idevicerestore */,
-			);
-			name = external;
-			sourceTree = "<group>";
-		};
-		8785874E1D89D1C1008689F0 /* idevicerestore */ = {
-			isa = PBXGroup;
-			children = (
-				8785874F1D89D1C1008689F0 /* asr.c */,
-				878587501D89D1C1008689F0 /* asr.h */,
-				878587511D89D1C1008689F0 /* common.c */,
-				878587521D89D1C1008689F0 /* common.h */,
-				878587531D89D1C1008689F0 /* dfu.c */,
-				878587541D89D1C1008689F0 /* dfu.h */,
-				878587551D89D1C1008689F0 /* download.c */,
-				878587561D89D1C1008689F0 /* download.h */,
-				878587571D89D1C1008689F0 /* endianness.h */,
-				878587581D89D1C1008689F0 /* fdr.c */,
-				878587591D89D1C1008689F0 /* fdr.h */,
-				8785875A1D89D1C1008689F0 /* fls.c */,
-				8785875B1D89D1C1008689F0 /* fls.h */,
-				8785875C1D89D1C1008689F0 /* idevicerestore.c */,
-				8785875D1D89D1C1008689F0 /* idevicerestore.h */,
-				8785875E1D89D1C1008689F0 /* img3.c */,
-				8785875F1D89D1C1008689F0 /* img3.h */,
-				878587601D89D1C1008689F0 /* img4.c */,
-				878587611D89D1C1008689F0 /* img4.h */,
-				87B517C5236EF3B0009EAB8F /* json_plist.c */,
-				87B517C4236EF3B0009EAB8F /* json_plist.h */,
-				87B517C1236EF36B009EAB8F /* ftab.c */,
-				87B517C2236EF36B009EAB8F /* ftab.h */,
-				87B517C7236EF3CD009EAB8F /* jsmn.c */,
-				87B517C8236EF3CD009EAB8F /* jsmn.h */,
-				878587621D89D1C1008689F0 /* ipsw.c */,
-				878587631D89D1C1008689F0 /* ipsw.h */,
-				878587641D89D1C1008689F0 /* limera1n.c */,
-				878587651D89D1C1008689F0 /* limera1n.h */,
-				878587661D89D1C1008689F0 /* limera1n_payload.h */,
-				878587671D89D1C1008689F0 /* locking.c */,
-				878587681D89D1C1008689F0 /* locking.h */,
-				8785876A1D89D1C1008689F0 /* mbn.c */,
-				8785876B1D89D1C1008689F0 /* mbn.h */,
-				8785876C1D89D1C1008689F0 /* normal.c */,
-				8785876D1D89D1C1008689F0 /* normal.h */,
-				8785876E1D89D1C1008689F0 /* recovery.c */,
-				8785876F1D89D1C1008689F0 /* recovery.h */,
-				878587701D89D1C1008689F0 /* restore.c */,
-				878587711D89D1C1008689F0 /* restore.h */,
-				878587721D89D1C1008689F0 /* socket.c */,
-				878587731D89D1C1008689F0 /* socket.h */,
-				878587741D89D1C1008689F0 /* thread.c */,
-				878587751D89D1C1008689F0 /* thread.h */,
-				878587761D89D1C1008689F0 /* tss.c */,
-				878587771D89D1C1008689F0 /* tss.h */,
-			);
-			name = idevicerestore;
-			path = external/idevicerestore/src;
-			sourceTree = SOURCE_ROOT;
-		};
-		878587961D89D2BA008689F0 /* tsschecker */ = {
-			isa = PBXGroup;
-			children = (
-				878587991D89D2BA008689F0 /* download.h */,
-				878587981D89D2BA008689F0 /* download.c */,
-				8785879B1D89D2BA008689F0 /* jssy.h */,
-				8785879A1D89D2BA008689F0 /* jssy.c */,
-				878587A01D89D2BA008689F0 /* tsschecker.h */,
-				8785879F1D89D2BA008689F0 /* tsschecker.c */,
-			);
-			name = tsschecker;
-			path = external/tsschecker/tsschecker;
-			sourceTree = SOURCE_ROOT;
-		};
 		87F574C21E151CDE008D5C4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2A4C88292DF810E10010BA7E /* libfwkeyfetch.0.dylib */,
+				2AF0D6322C63BFA000CDBC03 /* libirecovery-1.0.5.dylib */,
+				2AC7AB912A8279A0004F21C9 /* libplist-2.0.4.dylib */,
+				2A76ED872A5BFBED0074B9E4 /* libtsschecker.0.dylib */,
+				2A3E770F29ACA1590079E6B4 /* libimg3tool.0.dylib */,
+				2A8D85DD296D75B1004894E4 /* libpatchfinder.0.dylib */,
+				2A8D85DA296D7056004894E4 /* libra1nsn0w.0.dylib */,
+				2AE12634296C306A0051DB0F /* libimg4tool.0.dylib */,
+				2AE12631296C278E0051DB0F /* libimobiledevice-1.0.6.dylib */,
+				2AE1262E296C270B0051DB0F /* libplist-2.0.3.dylib */,
+				2AE1262B296C24560051DB0F /* libimobiledevice-glue-1.0.0.dylib */,
+				2AE12628296C1F9C0051DB0F /* libipatcher.0.dylib */,
+				2AE12625296C1F830051DB0F /* libidevicerestore.0.dylib */,
+				2AE12622296C1F760051DB0F /* libirecovery-1.0.3.dylib */,
+				2AE1261F296C1F6B0051DB0F /* libgeneral.0.dylib */,
 				5669111C23B3D86E00C93279 /* libbz2.a */,
 				87F574C71E151DA6008D5C4D /* libcommonCrypto.tbd */,
 				87F574CC1E151EF8008D5C4D /* libcorecrypto.tbd */,
@@ -354,31 +252,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8799B0C11D89DB38002F4D5F /* fls.c in Sources */,
-				8799B0B41D89DAF6002F4D5F /* tss.c in Sources */,
-				8799B0C01D89DB38002F4D5F /* fdr.c in Sources */,
-				8799B0BC1D89DB27002F4D5F /* ipsw.c in Sources */,
-				87B517C3236EF36B009EAB8F /* ftab.c in Sources */,
-				8799B0CC1D89F7B9002F4D5F /* download.c in Sources */,
-				8799B0B91D89DB0D002F4D5F /* img3.c in Sources */,
-				8799B0B51D89DAFF002F4D5F /* common.c in Sources */,
-				8799B0C41D89DB55002F4D5F /* mbn.c in Sources */,
-				8799B0B81D89DAFF002F4D5F /* recovery.c in Sources */,
-				8799B0B31D89DAE7002F4D5F /* idevicerestore.c in Sources */,
-				8799B0BB1D89DB12002F4D5F /* download.c in Sources */,
-				8799B0B71D89DAFF002F4D5F /* normal.c in Sources */,
-				87B517C9236EF3CD009EAB8F /* jsmn.c in Sources */,
-				8799B0C31D89DB4B002F4D5F /* socket.c in Sources */,
-				8799B0C21D89DB46002F4D5F /* thread.c in Sources */,
-				8799B0B61D89DAFF002F4D5F /* dfu.c in Sources */,
-				8799B0BD1D89DB27002F4D5F /* limera1n.c in Sources */,
-				8799B0C51D89DB67002F4D5F /* locking.c in Sources */,
 				878587471D89CFDC008689F0 /* main.cpp in Sources */,
-				87B517C6236EF3B0009EAB8F /* json_plist.c in Sources */,
-				8799B0BF1D89DB38002F4D5F /* asr.c in Sources */,
-				8799B0BE1D89DB27002F4D5F /* restore.c in Sources */,
-				8799B0CB1D89F796002F4D5F /* tsschecker.c in Sources */,
-				8799B0CA1D89E371002F4D5F /* img4.c in Sources */,
 				8799B0B21D89D99D002F4D5F /* futurerestore.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -493,12 +367,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 					"IDEVICERESTORE_NOMAIN=1",
-					"CUSTOM_LOGGING=1",
 					"HAVE_REALPATH=1",
+					XCODE,
 				);
 				HEADER_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
@@ -507,6 +382,7 @@
 					/usr/local/opt/openssl/lib,
 					"$(SDKROOT)/usr/lib/system",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/libgeneral/include $(SRCROOT)/external/tsschecker/external/jssy/jssy $(SRCROOT)/external/idevicerestore/src";
@@ -517,6 +393,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				HEADER_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
@@ -524,6 +401,7 @@
 					/usr/local/opt/openssl/lib,
 					"$(SDKROOT)/usr/lib/system",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				OTHER_CFLAGS = "-DHAVE_LIBIPATCHER";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "/usr/local/opt/openssl/include /usr/local/include $(SRCROOT)/external/libgeneral/include $(SRCROOT)/external/tsschecker/external/jssy/jssy $(SRCROOT)/external/idevicerestore/src";

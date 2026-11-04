@@ -19,107 +19,98 @@
 #include <stdio.h>
 #include <functional>
 #include <vector>
-#include "idevicerestore.h"
-#include <jssy.h>
 #include <plist/plist.h>
+#include <libgeneral/Mem.hpp>
 
-using namespace std;
+#include <ra1nsn0w/ra1nsn0w.hpp>
 
-template <typename T>
-class ptr_smart {
-    std::function<void(T)> _ptr_free = NULL;
-public:
-    T _p;
-    ptr_smart(T p, function<void(T)> ptr_free){static_assert(is_pointer<T>(), "error: this is for pointers only\n"); _p = p;_ptr_free = ptr_free;}
-    ptr_smart(T p){_p = p;}
-    ptr_smart(){_p = NULL;}
-    ptr_smart(ptr_smart &&p){ _p = p._p; _ptr_free = p._ptr_free; p._p = NULL; p._ptr_free = NULL;}
-    ptr_smart& operator =(ptr_smart &&p){_p = p._p; _ptr_free = p._ptr_free; p._p = NULL; p._ptr_free = NULL; return *this;}
-    T operator =(T p){ _p = p; return _p;}
-    T operator =(T &p){_p = p; p = NULL; return _p;}
-    T *operator&(){return &_p;}
-    explicit operator const T() const {return _p;}
-    operator const void*() const {return _p;}
-    ~ptr_smart(){if (_p) (_ptr_free) ? _ptr_free(_p) : free((void*)_p);}
+extern "C"{
+#include <idevicerestore/idevicerestore.h>
 };
 
-class futurerestore {
-    struct idevicerestore_client_t* _client;
-    char *_ibootBuild = NULL;
-    bool _didInit = false;
-    vector<plist_t> _aptickets;
-    vector<pair<char *, size_t>>_im4ms;
-    int _foundnonce = -1;
-    bool _isUpdateInstall = false;
-    bool _isPwnDfu = false;
-    
-    char *_firmwareJson = NULL;
-    jssytok_t *_firmwareTokens = NULL;;
-    char *__latestManifest = NULL;
-    char *__latestFirmwareUrl = NULL;
-    
-    plist_t _sepbuildmanifest = NULL;
-    plist_t _basebandbuildmanifest = NULL;
-    
-    const char *_basebandPath = NULL;;
-    const char *_sepbuildmanifestPath = NULL;
-    const char *_basebandbuildmanifestPath = NULL;
-    
-    bool _enterPwnRecoveryRequested = false;
-    bool _rerestoreiOS9 = false;
-    //methods
-    void enterPwnRecovery(plist_t build_identity, std::string bootargs = "");
-    
-public:
-    futurerestore(bool isUpdateInstall = false, bool isPwnDfu = false);
-    bool init();
-    int getDeviceMode(bool reRequest);
-    uint64_t getDeviceEcid();
-    void putDeviceIntoRecovery();
-    void setAutoboot(bool val);
-    void exitRecovery();
-    void waitForNonce();
-    void waitForNonce(vector<const char *>nonces, size_t nonceSize);
-    void loadAPTickets(const vector<const char *> &apticketPaths);
-    char *getiBootBuild();
-    
-    plist_t nonceMatchesApTickets();
-    std::pair<const char *,size_t> nonceMatchesIM4Ms();
+struct idevicerestore_mode_t;
 
-    void loadFirmwareTokens();
-    const char *getDeviceModelNoCopy();
-    const char *getDeviceBoardNoCopy();
-    char *getLatestManifest();
-    char *getLatestFirmwareUrl();
-    void loadLatestBaseband();
-    void loadLatestSep();
+class futurerestore {
+    idevicerestore_client_t *_client;
+
+    std::vector<plist_t> _aptickets;
+    std::vector<tihmstar::Mem>_im4ms;
+    tihmstar::Mem _donorLLB;
+    std::string _donorIPSW;
+    tihmstar::Mem _sep;
+    std::string _latestFirmwareUrl;
     
-    void setSepManifestPath(const char *sepManifestPath);
-    void setBasebandManifestPath(const char *basebandManifestPath);
-    void loadSep(const char *sepPath);
-    void setBasebandPath(const char *basebandPath);
-    bool isUpdateInstall(){return _isUpdateInstall;};
+    tihmstar::Mem _customRamdisk;
+    tihmstar::Mem _sepTicket;
+    plist_t _p_latestManifestCache;
+    tihmstar::ra1nsn0w::launchConfig _persist_cfg;
+
+    bool _isUpdateInstall;
+    bool _isPwnDfu;
+    bool _no_ticket_needed;
+    bool _restorePwnage;
+    bool _restore24kpwn;
+    bool _needsDecryptedRamdisk;
     
-    plist_t sepManifest(){return _sepbuildmanifest;};
-    plist_t basebandManifest(){return _basebandbuildmanifest;};
-    const char *sepManifestPath(){return _sepbuildmanifestPath;};
-    const char *basebandManifestPath(){return _basebandbuildmanifestPath;};
-    bool is32bit(){return !is_image4_supported(_client);};
-    
-    uint64_t getBasebandGoldCertIDFromDevice();
-    
-    void doRestore(const char *ipsw);
-    int doJustBoot(const char *ipsw, std::string bootargs = "");
-    
+private:
+    const plist_t loadBuilmanifestForLatestFirmware();
+    tihmstar::Mem getComponentFromIPSW(const char *ipswPath, const char *component);
+
+public:
+    futurerestore(uint64_t ecid = 0, bool isUpdateInstall = false, bool isPwnDfu = true);
     ~futurerestore();
     
-    static std::pair<const char *,size_t> getRamdiskHashFromSCAB(const char* scab, size_t scabSize);
-    static std::pair<const char *,size_t> getNonceFromSCAB(const char* scab, size_t scabSize);
-    static uint64_t getEcidFromSCAB(const char* scab, size_t scabSize);
-    static plist_t loadPlistFromFile(const char *path);
-    static void saveStringToFile(const char *str, const char *path);
-    static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *model, int isUpdateInstall);
-    static std::string getGeneratorFromSHSH2(const plist_t shsh2);
+    void setPersistCfg(tihmstar::ra1nsn0w::launchConfig cfg);
+    void setRestorePwnage(bool restorePwnage);
+    void setRestore24kpwn(bool restore24kpwn);
+    void setNeedsDecryptedRamdisk(bool needsDecryptedRamdisk);
+    void setNoTicketNeeded(bool ticketIsNotNeeded);
+    void loadAPTickets(const std::vector<const char*> &APTicketPaths);
+    
+    idevicerestore_mode_t *getDeviceMode();
+    bool isInRestoreMode();
+    void putDeviceIntoRecovery();
+    
+    tihmstar::Mem getRamdiskForDevice(const char *ipswpath);
+    
+    void doRestore(const char *ipswpath);
+    void enterPwnRestore(const char *ipswpath, bool is32bit, const char *bootargs = NULL, tihmstar::ra1nsn0w::launchConfig = {});
+    void enterRestore(const char *ipswpath);
+
+    void setLLBFromIPSW(const char *llbipswpath);
+
+    const char *getDeviceBoardNoCopy();
+    const char *getDeviceModelNoCopy();
+    
+    plist_t nonceMatchesApTickets();
+    tihmstar::Mem nonceMatchesIM4Ms();
+    uint64_t getDeviceEcid();
+    uint32_t getDeviceCPID();
+    uint32_t getDeviceBDID();
+
+    void requestFreshAPTicket(plist_t buildManifest, const char *variant = NULL);
+    void requestFreshAPTicket(const char *ipsw, const char *variant = NULL);
+    void requestFreshSEPTicket(plist_t buildManifest, const char *variant = NULL);
+    void fetchLatestBaseband();
+    void fetchLatestSEP();
+
+    void setCustomBasebandPath(const char *basebandPath);
+    void setCustomSEPPath(const char *SEPPath);
+    void setCustomBasebandManifest(plist_t basebandManifest);
+    void setCustomSEPManifest(plist_t SEPManifest);
+
+    void setCustomRamdisk(const char *ramdiskPath);
+
+    void verifyBasebandTicketCanBeRequested();
+    
+#pragma mark static
+    static tihmstar::Mem getRamdiskHashFromSCAB(const void* scab, size_t scabSize);
+//    static std::pair<const char *,size_t> getNonceFromSCAB(const char* scab, size_t scabSize);
+    static uint64_t getEcidFromSCAB(const void* scab, size_t scabSize);
+//    static plist_t loadPlistFromFile(const char *path);
+//    static void saveStringToFile(const char *str, const char *path);
+//    static char *getPathOfElementInManifest(const char *element, const char *manifeststr, const char *model, int isUpdateInstall);
+//    static std::string getGeneratorFromSHSH2(const plist_t shsh2);
 };
 
 #endif /* futurerestore_hpp */

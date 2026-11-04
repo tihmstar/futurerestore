@@ -25,8 +25,6 @@ __Only use if you are sure what you're doing.__
   * [libirecovery](https://github.com/libimobiledevice/libirecovery);
   * [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice);
   * [img4tool](https://github.com/tihmstar/img4tool);
-  * [liboffsetfinder64](https://github.com/tihmstar/liboffsetfinder64);
-  * [libipatcher](https://github.com/tihmstar/libipatcher)
 
 * ## Submodules
   Make sure these projects compile on your system (install it's dependencies):

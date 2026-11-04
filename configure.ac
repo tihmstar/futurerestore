@@ -27,9 +27,8 @@ case $host_os in
 esac
 
 # Checks the flags.
-CFLAGS+=" -DIDEVICERESTORE_NOMAIN=1 -DTSSCHECKER_NOMAIN=1"
-CXXFLAGS+=" -std=c++11"
-CFLAGS+=" -std=c11"
+CXXFLAGS+=" -std=c++17"
+CFLAGS+=" -std=c17"
 
 AC_DEFUN([AX_UNPRECIOUS], [
     m4_define([_AC_PRECIOUS_VARS], m4_bpatsubst(_AC_PRECIOUS_VARS, [$1], []))
@@ -37,18 +36,19 @@ AC_DEFUN([AX_UNPRECIOUS], [
 AX_UNPRECIOUS([CFLAGS])
 export CFLAGS
 
-AC_CONFIG_SUBDIRS(external/idevicerestore external/tsschecker)
 AC_CONFIG_SRCDIR([futurerestore])
 
 # Checks the libraries.
-LIBIPATCHER_REQUIRES_STR="libipatcher >= 61"
-LIBPLIST_REQUIRES_STR="libplist-2.0 >= 2.2.0"
+LIBPLIST_REQUIRES_STR="libplist-2.0 >= 2.3.0"
 LIBZIP_REQUIRES_STR="libzip >= 0.10"
 LIBIMOBILEDEVICE_REQUIRES_STR="libimobiledevice-1.0 >= 1.2.1"
 LIBFRAGMENTZIP_REQUIRES_STR="libfragmentzip >= 47"
+LIBFWKEYFETCH_REQUIRES_STR="libfwkeyfetch >= 1"
 LIBIRECOVERY_REQUIRES_STR="libirecovery-1.0 >= 1.0.0"
 IMG4TOOL_REQUIRES_STR="libimg4tool >= 162"
 LIBGENERAL_REQUIRES_STR="libgeneral >= 26"
+LIBIDEVICERESTORE_REQUIRES_STR="libidevicerestore >= 1.0.0"
+LIBRA1NSN0W_REQUIRES_STR="libra1nsn0w >= 158"
 
 PKG_CHECK_MODULES(libplist, $LIBPLIST_REQUIRES_STR)
 PKG_CHECK_MODULES(libzip, $LIBZIP_REQUIRES_STR)
@@ -57,31 +57,9 @@ PKG_CHECK_MODULES(libfragmentzip, $LIBFRAGMENTZIP_REQUIRES_STR)
 PKG_CHECK_MODULES(libirecovery, $LIBIRECOVERY_REQUIRES_STR)
 PKG_CHECK_MODULES(libimg4tool, $IMG4TOOL_REQUIRES_STR)
 PKG_CHECK_MODULES(libgeneral, $LIBGENERAL_REQUIRES_STR)
-
-# Optional module libipatcher
-AC_ARG_WITH([libipatcher],
-            [AS_HELP_STRING([--without-libipatcher],
-            [build with bundle-less odysseus support (default is yes)])],
-            [build_libipatcher=false],
-            [build_libipatcher=true])
-
-PKG_PROG_PKG_CONFIG
-LIBIPATCHER_FLAGS=$($PKG_CONFIG --cflags libipatcher)
-if [test -z "$LIBIPATCHER_FLAGS"]; then
-    do_libipatcher=no
-else
-    AC_MSG_CHECKING([for futurerestore libipatcher])
-    if test "$build_libipatcher" = "true"; then
-            PKG_CHECK_MODULES(libipatcher, $LIBIPATCHER_REQUIRES_STR)
-            AC_DEFINE(HAVE_LIBIPATCHER, 1, [Define if you have libipatcher])
-            do_libipatcher=yes
-    else
-            do_libipatcher=no
-    fi
-fi
-AM_CONDITIONAL([HAVE_LIBIPATCHER],[test "x$do_libipatcher" = "xyes"])
-
-AC_DEFINE(CUSTOM_LOGGING, 1, [required for futurerestore])
+PKG_CHECK_MODULES(libidevicerestore, $LIBIDEVICERESTORE_REQUIRES_STR)
+PKG_CHECK_MODULES(libra1nsn0w, $LIBRA1NSN0W_REQUIRES_STR)
+PKG_CHECK_MODULES(libfwkeyfetch, $LIBFWKEYFETCH_REQUIRES_STR)
 
 LT_INIT
 
@@ -95,7 +73,6 @@ Configuration for $PACKAGE $VERSION:
 -------------------------------------------
 
   Install prefix ..........: $prefix
-  With libipatcher ........: $do_libipatcher
   Now type 'make' to build $PACKAGE $VERSION,
   and then 'make install' for installation.
 "
