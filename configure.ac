@@ -61,6 +61,18 @@ PKG_CHECK_MODULES(libidevicerestore, $LIBIDEVICERESTORE_REQUIRES_STR)
 PKG_CHECK_MODULES(libra1nsn0w, $LIBRA1NSN0W_REQUIRES_STR)
 PKG_CHECK_MODULES(libfwkeyfetch, $LIBFWKEYFETCH_REQUIRES_STR)
 
+AC_ARG_ENABLE([debug],
+            [AS_HELP_STRING([--enable-debug],
+            [enable debug build(default is no)])],
+            [debug_build=true],
+            [debug_build=false])
+
+if test "$debug_build" = true; then
+  echo "*** Note: debug build requested ***"
+  CFLAGS+=" -g -O0 -DDEBUG=1"
+  CXXFLAGS+=" -g -O0 -DDEBUG=1"
+fi
+
 LT_INIT
 
 AC_OUTPUT([
@@ -69,10 +81,14 @@ futurerestore/Makefile
 ])
 
 echo "
-Configuration for $PACKAGE $VERSION:
+Configuration for $PACKAGE-$VERSION:
 -------------------------------------------
 
-  Install prefix ..........: $prefix
-  Now type 'make' to build $PACKAGE $VERSION,
+  install prefix ..........: $prefix
+  debug build .............: $debug_build"
+
+echo "  compiler ................: ${CC}
+
+  Now type 'make' to build $PACKAGE-$VERSION,
   and then 'make install' for installation.
 "
