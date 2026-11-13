@@ -766,7 +766,9 @@ void futurerestore::doRestore(const char *ipswpath){
             futurerestore *_this = (futurerestore*)(client->user_cb_data);
             debug("restore_custom_component_function called with component '%s'",name);
             
-            if (_this->_restorePwnage) {
+            if (_this->_donorLLB.size() && strcmp(name, "LLB") == 0) {
+                unsigned_component = &_this->_donorLLB;
+            }else if (_this->_restorePwnage) {
                 if (_this->_persist_cfg.bootlogoIm4p.size() && !strcmp(name, "AppleLogo")){
                     unsigned_component = &_this->_persist_cfg.bootlogoIm4p;
                 }else if (!strcmp(name, "KernelCache") ||
@@ -790,8 +792,6 @@ void futurerestore::doRestore(const char *ipswpath){
                     fcomponent = ra1nsn0w::patchIMG3(fcomponent.data(), fcomponent.size(), keys.iv, keys.key, "", [](void*, size_t, void*)->int{return 0;}, NULL);
                     unsigned_component = &fcomponent;
                 }
-            }else if (_this->_donorLLB.size() && strcmp(name, "LLB") == 0) {
-                unsigned_component = &_this->_donorLLB;
             }else if (_this->_sep.size() && strcmp(name, "SEP") == 0){
                 unsigned_component = &_this->_sep;
             }else if (_this->_donorIPSW.size()){
