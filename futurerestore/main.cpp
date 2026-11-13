@@ -339,7 +339,7 @@ int main_r(int argc, const char * argv[]) {
     if (apticketPaths.size()) client.loadAPTickets(apticketPaths);
     if (requestFreshAPTicketVariant){
         if (llbipsw) {
-            client.requestFreshAPTicket(llbipsw, requestFreshAPTicketVariant);
+            client.requestFreshAPTicket(llbipsw, requestFreshAPTicketVariant, true);
         }else{
             client.requestFreshAPTicket(ipsw, requestFreshAPTicketVariant);
         }

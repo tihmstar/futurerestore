@@ -88,8 +88,8 @@ public:
     uint32_t getDeviceCPID();
     uint32_t getDeviceBDID();
 
-    void requestFreshAPTicket(plist_t buildManifest, const char *variant = NULL);
-    void requestFreshAPTicket(const char *ipsw, const char *variant = NULL);
+    void requestFreshAPTicket(plist_t buildManifest, const char *variant = NULL, bool skipRamdisk = false);
+    void requestFreshAPTicket(const char *ipsw, const char *variant = NULL, bool skipRamdisk = false);
     void requestFreshSEPTicket(plist_t buildManifest, const char *variant = NULL);
     void fetchLatestBaseband();
     void fetchLatestSEP();

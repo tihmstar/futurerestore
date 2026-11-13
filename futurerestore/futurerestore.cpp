@@ -1227,7 +1227,7 @@ uint32_t futurerestore::getDeviceBDID(){
     return bdid;
 }
 
-void futurerestore::requestFreshAPTicket(plist_t p_BuildManifest, const char *variant){
+void futurerestore::requestFreshAPTicket(plist_t p_BuildManifest, const char *variant, bool skipRamdisk){
     uint8_t *sepnonce = NULL;
     plist_t p_APTicket = NULL;
     cleanup([&]{
@@ -1250,6 +1250,11 @@ void futurerestore::requestFreshAPTicket(plist_t p_BuildManifest, const char *va
     
     req.addDefaultAPTagsToRequest();
     req.addAllAPComponentsToRequest();
+    
+    if (skipRamdisk) {
+        req.deleteComponent("RestoreRamDisk");
+        req.deleteComponent("UniqueBuildID");
+    }
     
     p_APTicket = req.getTSSResponce();
     {
@@ -1308,7 +1313,7 @@ void futurerestore::requestFreshSEPTicket(plist_t p_BuildManifest, const char *v
     }
 }
 
-void futurerestore::requestFreshAPTicket(const char *ipswpath, const char *variant){
+void futurerestore::requestFreshAPTicket(const char *ipswpath, const char *variant, bool skipRamdisk){
     char *buf = NULL;
     plist_t p_BuildManifest = NULL;
     ipsw_archive_t ipsw = NULL;
@@ -1325,7 +1330,7 @@ void futurerestore::requestFreshAPTicket(const char *ipswpath, const char *varia
     
     retassure(!(err = ipsw_extract_to_memory(ipsw, "BuildManifest.plist", (void**)&buf, &bufSize)), "Failed to extract BuildManifest.plist with err=%d from ipsw at path=%s",err,ipsw);
     retassure(!(perr = plist_from_memory(buf, (uint32_t)bufSize, &p_BuildManifest, NULL)),"Failed to parse BuildManifest.plist");
-    return requestFreshAPTicket(p_BuildManifest, variant);
+    return requestFreshAPTicket(p_BuildManifest, variant, skipRamdisk);
 }
 
 void futurerestore::fetchLatestBaseband(){
