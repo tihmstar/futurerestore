@@ -856,7 +856,13 @@ void futurerestore::doRestore(const char *ipswpath){
                         signedComponent = *unsigned_component;
                     }else{
                         retassure(_this->_client->tss, "We're asked to personalize '%s', but we don't have a ticket!!",name);
-                        signedComponent = img3tool::signIMG3WithSHSH(unsigned_component->data(), unsigned_component->size(), _this->_client->tss);
+                        try {
+                            signedComponent = img3tool::signIMG3WithSHSH(unsigned_component->data(), unsigned_component->size(), _this->_client->tss);
+                        } catch (tihmstar::exception &e) {
+                            warning("Failed to personalize component '%s'",name);
+                            if (atoi(_this->_client->version) < 5) throw;
+                            signedComponent = *unsigned_component;
+                        }
                     }
                     if (dataSize) *dataSize = (unsigned int)signedComponent.size();
                     if (data) {
