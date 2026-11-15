@@ -1249,7 +1249,18 @@ void futurerestore::requestFreshAPTicket(plist_t p_BuildManifest, const char *va
     req.setEcid(getDeviceEcid());
     
     retassure(!(err = get_ap_nonce(_client, &_client->nonce, &_client->nonce_size)), "Failed to get APNonce with err=%d",err);
-    if (_client->nonce_size) req.setAPNonce(_client->nonce,_client->nonce_size);
+    if (_client->nonce_size) {
+        if (_client->nonce_size < 20){
+            /*
+                Some checkm8 bug with iPod5,1
+             */
+            uint8_t nonce[20] = {};
+            memset(nonce, 0x41, sizeof(nonce));
+            req.setAPNonce(nonce,sizeof(nonce));
+        }else{
+            req.setAPNonce(_client->nonce,_client->nonce_size);
+        }
+    }
     
     retassure(!(err = get_sep_nonce(_client, &sepnonce, (unsigned int*)&sepnonceSize)), "Failed to get SEPNonce with err=%d",err);
     if (sepnonceSize) req.setSEPNonce(sepnonce,sepnonceSize);
