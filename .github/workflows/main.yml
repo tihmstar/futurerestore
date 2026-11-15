@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     env:
       BUILDROOT: "buildroot_${{ matrix.platform }}"
-      GIT_DEPENDENCIES: idevicerestore,img1tool,img3tool,img4tool,jssy,libfragmentzip,libfwkeyfetch,libgeneral,libimobiledevice-glue,libirecovery,libinsn,libpatchfinder,libplist,libtatsu,libusbmuxd,ra1nsn0w,tsschecker
+      GIT_DEPENDENCIES: idevicerestore,img1tool,img3tool,img4tool,jssy,libfragmentzip,libfwkeyfetch,libgeneral,libimobiledevice,libimobiledevice-glue,libirecovery,libinsn,libpatchfinder,libplist,libtatsu,libusbmuxd,ra1nsn0w,tsschecker
       MAC_DYNAMIC_LIBS: openssl
 
     steps:
@@ -26,7 +26,7 @@ jobs:
 
          elif [ "$RUNNER_OS" == "macOS" ]; then
           brew install autoconf automake libtool jq pkg-config
-          brew install openssl
+          brew install openssl libzip
 
           cd $(brew --prefix openssl)
           sudo mkdir -p /usr/local/lib/pkgconfig/
