@@ -1,0 +1,149 @@
+name: Buildrunner
+
+on: [push]
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    env:
+      BUILDROOT: "buildroot_${{ matrix.platform }}"
+      GIT_DEPENDENCIES: idevicerestore,img1tool,img3tool,img4tool,jssy,libfragmentzip,libfwkeyfetch,libgeneral,libimobiledevice-glue,libirecovery,libinsn,libpatchfinder,libplist,libtatsu,libusbmuxd,ra1nsn0w,tsschecker
+      MAC_DYNAMIC_LIBS: openssl
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name:  Install pre-dependencies
+      run:   |
+         if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get update
+          sudo apt-get install -y jq libssl-dev libcurl4-openssl-dev libusb-1.0-0-dev libzip-dev
+
+         elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew install autoconf automake libtool jq pkg-config
+          brew install openssl
+
+          cd $(brew --prefix openssl)
+          sudo mkdir -p /usr/local/lib/pkgconfig/
+          sudo cp -r lib/pkgconfig/* /usr/local/lib/pkgconfig/
+          cd $GITHUB_WORKSPACE
+
+         else
+          echo "$RUNNER_OS not supported"
+          exit 1
+         fi
+      shell: bash
+    - name: download dependencies
+      env: 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        get_latest_release() {
+          url="https://api.github.com/repos/$1/releases/latest"
+          echo "url: ${url}" >&2
+          curl --silent --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' "${url}" | # Get latest release from GitHub api
+          jq .tag_name  | # Get tag
+          tr -d '"' # Strip quotes
+        }
+        mkdir depdir
+        cd depdir
+        mkdir $BUILDROOT
+        IFS=',' read -r -a deparray <<< "$GIT_DEPENDENCIES"; for d in ${deparray[@]}; do
+          dep=$d
+          if ! echo ${dep} | grep -q '/'; then
+            dep=${{ github.repository_owner }}/${dep}
+          fi
+          echo "Got dependency: ${dep}"
+          tag=$(get_latest_release ${dep});
+          echo "Found tag: $tag"
+          wget "https://github.com/${dep}/releases/download/$tag/$BUILDROOT.zip"
+          unzip -o -u "$BUILDROOT.zip"
+          rm "$BUILDROOT.zip"
+        done
+        echo "moving dependencies to /"
+        (
+          cd $BUILDROOT
+          tar -cpv . | sudo tar -xkpvC /
+        )
+        cd ..
+        rm -rf depdir
+    - name: prepre submodule
+      run: |
+        git submodule init
+        git submodule update
+    - name: prepre buildroot
+      run: mkdir -p $BUILDROOT
+    - name: autogen
+      run: ./autogen.sh --enable-static --disable-shared --enable-plugins
+    - name: make
+      run: |
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          IFS=',' read -r -a deparray <<< "$MAC_DYNAMIC_LIBS"; for d in ${deparray[@]}; do        
+            echo "moving library $d"
+            cd $(brew --prefix $d)
+            find . -name "*.dylib" -exec mv {} {}.bak \;
+          done       
+          cd $GITHUB_WORKSPACE
+          
+          make -j || make
+          
+          IFS=',' read -r -a deparray <<< "$MAC_DYNAMIC_LIBS"; for d in ${deparray[@]}; do        
+            echo "restoring library $d"
+            cd $(brew --prefix $d)
+          find . -name "*.dylib.bak" | while read f; do o=$(echo $f | rev | cut -d '.' -f2- | rev); mv $f $o; done
+          done       
+          cd $GITHUB_WORKSPACE
+        else
+          make -j || make
+        fi
+    - name: make install
+      run: make DESTDIR=$GITHUB_WORKSPACE/$BUILDROOT install
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.BUILDROOT }}
+        path: ${{ env.BUILDROOT }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Download ubuntu artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: buildroot_ubuntu-latest   
+        path: buildroot_ubuntu-latest    
+    - name: Download macos artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: buildroot_macos-latest
+        path: buildroot_macos-latest
+    - name: Set env vars and zip
+      run: |
+        echo "BUILD_VERSION_NUM=$(echo "$(git rev-list --count HEAD | tr -d '\n')")" >> $GITHUB_ENV
+        echo "BUILD_VERSION_SHA=$(echo "$(git rev-parse HEAD | tr -d '\n'])")" >> $GITHUB_ENV
+        echo "BUILD_VERSION_STR=$(echo "$(git rev-list --count HEAD | tr -d '\n')-$(git rev-parse HEAD | tr -d '\n'])")" >> $GITHUB_ENV
+        echo "COMMIT_MSG=$(echo "$(git log -1 --pretty=%B)")" >> $GITHUB_ENV
+        zip -r buildroot_macos-latest.zip buildroot_macos-latest
+        zip -r buildroot_ubuntu-latest.zip buildroot_ubuntu-latest
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      if: github.ref == 'refs/heads/master'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        prerelease: false
+        draft: false
+        tag_name: ${{ env.BUILD_VERSION_NUM }}
+        name: Build ${{ env.BUILD_VERSION_STR }}
+        body: ${{ env.COMMIT_MSG }}
+        files: |
+          buildroot_ubuntu-latest.zip
+          buildroot_macos-latest.zip
