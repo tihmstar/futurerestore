@@ -78,7 +78,7 @@ jobs:
     - name: prepre buildroot
       run: mkdir -p $BUILDROOT
     - name: autogen
-      run: ./autogen.sh --enable-static --disable-shared --enable-plugins
+      run: ./autogen.sh --enable-static --disable-shared
     - name: make
       run: |
         if [ "$RUNNER_OS" == "macOS" ]; then
