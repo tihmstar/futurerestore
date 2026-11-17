@@ -1347,7 +1347,7 @@ void futurerestore::requestFreshAPTicket(const char *ipswpath, const char *varia
     
     retassure(!(err = ipsw_extract_to_memory(ipsw, "BuildManifest.plist", (void**)&buf, &bufSize)), "Failed to extract BuildManifest.plist with err=%d from ipsw at path=%s",err,ipsw);
     retassure(!(perr = plist_from_memory(buf, (uint32_t)bufSize, &p_BuildManifest, NULL)),"Failed to parse BuildManifest.plist");
-    return requestFreshAPTicket(p_BuildManifest, variant, skipRamdisk);
+    return requestFreshAPTicket(p_BuildManifest, variant, skipRamdisk && !_client->image4supported);
 }
 
 void futurerestore::fetchLatestBaseband(){
